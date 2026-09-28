@@ -1,0 +1,189 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Hub Turismo Amazonas API",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/api/contatos": {
+      "post": {
+        "summary": "Salvar contato",
+        "description": "Origin igual à origem do site; UUID v4 em Idempotency-Key. Limites 5/e-mail/hora e 30/IP/hora. Dados no esquema ContactInput.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Retentativa idempotente"
+          },
+          "201": {
+            "description": "Salvo: data.id e data.message"
+          },
+          "400": {
+            "description": "JSON ou chave inválida"
+          },
+          "403": {
+            "description": "Origem inválida"
+          },
+          "409": {
+            "description": "Chave já usada com outro conteúdo"
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes"
+          },
+          "415": {
+            "description": "Conteúdo não JSON"
+          },
+          "422": {
+            "description": "Validação: error.code,message,fields,requestId"
+          },
+          "429": {
+            "description": "Limite: Retry-After 3600"
+          },
+          "503": {
+            "description": "Indisponível"
+          }
+        }
+      }
+    },
+    "/api/admin/contatos": {
+      "get": {
+        "summary": "Lista restrita de contatos",
+        "description": "Sessão de plataforma Sites verificada e ADMIN_EMAILS. Retorno data (id,name,email,organization,interest,message,created_at), page, pageSize=20,total. Ordem decrescente por created_at.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 999999,
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página"
+          },
+          "400": {
+            "description": "Página inválida"
+          },
+          "401": {
+            "description": "Sem sessão"
+          },
+          "403": {
+            "description": "Conta não autorizada"
+          },
+          "503": {
+            "description": "Indisponível"
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "summary": "Saúde do banco",
+        "responses": {
+          "200": {
+            "description": "status: ok"
+          },
+          "503": {
+            "description": "status: unavailable"
+          }
+        }
+      }
+    },
+    "/api/openapi": {
+      "get": {
+        "summary": "Este contrato",
+        "responses": {
+          "200": {
+            "description": "OpenAPI JSON"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ContactInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "email", "interest", "message", "consent"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          },
+          "organization": {
+            "type": "string",
+            "maxLength": 120,
+            "default": ""
+          },
+          "interest": {
+            "type": "string",
+            "enum": [
+              "Conhecer a solução",
+              "Hotel ou pousada",
+              "Parcerias",
+              "Privacidade",
+              "Outro assunto"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 2000
+          },
+          "consent": {
+            "type": "boolean",
+            "const": true
+          },
+          "website": {
+            "type": "string",
+            "maxLength": 0,
+            "default": ""
+          }
+        }
+      }
+    }
+  }
+}
