@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { siteUrl } from "@/lib/site-config";
 import "./globals.css";
 export const metadata: Metadata = {
-  metadataBase: new URL("https://hub-turismo-amazonas.chirpy-tick-5066.chatgpt.site"),
+  metadataBase: new URL(siteUrl),
   title: {
     default: "Hub Turismo Amazonas | Tecnologia que acolhe",
     template: "%s | Hub Turismo Amazonas",

@@ -2,6 +2,17 @@
 
 Site institucional com contato persistente e consulta administrativa. O operador autorizado é configurado por variável de ambiente; o painel exige login e nega acesso a contas fora da lista.
 
+## Acessar a publicação
+
+- Site: https://hub-turismo-amazonas.rogeriolevydesousa.chatgpt.site
+- Administração: https://hub-turismo-amazonas.rogeriolevydesousa.chatgpt.site/admin
+
+Publicação inicial confirmada em 28/09/2026. O site está restrito ao proprietário e ao visitante convidado. Entre com a conta ChatGPT correspondente ao e-mail autorizado para consultar as mensagens em /admin. A permissão de visitante do site e a autorização administrativa da aplicação são controles separados.
+
+O painel permite consultar, atualizar a lista, paginar e abrir o e-mail do contato para resposta manual. Não envia respostas nem notificações automaticamente. Os dados de teste locais não foram transferidos para produção.
+
+O endereço usado no sitemap e nos metadados está centralizado em lib/site-config.ts. Atualize-o e publique uma nova versão se o domínio mudar.
+
 ## Executar localmente
 
 Requisitos: Node.js 22.13+ (testado com 22.23.2) e npm.

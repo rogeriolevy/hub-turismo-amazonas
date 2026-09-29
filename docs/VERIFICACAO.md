@@ -1,6 +1,6 @@
 # Verificação da entrega
 
-Data: 28/09/2026. Escopo: site institucional, contato persistente e consulta administrativa. O PMS apresentado no PDF permanece uma etapa futura.
+Verificação funcional: 28/09/2026. Revisão de endereço e documentação: 29/09/2026. Escopo: site institucional, contato persistente e consulta administrativa. O PMS apresentado no PDF permanece uma etapa futura.
 
 ## Evidências executadas
 
@@ -20,9 +20,9 @@ O login real da conta solicitada ainda não foi realizado pelo operador. O teste
 
 ## Publicação e conferência
 
-O componente local de publicação do Sites voltou a ficar disponível em 28/09/2026, após uma interrupção na preparação. As configurações de acesso foram preservadas na plataforma. A publicação aplica ADMIN_EMAILS ao Worker e a migration ao banco de produção.
+Publicação inicial confirmada pelo Sites com status succeeded em 28/09/2026 às 21:09:55 UTC (17:09 em Manaus), versão 1, revisão de ambiente 1. A configuração ADMIN_EMAILS foi aplicada. Endereço: https://hub-turismo-amazonas.rogeriolevydesousa.chatgpt.site.
 
-Executar o fluxo descrito em DEPLOY.md com o project_id existente. Não criar outro site. Confirmar status succeeded antes de considerar a versão disponível e solicitar ao operador que faça o primeiro login. O resultado da publicação e o endereço são informados na entrega; este documento registra os testes feitos antes da publicação.
+Em 29/09/2026, o endereço definitivo foi centralizado e aplicado a canonical, metadados, robots e sitemap. As atualizações usam o fluxo descrito em DEPLOY.md com o project_id existente. Confirmar status succeeded antes de considerar cada revisão disponível e solicitar ao operador que faça o primeiro login. O teste com a identidade real do operador ainda depende desse login.
 
 O site mantém a audiência restrita ao proprietário e ao operador convidado. A abertura ao público é uma decisão posterior, independente da autorização administrativa da aplicação.
 
