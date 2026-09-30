@@ -4,7 +4,7 @@ export default function NotFound() {
   return (
     <>
       <Header />
-      <main id="conteudo" className="container prose">
+      <main id="conteudo" tabIndex={-1} className="container prose">
         <p className="eyebrow">PÁGINA NÃO ENCONTRADA</p>
         <h1>Vamos encontrar outro caminho.</h1>
         <p>O endereço que você procurou não existe neste site.</p>

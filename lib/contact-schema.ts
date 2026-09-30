@@ -33,4 +33,4 @@ export const contactSchema = z
   })
   .strict();
 export type ContactInput = z.infer<typeof contactSchema>;
-export const privacyVersion = "2026-09-28";
+export const privacyVersion = "2026-09-29-node";

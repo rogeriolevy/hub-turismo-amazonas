@@ -1,5 +1,6 @@
 import { getDatabase } from "@/db";
 import { createContact } from "@/server/contact-service";
+import { getClientIp } from "@/server/client-ip";
 import { readJson, json, errorResponse } from "@/server/http";
 export async function POST(request: Request) {
   const requestId = crypto.randomUUID();
@@ -9,7 +10,7 @@ export async function POST(request: Request) {
       getDatabase(),
       body,
       request.headers.get("Idempotency-Key"),
-      request.headers.get("cf-connecting-ip") || "local",
+      getClientIp(request.headers),
     );
     return json(
       {

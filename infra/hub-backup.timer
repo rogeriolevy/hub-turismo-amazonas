@@ -1,0 +1,10 @@
+[Unit]
+Description=Backup diário da Hub Turismo Amazonas
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+Unit=hub-backup.service
+
+[Install]
+WantedBy=timers.target

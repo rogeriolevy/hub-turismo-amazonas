@@ -2,7 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Hub Turismo Amazonas API",
-    "version": "1.0.0"
+    "version": "3.1.0",
+    "description": "Plataforma local Node.js/SQLite. Reservas por aprovação, sem pagamentos. POSTs exigem Origin igual à origem configurada e JSON limitado a 12000 bytes. Contas básicas não têm confirmação automática de e-mail. Importação Cadastur exclusiva do administrador: CSV/XLSX até 20 MB, prévia e revisão; não publica nem cria contas."
   },
   "servers": [
     {
@@ -80,7 +81,7 @@
     "/api/admin/contatos": {
       "get": {
         "summary": "Lista restrita de contatos",
-        "description": "Sessão de plataforma Sites verificada e ADMIN_EMAILS. Retorno data (id,name,email,organization,interest,message,created_at), page, pageSize=20,total. Ordem decrescente por created_at.",
+        "description": "Sessão Better Auth e e-mail autorizado em ADMIN_EMAILS. Retorno data (id,name,email,organization,interest,message,created_at), page, pageSize=20,total. Ordem decrescente por created_at e id. Sem cache.",
         "parameters": [
           {
             "name": "page",
@@ -109,7 +110,12 @@
           "503": {
             "description": "Indisponível"
           }
-        }
+        },
+        "security": [
+          {
+            "AdminSession": []
+          }
+        ]
       }
     },
     "/api/health": {
@@ -133,6 +139,3787 @@
             "description": "OpenAPI JSON"
           }
         }
+      }
+    },
+    "/api/auth/sign-in/email": {
+      "post": {
+        "responses": {
+          "401": {
+            "description": "Credenciais inválidas"
+          },
+          "429": {
+            "description": "Limite de tentativas"
+          },
+          "200": {
+            "description": "Autenticado; cookie de sessão emitido pelo servidor"
+          },
+          "403": {
+            "description": "Origem inválida"
+          }
+        },
+        "description": "Exige Origin igual a SITE_URL. Limite de 5 tentativas por IP em 60 segundos. Cadastro básico disponível exclusivamente em /api/conta/cadastro. Erros do Better Auth retornam code e message; erros da camada HTTP retornam error.code, error.message e requestId.",
+        "summary": "Entrar na conta",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "rememberMe": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "password": {
+                    "type": "string",
+                    "maxLength": 128
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                },
+                "type": "object",
+                "required": ["email", "password"]
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/api/auth/sign-out": {
+      "post": {
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "description": "Enviar JSON vazio e Origin igual a SITE_URL. Revoga a sessão no banco.",
+        "summary": "Encerrar sessão",
+        "responses": {
+          "200": {
+            "description": "Sessão encerrada"
+          },
+          "403": {
+            "description": "Origem inválida"
+          }
+        }
+      }
+    },
+    "/api/auth/get-session": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Sessão atual ou null, sem cache"
+          }
+        },
+        "description": "Retorna null quando não autenticado; a existência de sessão não implica autorização administrativa.",
+        "summary": "Consultar sessão atual"
+      }
+    },
+    "/api/catalogo/hospedagens": {
+      "get": {
+        "summary": "Listar hospedagens",
+        "description": "Somente empresas e ofertas publicadas. Sem paginação nesta fase.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Company"
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Busca por nome/cidade. O servidor considera os primeiros 100 caracteres."
+          }
+        ]
+      }
+    },
+    "/api/catalogo/passeios": {
+      "get": {
+        "summary": "Listar passeios",
+        "description": "Somente empresas e ofertas publicadas. Sem paginação nesta fase.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Tour"
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Busca por nome/cidade. O servidor considera os primeiros 100 caracteres."
+          }
+        ]
+      }
+    },
+    "/api/catalogo/hospedagens/{slug}": {
+      "get": {
+        "summary": "Detalhar hospedagens",
+        "description": "Somente registros publicados. Saídas de passeios incluem apenas as ativas e futuras.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/HotelDetail"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 80,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/catalogo/passeios/{slug}": {
+      "get": {
+        "summary": "Detalhar passeios",
+        "description": "Somente registros publicados. Saídas de passeios incluem apenas as ativas e futuras.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TourDetail"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 80,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/catalogo/guias/{slug}": {
+      "get": {
+        "summary": "Detalhar guias",
+        "description": "Somente registros publicados. Saídas de passeios incluem apenas as ativas e futuras.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/GuideDetail"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 80,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            }
+          }
+        ]
+      }
+    },
+    "/api/plataforma/empresas": {
+      "get": {
+        "summary": "Empresas acessíveis",
+        "description": "Administrador: todas. Equipe: empresas vinculadas não suspensas. Turista: lista vazia.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Company"
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Cadastrar ou atualizar empresa",
+        "description": "Somente administrador. O campo id indica atualização. Tipo imutável. Publicação controla o catálogo.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "required": ["id"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mesma origem de SITE_URL."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plataforma/acessos": {
+      "get": {
+        "summary": "Vínculos empresariais",
+        "description": "Somente administrador do sistema.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Member"
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Conceder ou alterar vínculo",
+        "description": "Somente administrador; conta já cadastrada; perfil compatível com a empresa. Confirme o controle da conta diretamente antes de conceder acesso.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "required": ["id"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mesma origem de SITE_URL."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plataforma/inventario": {
+      "get": {
+        "summary": "Inventário da empresa",
+        "description": "Exige vínculo com a empresa ou administração.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Inventory"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "empresa",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/api/plataforma/minhas-reservas": {
+      "get": {
+        "summary": "Minhas solicitações",
+        "description": "Somente reservas pertencentes à conta autenticada.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Booking"
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ]
+      }
+    },
+    "/api/plataforma/reservas": {
+      "get": {
+        "summary": "Solicitações da empresa",
+        "description": "Exige vínculo com a empresa ou administração.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Booking"
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "empresa",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Solicitar reserva",
+        "description": "Conta autenticada. Cria pending, sem retenção de inventário. Máximo 20 novas solicitações/conta/24h. Preço calculado no servidor. Repetir chave e dados retorna o mesmo id, inclusive com status 201; mudar dados com a mesma chave retorna 409.",
+        "responses": {
+          "201": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "required": ["id"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mesma origem de SITE_URL."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plataforma/quartos": {
+      "post": {
+        "summary": "Cadastrar ou atualizar quarto",
+        "description": "Equipe do hotel ou administrador. Cada registro é um quarto físico. Não reduz capacidade abaixo de reservas confirmadas futuras.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "required": ["id"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mesma origem de SITE_URL."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoomInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plataforma/guias": {
+      "post": {
+        "summary": "Cadastrar ou atualizar perfil de guia",
+        "description": "Equipe do operador ou administrador. Perfil público independente da conta de login.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "required": ["id"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mesma origem de SITE_URL."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuideInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plataforma/passeios": {
+      "post": {
+        "summary": "Cadastrar ou atualizar passeio",
+        "description": "Equipe do operador ou administrador. Guia, se informado, deve pertencer à mesma empresa.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "required": ["id"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mesma origem de SITE_URL."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TourInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plataforma/saidas": {
+      "post": {
+        "summary": "Cadastrar ou atualizar saída",
+        "description": "Equipe do operador ou administrador. Data futura; capacidade suficiente; passeio/horário não mudam quando existem pedidos pendentes ou confirmados.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "required": ["id"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mesma origem de SITE_URL."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepartureInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plataforma/decisao": {
+      "post": {
+        "summary": "Aprovar ou recusar solicitação",
+        "description": "Equipe da empresa ou administrador. Somente pending; aprovação revalida disponibilidade dentro de transação IMMEDIATE.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "required": ["id"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mesma origem de SITE_URL."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plataforma/estadia": {
+      "post": {
+        "summary": "Registrar chegada ou saída",
+        "description": "Equipe do hotel ou administrador. Reserva confirmada; check-in no período, check-out após entrada. Registro local, sem transmissão de FNRH oficial.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "required": ["id"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mesma origem de SITE_URL."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StayInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plataforma/cancelar": {
+      "post": {
+        "summary": "Cancelar solicitação própria",
+        "description": "Somente titular, antes do início ou check-in. Estados pending ou confirmed.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      },
+                      "required": ["id"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mesma origem de SITE_URL."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plataforma/revogar-acesso": {
+      "post": {
+        "summary": "Revogar vínculo",
+        "description": "Somente administrador. Próximas requisições já refletem a remoção.",
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "ok": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["ok"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mesma origem de SITE_URL."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/conta/cadastro": {
+      "post": {
+        "summary": "Criar conta básica",
+        "description": "Cadastro sem login automático, confirmação de e-mail ou privilégios. Recusa e-mail reservado à administração e campos extras. Limite de 5 cadastros/IP/hora. Endpoint genérico /api/auth/sign-up/email permanece bloqueado. Erros de validação local usam DomainError; erros do provedor podem usar code/message, inclusive para conta já existente.",
+        "responses": {
+          "200": {
+            "description": "Conta criada; entre pelo endpoint de login.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string",
+                          "maxLength": 254,
+                          "format": "email"
+                        },
+                        "emailVerified": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "token": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origem ou permissão recusada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso inexistente ou fora do escopo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflito de estado, disponibilidade ou chave",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo acima de 12000 bytes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Conteúdo não JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de solicitações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Mesma origem de SITE_URL."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationInput"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cadastur/fontes": {
+      "get": {
+        "summary": "Listar arquivos oficiais por categoria",
+        "description": "Apenas administrador. Nenhuma publicação automática.",
+        "tags": ["Cadastur"],
+        "security": [
+          {
+            "AdminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado em data."
+          },
+          "401": {
+            "description": "Sem sessão."
+          },
+          "403": {
+            "description": "Sem permissão ou origem inválida."
+          },
+          "409": {
+            "description": "Prévia expirada, substituída, divergente ou leitura em andamento."
+          },
+          "413": {
+            "description": "Tamanho excedido."
+          },
+          "415": {
+            "description": "Formato não suportado."
+          },
+          "422": {
+            "description": "Validação falhou."
+          },
+          "502": {
+            "description": "Fonte oficial indisponível ou formato inesperado."
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["hospedagens", "guias", "gastronomia", "transportes"]
+            }
+          }
+        ]
+      }
+    },
+    "/api/cadastur/registros": {
+      "get": {
+        "summary": "Consultar diretório interno e histórico",
+        "description": "Apenas administrador. Nenhuma publicação automática.",
+        "tags": ["Cadastur"],
+        "security": [
+          {
+            "AdminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado em data."
+          },
+          "401": {
+            "description": "Sem sessão."
+          },
+          "403": {
+            "description": "Sem permissão ou origem inválida."
+          },
+          "409": {
+            "description": "Prévia expirada, substituída, divergente ou leitura em andamento."
+          },
+          "413": {
+            "description": "Tamanho excedido."
+          },
+          "415": {
+            "description": "Formato não suportado."
+          },
+          "422": {
+            "description": "Validação falhou."
+          },
+          "502": {
+            "description": "Fonte oficial indisponível ou formato inesperado."
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["hospedagens", "guias", "gastronomia", "transportes"]
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          }
+        ]
+      }
+    },
+    "/api/cadastur/inspecionar": {
+      "post": {
+        "summary": "Identificar abas e colunas de CSV/XLSX",
+        "description": "Origin obrigatório. JSON com resource_id consulta o CKAN e baixa apenas do domínio oficial, sem redirecionamentos. Alternativa: multipart com file e config (JSON em texto). Arquivo até 20 MB; request multipart até 20 MB + 24000 bytes; 100 mil linhas, 100 colunas; XLSX até 160 MB descompactados, 1000 entradas e 10 abas. A inspeção não retorna células brutas. Prévia substitui a anterior do mesmo administrador, mantém só campos selecionados e não altera o diretório. CPF e colunas pessoais adicionais bloqueados. Limite de 10 mil registros selecionados.",
+        "tags": ["Cadastur"],
+        "security": [
+          {
+            "AdminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado em data."
+          },
+          "401": {
+            "description": "Sem sessão."
+          },
+          "403": {
+            "description": "Sem permissão ou origem inválida."
+          },
+          "409": {
+            "description": "Prévia expirada, substituída, divergente ou leitura em andamento."
+          },
+          "413": {
+            "description": "Tamanho excedido."
+          },
+          "415": {
+            "description": "Formato não suportado."
+          },
+          "422": {
+            "description": "Validação falhou."
+          },
+          "502": {
+            "description": "Fonte oficial indisponível ou formato inesperado."
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["category"],
+                "properties": {
+                  "category": {
+                    "type": "string",
+                    "enum": ["hospedagens", "guias", "gastronomia", "transportes"]
+                  },
+                  "sheet": {
+                    "type": "string",
+                    "default": "1"
+                  },
+                  "resource_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file", "config"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "config": {
+                    "type": "string",
+                    "description": "JSON do mesmo esquema, sem resource_id."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/cadastur/prever": {
+      "post": {
+        "summary": "Criar prévia de importação, válida por 30 minutos",
+        "description": "Origin obrigatório. JSON com resource_id consulta o CKAN e baixa apenas do domínio oficial, sem redirecionamentos. Alternativa: multipart com file e config (JSON em texto). Arquivo até 20 MB; request multipart até 20 MB + 24000 bytes; 100 mil linhas, 100 colunas; XLSX até 160 MB descompactados, 1000 entradas e 10 abas. A inspeção não retorna células brutas. Prévia substitui a anterior do mesmo administrador, mantém só campos selecionados e não altera o diretório. CPF e colunas pessoais adicionais bloqueados. Limite de 10 mil registros selecionados.",
+        "tags": ["Cadastur"],
+        "security": [
+          {
+            "AdminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado em data."
+          },
+          "401": {
+            "description": "Sem sessão."
+          },
+          "403": {
+            "description": "Sem permissão ou origem inválida."
+          },
+          "409": {
+            "description": "Prévia expirada, substituída, divergente ou leitura em andamento."
+          },
+          "413": {
+            "description": "Tamanho excedido."
+          },
+          "415": {
+            "description": "Formato não suportado."
+          },
+          "422": {
+            "description": "Validação falhou."
+          },
+          "502": {
+            "description": "Fonte oficial indisponível ou formato inesperado."
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CadasturPreviewInput"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file", "config"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "config": {
+                    "type": "string",
+                    "description": "JSON do mesmo esquema, sem resource_id."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/cadastur/confirmar": {
+      "post": {
+        "summary": "Confirmar importação idempotente",
+        "description": "Origin obrigatório. Confirmar exige a prévia do mesmo administrador; confere versões em transação, rejeita fonte mais antiga e não cria contas nem ofertas. Revisar associa hospedagem a hotel existente ou guia a perfil existente; não concede permissões nem publica. Gastronomia e transporte ficam em revisão interna.",
+        "tags": ["Cadastur"],
+        "security": [
+          {
+            "AdminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado em data."
+          },
+          "401": {
+            "description": "Sem sessão."
+          },
+          "403": {
+            "description": "Sem permissão ou origem inválida."
+          },
+          "409": {
+            "description": "Prévia expirada, substituída, divergente ou leitura em andamento."
+          },
+          "413": {
+            "description": "Tamanho excedido."
+          },
+          "415": {
+            "description": "Formato não suportado."
+          },
+          "422": {
+            "description": "Validação falhou."
+          },
+          "502": {
+            "description": "Fonte oficial indisponível ou formato inesperado."
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id"],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/cadastur/revisar": {
+      "post": {
+        "summary": "Salvar revisão e vínculo opcional",
+        "description": "Origin obrigatório. Confirmar exige a prévia do mesmo administrador; confere versões em transação, rejeita fonte mais antiga e não cria contas nem ofertas. Revisar associa hospedagem a hotel existente ou guia a perfil existente; não concede permissões nem publica. Gastronomia e transporte ficam em revisão interna.",
+        "tags": ["Cadastur"],
+        "security": [
+          {
+            "AdminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado em data."
+          },
+          "401": {
+            "description": "Sem sessão."
+          },
+          "403": {
+            "description": "Sem permissão ou origem inválida."
+          },
+          "409": {
+            "description": "Prévia expirada, substituída, divergente ou leitura em andamento."
+          },
+          "413": {
+            "description": "Tamanho excedido."
+          },
+          "415": {
+            "description": "Formato não suportado."
+          },
+          "422": {
+            "description": "Validação falhou."
+          },
+          "502": {
+            "description": "Fonte oficial indisponível ou formato inesperado."
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id"],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "company_id": {
+                    "type": ["string", "null"],
+                    "format": "uuid"
+                  },
+                  "guide_id": {
+                    "type": ["string", "null"],
+                    "format": "uuid"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
       }
     }
   },
@@ -183,6 +3970,994 @@
             "default": ""
           }
         }
+      },
+      "CompanyInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["hotel", "operator"]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "slug": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 80,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "city": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 2000
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "published", "suspended"]
+          }
+        },
+        "required": ["kind", "name", "slug", "city", "description", "status"]
+      },
+      "MemberInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "company_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["hotel_manager", "hotel_staff", "operator", "guide"]
+          }
+        },
+        "required": ["company_id", "email", "role"]
+      },
+      "RoomInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "price_cents": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000000
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": ["company_id", "code", "name", "capacity", "price_cents", "active"]
+      },
+      "GuideInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 80,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "bio": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 2000
+          },
+          "languages": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 150
+          },
+          "published": {
+            "type": "boolean"
+          }
+        },
+        "required": ["company_id", "slug", "name", "bio", "languages", "published"]
+      },
+      "TourInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 80,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 2000
+          },
+          "city": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "minimum": 15,
+            "maximum": 1440
+          },
+          "price_cents": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000000
+          },
+          "guide_id": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "const": ""
+              }
+            ]
+          },
+          "published": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "company_id",
+          "slug",
+          "name",
+          "description",
+          "city",
+          "duration_minutes",
+          "price_cents",
+          "guide_id",
+          "published"
+        ]
+      },
+      "DepartureInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tour_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": ["company_id", "tour_id", "starts_at", "capacity", "active"]
+      },
+      "HotelBookingInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "hotel"
+          },
+          "room_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "check_in": {
+            "type": "string",
+            "format": "date"
+          },
+          "check_out": {
+            "type": "string",
+            "format": "date"
+          },
+          "guests": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000,
+            "default": ""
+          }
+        },
+        "required": ["kind", "room_id", "check_in", "check_out", "guests"]
+      },
+      "TourBookingInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "tour"
+          },
+          "departure_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "guests": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000,
+            "default": ""
+          }
+        },
+        "required": ["kind", "departure_id", "guests"]
+      },
+      "BookingInput": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/HotelBookingInput"
+          },
+          {
+            "$ref": "#/components/schemas/TourBookingInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind"
+        }
+      },
+      "DecisionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "company_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "booking_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "decision": {
+            "type": "string",
+            "enum": ["confirmed", "declined"]
+          }
+        },
+        "required": ["company_id", "booking_id", "decision"]
+      },
+      "StayInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "company_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "booking_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["checkin", "checkout"]
+          },
+          "country": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80,
+            "default": "Brasil"
+          },
+          "origin_city": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "default": "Não informado"
+          }
+        },
+        "required": ["company_id", "booking_id", "action"]
+      },
+      "CancelInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "booking_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": ["booking_id"]
+      },
+      "RevokeInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "company_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "user_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": ["company_id", "user_id"]
+      },
+      "RegistrationInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 128
+          },
+          "consent": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": ["name", "email", "password", "consent"]
+      },
+      "DomainError": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "requestId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "fields": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "required": ["code", "message", "requestId"]
+          }
+        },
+        "required": ["error"]
+      },
+      "Company": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["hotel", "operator"]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "slug": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 80,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "city": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 2000
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "published", "suspended"]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "from_price": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          }
+        },
+        "required": ["id", "kind", "name", "slug", "city", "description", "status"]
+      },
+      "Room": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "price_cents": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000000
+          },
+          "active": {
+            "type": "integer",
+            "enum": [0, 1]
+          }
+        },
+        "required": ["id", "company_id", "code", "name", "capacity", "price_cents", "active"]
+      },
+      "Guide": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 80,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "bio": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 2000
+          },
+          "languages": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 150
+          },
+          "published": {
+            "type": "integer",
+            "enum": [0, 1]
+          }
+        },
+        "required": ["id", "company_id", "slug", "name", "bio", "languages", "published"]
+      },
+      "Tour": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 80,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 2000
+          },
+          "city": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "minimum": 15,
+            "maximum": 1440
+          },
+          "price_cents": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000000
+          },
+          "guide_id": {
+            "type": ["string", "null"]
+          },
+          "published": {
+            "type": "integer",
+            "enum": [0, 1]
+          }
+        },
+        "required": [
+          "id",
+          "company_id",
+          "slug",
+          "name",
+          "description",
+          "city",
+          "duration_minutes",
+          "price_cents",
+          "guide_id",
+          "published"
+        ]
+      },
+      "Departure": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tour_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "active": {
+            "type": "integer",
+            "enum": [0, 1]
+          },
+          "reserved": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": ["id", "tour_id", "starts_at", "capacity", "active"]
+      },
+      "HotelDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Company"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "rooms": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Room"
+                }
+              }
+            },
+            "required": ["rooms"]
+          }
+        ]
+      },
+      "TourDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Tour"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "company_name": {
+                "type": "string"
+              },
+              "guide": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Guide"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "departures": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Departure"
+                }
+              }
+            },
+            "required": ["company_name", "departures"]
+          }
+        ]
+      },
+      "GuideDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Guide"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "company_name": {
+                "type": "string"
+              },
+              "city": {
+                "type": "string"
+              },
+              "tours": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Tour"
+                }
+              }
+            },
+            "required": ["company_name", "city", "tours"]
+          }
+        ]
+      },
+      "Member": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "company_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["hotel_manager", "hotel_staff", "operator", "guide"]
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "company_name": {
+            "type": "string"
+          }
+        },
+        "required": ["company_id", "user_id", "role", "name", "email", "company_name"]
+      },
+      "Booking": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["hotel", "tour"]
+          },
+          "room_id": {
+            "type": ["string", "null"]
+          },
+          "departure_id": {
+            "type": ["string", "null"]
+          },
+          "check_in": {
+            "type": ["string", "null"]
+          },
+          "check_out": {
+            "type": ["string", "null"]
+          },
+          "guests": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "customer_name": {
+            "type": "string"
+          },
+          "customer_email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "total_cents": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "confirmed", "declined", "cancelled"]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "item_name": {
+            "type": "string"
+          },
+          "company_name": {
+            "type": "string"
+          },
+          "starts_at": {
+            "type": ["string", "null"]
+          },
+          "country": {
+            "type": ["string", "null"]
+          },
+          "origin_city": {
+            "type": ["string", "null"]
+          },
+          "checked_in_at": {
+            "type": ["string", "null"]
+          },
+          "checked_out_at": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": ["id", "kind", "status", "total_cents", "guests", "company_id"]
+      },
+      "Inventory": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "company": {
+            "$ref": "#/components/schemas/Company"
+          },
+          "rooms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Room"
+            }
+          },
+          "guides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Guide"
+            }
+          },
+          "tours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Tour"
+            }
+          },
+          "departures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Departure"
+            }
+          }
+        },
+        "required": ["company", "rooms", "guides", "tours", "departures"]
+      },
+      "CadasturMapping": {
+        "type": "object",
+        "required": ["external_id", "name", "uf", "city"],
+        "properties": {
+          "external_id": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 99
+          },
+          "name": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 99
+          },
+          "uf": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 99
+          },
+          "city": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 99
+          },
+          "fallback_name": {
+            "type": "integer",
+            "minimum": -1,
+            "maximum": 99
+          },
+          "subtype": {
+            "type": "integer",
+            "minimum": -1,
+            "maximum": 99
+          },
+          "registry_status": {
+            "type": "integer",
+            "minimum": -1,
+            "maximum": 99
+          },
+          "valid_until": {
+            "type": "integer",
+            "minimum": -1,
+            "maximum": 99
+          }
+        },
+        "additionalProperties": false
+      },
+      "CadasturPreviewInput": {
+        "type": "object",
+        "required": ["category", "period", "uf", "sheet", "mapping", "checksum"],
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": ["hospedagens", "guias", "gastronomia", "transportes"]
+          },
+          "period": {
+            "type": "string",
+            "pattern": "^20\\d{2}-T[1-4]$"
+          },
+          "uf": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "sheet": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "mapping": {
+            "$ref": "#/components/schemas/CadasturMapping"
+          },
+          "checksum": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "resource_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "AdminSession": {
+        "description": "Cookie HttpOnly emitido pelo login em HTTPS. Em HTTP local: better-auth.session_token.",
+        "in": "cookie",
+        "name": "__Secure-better-auth.session_token",
+        "type": "apiKey"
+      },
+      "Session": {
+        "description": "Sessão Better Auth, HttpOnly. HTTPS usa o prefixo __Secure-; HTTP local usa better-auth.session_token. A sessão não concede por si só acesso a uma empresa.",
+        "in": "cookie",
+        "name": "__Secure-better-auth.session_token",
+        "type": "apiKey"
       }
     }
   }

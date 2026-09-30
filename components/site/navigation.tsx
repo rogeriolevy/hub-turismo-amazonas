@@ -1,17 +1,10 @@
 /* eslint-disable @next/next/no-html-link-for-pages -- Full document navigation keeps these institutional routes server rendered. */
-import { Waves, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
+import Link from "next/link";
+import { PlatformBrand } from "@/components/platform/brand";
+import { ModuleSwitcher } from "@/components/platform/shared";
 export function Brand() {
-  return (
-    <a className="brand" href="/" aria-label="Hub Turismo Amazonas, início">
-      <Waves className="brand-mark" size={37} strokeWidth={1.6} />
-      <span>
-        <strong>
-          hub<span className="brand-dot">.</span>
-        </strong>
-        <span className="brand-caption">TURISMO AMAZONAS</span>
-      </span>
-    </a>
-  );
+  return <PlatformBrand />;
 }
 export function Header() {
   return (
@@ -22,14 +15,17 @@ export function Header() {
       <header className="site-header">
         <div className="container header-inner">
           <Brand />
-          <nav aria-label="Navegação principal">
-            <a href="/#sobre">Quem somos</a>
-            <a href="/#solucoes">Soluções</a>
-            <a href="/#caminho">Nosso caminho</a>
+          <nav aria-label="Navegação principal" className="portal-nav">
+            <Link href="/hospedagens">Hospedagens</Link>
+            <Link href="/passeios">Passeios</Link>
+            <a href="/#sobre">Sobre a Hub</a>
           </nav>
-          <a className="header-cta" href="/#contato">
-            Vamos conversar <ArrowUpRight size={17} />
-          </a>
+          <div className="header-tools">
+            <ModuleSwitcher />
+            <Link className="header-cta" href="/minha-conta">
+              Minha conta <ArrowUpRight size={17} />
+            </Link>
+          </div>
         </div>
       </header>
     </>

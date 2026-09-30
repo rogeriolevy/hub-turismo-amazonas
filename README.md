@@ -1,62 +1,125 @@
-# Hub Turismo Amazonas
+# Hub Turismo Amazonas — versão Node.js + SQLite
 
-Site institucional com contato persistente e consulta administrativa. O operador autorizado é configurado por variável de ambiente; o painel exige login e nega acesso a contas fora da lista.
+Site institucional, catálogos de hospedagens/passeios, contas de turistas, reservas por aprovação e painéis de empresas, em Next.js oficial com Node.js. Esta versão local é independente da publicação existente no Sites.
 
-## Acessar a publicação
+Para usar diariamente no Windows, iniciar o servidor, fazer backup ou recuperar o acesso, consulte [Uso local](docs/USO-LOCAL.md). A prioridade atual é a operação local; a publicação na VPS foi adiada pelo proprietário.
 
-- Site: https://hub-turismo-amazonas.rogeriolevydesousa.chatgpt.site
-- Administração: https://hub-turismo-amazonas.rogeriolevydesousa.chatgpt.site/admin
+## Começar
 
-Publicação inicial confirmada em 28/09/2026. O site está restrito ao proprietário e ao visitante convidado. Entre com a conta ChatGPT correspondente ao e-mail autorizado para consultar as mensagens em /admin. A permissão de visitante do site e a autorização administrativa da aplicação são controles separados.
+Requer Node.js 22.13+ da linha 22 LTS e npm. Desenvolvimento verificado com Node 22.23.2. Use terminal na pasta deste projeto.
 
-O painel permite consultar, atualizar a lista, paginar e abrir o e-mail do contato para resposta manual. Não envia respostas nem notificações automaticamente. Os dados de teste locais não foram transferidos para produção.
+```sh
+npm ci
+npm run setup
+npm run db:migrate
+npm run admin:create
+npm run dev
+```
 
-O endereço usado no sitemap e nos metadados está centralizado em lib/site-config.ts. Atualize-o e publique uma nova versão se o domínio mudar.
+Abra http://127.0.0.1:3005 e /admin. O comando admin:create solicita a senha duas vezes com asteriscos; use entre 12 e 128 caracteres. Maiúsculas, minúsculas e espaços contam. Backspace apaga o último caractere e Ctrl+U limpa a digitação. Não envie senhas pelo chat nem pela linha de comando. O e-mail autorizado inicialmente é rogerio1kg@gmail.com. O login é próprio desta instalação, independente da senha do ChatGPT. O cadastro público em /cadastro cria apenas contas básicas. Perfis empresariais dependem de autorização do administrador.
 
-## Executar localmente
+A configuração local fica em .env.local, ignorada pelo Git. setup gera um segredo aleatório sem exibi-lo e preserva uma configuração existente. O banco fica em data/hub.sqlite. O primeiro acesso administrativo exige executar admin:create em um terminal interativo.
 
-Requisitos: Node.js 22.13+ (testado com 22.23.2) e npm.
+## Funcionalidades
 
-1. npm run install:ci
-2. npm run build
-3. npm run db:migrate:local
-4. npm run dev
+- Site institucional, privacidade, identidade visual e conteúdo preservados.
+- Formulário público com validação Zod, consentimento, honeypot, limite de corpo e envios.
+- Idempotência: repetir uma tentativa não duplica a mensagem; reutilizar chave com outro conteúdo retorna conflito.
+- Painel paginado com estados de carregamento, vazio, erro e sucesso.
+- Login por e-mail/senha, logout, sessão e autorização no servidor.
+- Respostas aos contatos continuam manuais, pelo aplicativo de e-mail do operador.
+- Catálogos públicos, perfis de guia, cadastro/login e acompanhamento das reservas do turista.
+- Painéis de hotel (quartos, reservas e estadias locais), operador (guias, passeios, agenda e vagas) e administração (empresas e permissões).
+- Aprovação de solicitações com controle transacional de disponibilidade e isolamento por empresa.
+- Sem pagamentos, e-mails automáticos ou transmissão oficial de FNRH.
 
-Abra a URL informada pelo servidor, normalmente http://127.0.0.1:5173.
-Copie .env.example para .dev.vars para configurar o ambiente local.
-Para testar administração SOMENTE no ambiente local, use ADMIN_EMAILS="seedy@sites.test" em .dev.vars, reinicie e acesse /admin. O starter simula esse login apenas no desenvolvimento. Produção usa conta real e ambiente Sites.
-O script db:migrate:local registra as migrations aplicadas; não execute o SQL repetidamente à mão.
+Veja [Módulos e operação](docs/PLATAFORMA.md) para o mapa completo de rotas, regras, permissões e primeiro cadastro de empresas.
 
-## Verificar e manter
+## Arquitetura e pastas
 
-- npm test
-- npm run typecheck
-- npm run lint
-- npm run format:check
-- npm run build
-- npm run test:smoke (servidor ativo e banco migrado)
+Uma aplicação, uma origem HTTP e um banco local ao servidor; frontend e backend permanecem separados em módulos.
 
-TEST_BASE_URL permite outro endereço de teste.
-npm run format formata o código.
-npm run db:generate cria migrations após alterações no esquema; sempre revise o SQL.
+```text
+app/                  Páginas, metadados e rotas HTTP
+components/site/      Interface institucional, formulário, login e contatos
+components/platform/  Catálogos, reservas, seletor de módulos e painéis
+components/ui/        Componentes reutilizáveis preservados
+lib/                  Validação compartilhada e configuração do site
+server/               Contatos, empresas, catálogo, reservas, autenticação e autorização
+db/                   Conexão SQLite, migrações e integração de autenticação
+scripts/              Setup, migração, contas, senha, backup e restauração
+tests/                Testes de serviços e integração HTTP
+infra/                Exemplos de Nginx e systemd
+docs/                 Plano, API, publicação e verificação
+public/               Imagens, ícones e fontes locais
+data/                 Banco local (ignorado)
+backups/              Backups locais (ignorados)
+```
 
-## Rotas
+Tecnologias: React 19, Next.js 16, TypeScript, Zod, Better Auth e better-sqlite3. A aplicação não utiliza Workers, D1 ou Drizzle. A conexão ativa é SQLite direto.
 
-/: institucional e contato; /privacidade: aviso; /admin: mensagens.
-APIs: POST /api/contatos, GET /api/admin/contatos, GET /api/health, GET /api/openapi.
-O formulário grava dados; não dispara e-mail automático. A equipe retorna manualmente pelo e-mail do visitante.
+## Banco e autenticação
 
-## Banco e configuração
+contacts armazena mensagem, identidade do contato, consentimento, versão do aviso e chave de idempotência. rate_limits guarda contadores temporários derivados do IP/e-mail. schema_migrations controla migrações SQL com checksum. As tabelas user, account, session, verification e rateLimit pertencem ao Better Auth. A migração 002 acrescenta companies, company_members, rooms, guides, tours, departures, bookings, stay_records e platform_audit, preservando os dados anteriores.
 
-Cloudflare D1/SQLite, binding DB em .openai/hosting.json. Banco local em .wrangler/state, separado da produção.
-ADMIN_EMAILS contém e-mails exatos separados por vírgula. Vazio nega todos. Nunca usar NEXT_PUBLIC_ para esse valor.
-Credenciais, ambiente privado e banco local não são versionados.
+As senhas são processadas pela biblioteca de autenticação; não há senha padrão. Sessões têm validade de oito horas, com renovação durante o uso, são revogadas no logout e não usam cache de autorização no navegador. O servidor verifica ADMIN_EMAILS a cada consulta. Conhecer o e-mail autorizado não concede acesso.
 
-## Documentação
+```sh
+npm run admin:password
+npm run account:password -- EMAIL_DA_CONTA
+npm run db:backup
+npm run db:restore -- backups/arquivo.sqlite data/restaurado.sqlite
+```
 
-- docs/ANALISE-E-ARQUITETURA.md: 8 páginas da referência, requisitos, arquitetura, 25 etapas.
-- docs/openapi.json: contrato HTTP.
-- docs/DEPLOY.md: CI/CD, publicação e recuperação.
-- docs/VERIFICACAO.md: evidências e limites.
-- docs/IDENTIDADE.md: marca e créditos.
-  Os PDFs originais permanecem na pasta superior.
+A recuperação de senha exige acesso ao terminal do servidor e encerra as sessões anteriores. A restauração exige arquivo de destino inexistente, verifica integridade e não substitui o banco ativo. Consulte docs/DEPLOY.md para troca do banco e agendamento de backups.
+
+### Quando o painel informar e-mail ou senha incorretos
+
+1. Abra o endereço de SITE_URL, que nesta instalação é http://127.0.0.1:3005/admin. Confira o e-mail e use “Mostrar senha” para conferir a digitação, se necessário. A tela também informa quando Caps Lock está ativado.
+2. Para redefinir, execute `npm run admin:password -- rogerio1kg@gmail.com` em um terminal na pasta deste projeto. Digite a nova senha e repita a confirmação. O comando verifica a senha gravada antes de informar sucesso; senhas acima do limite são rejeitadas, nunca cortadas.
+3. Entre com a nova senha. A alteração vale imediatamente para este banco, sem reiniciar o servidor; sessões anteriores são encerradas. Se houver bloqueio por tentativas, aguarde um minuto sem tentar antes de entrar novamente.
+
+Não é possível recuperar a senha anterior a partir do hash. O reset local não altera a conta nem o login do site publicado no Sites.
+
+## APIs
+
+| Método | Caminho                    | Uso                                        |
+| ------ | -------------------------- | ------------------------------------------ |
+| POST   | /api/contatos              | Envio público com Origin e Idempotency-Key |
+| GET    | /api/admin/contatos?page=1 | Consulta autenticada e autorizada          |
+| GET    | /api/health                | Saúde do banco                             |
+| GET    | /api/openapi               | Contrato OpenAPI                           |
+| POST   | /api/auth/sign-in/email    | Login por e-mail/senha                     |
+| POST   | /api/auth/sign-out         | Revogar a sessão atual                     |
+| GET    | /api/auth/get-session      | Consultar a sessão atual                   |
+
+A plataforma acrescenta GET /api/catalogo/_, POST /api/conta/cadastro e GET/POST /api/plataforma/_. O contrato completo está em /api/openapi e docs/openapi.json. O endpoint genérico de cadastro do provedor e a recuperação automática por e-mail permanecem bloqueados; o cadastro básico usa exclusivamente a rota controlada /api/conta/cadastro. Erros do domínio retornam error.code, message e requestId. Erros do provedor de autenticação seguem seu contrato, descrito no OpenAPI.
+
+## Testes e qualidade
+
+```sh
+npm run format:check
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npm run test:integration
+```
+
+Integração usa um banco temporário, contas fictícias, senhas aleatórias e servidor isolado na porta 3100; não modifica a produção ou o banco de desenvolvimento. A porta deve estar livre. Não execute duas integrações ao mesmo tempo.
+
+CI definido em .github/workflows/ci.yml: instalação pelo lockfile, configuração temporária, migração, formato, tipos, lint, testes, build e integração. A execução remota depende de um repositório GitHub com Actions habilitado; nenhum repositório foi publicado automaticamente.
+
+## Segurança, desempenho e publicação
+
+SQL parametrizado, transação atômica para contatos, índice de idempotência e ordenação, paginação de 20 itens, página institucional pré-renderizada, catálogos dinâmicos, assets locais e cache privado/no-store na administração. Há validação de origem, cookies HttpOnly/SameSite e cookies Secure em HTTPS. Nenhum segredo deve ir para Git, public ou logs.
+
+As novas listas de reservas e inventário ainda não possuem paginação; o dimensionamento deve ser revisto com o aumento do volume. Contas básicas ainda não verificam o e-mail por mensagem: confirme a identidade diretamente antes de conceder acesso empresarial.
+
+O CSP atual permite scripts inline necessários ao build; não é uma política de nonce estrita. Ao aumentar o uso de conteúdo dinâmico, reavaliar essa decisão. O proxy deve sobrescrever x-real-ip e o Node aceitar conexões somente do proxy para o rate limit por IP ser confiável.
+
+A aplicação precisa de disco persistente, HTTPS e backup fora da máquina. Consulte docs/DEPLOY.md. A versão publicada no Sites permanece separada. Os documentos anteriores em docs/ANALISE-E-ARQUITETURA.md e docs/VERIFICACAO-SITES.md descrevem a implementação antiga, não esta arquitetura.
+
+## Cadastur — v0.4.0
+
+O administrador encontra o importador em `/painel/plataforma/cadastur`: fontes oficiais do MTur, CSV/XLSX, prévia, filtros, confirmação e revisão com vínculos opcionais. A importação não publica prestadores nem cria contas. Veja [integração Cadastur](docs/INTEGRACAO-CADASTUR.md). O worker em `server/cadastur/file-worker.mjs` deve acompanhar o projeto na execução local; não copie somente a pasta `.next`.

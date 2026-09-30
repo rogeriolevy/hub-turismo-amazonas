@@ -1,3 +1,5 @@
+> Documento histórico da versão Sites. Para a arquitetura Node.js atual, consulte PLANO-SIMPLIFICADO.md e README.md.
+
 # Hub Turismo Amazonas: análise e arquitetura
 
 Data: 28/09/2026. Escopo confirmado: site institucional com apresentação e formulário. O PMS operacional não faz parte desta entrega.

@@ -19,6 +19,7 @@ export function ContactForm() {
   const [message, setMessage] = useState("");
   const key = useRef<string | null>(null);
   const feedback = useRef<HTMLDivElement>(null);
+  const nameInput = useRef<HTMLInputElement>(null);
   function fieldError(name: string) {
     return errors[name] ? (
       <span className="field-error" id={name + "-error"}>
@@ -92,6 +93,7 @@ export function ContactForm() {
             onClick={() => {
               setStatus("idle");
               setMessage("");
+              requestAnimationFrame(() => nameInput.current?.focus());
             }}
           >
             Enviar outra mensagem
@@ -108,6 +110,7 @@ export function ContactForm() {
               <label htmlFor="name">Seu nome</label>
               <input
                 id="name"
+                ref={nameInput}
                 name="name"
                 autoComplete="name"
                 maxLength={100}

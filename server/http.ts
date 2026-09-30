@@ -40,12 +40,11 @@ export function errorResponse(error: unknown, requestId: string) {
     503,
   );
 }
-export async function readJson(request: Request) {
-  if (request.headers.get("origin") !== new URL(request.url).origin)
+export function assertOrigin(request: Request) {
+  if (request.headers.get("origin") !== new URL(process.env.SITE_URL || request.url).origin)
     throw new HttpError(403, "ORIGIN", "Origem do envio não autorizada.");
-  if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json"))
-    throw new HttpError(415, "CONTENT_TYPE", "Envie conteúdo JSON.");
-  const max = 12000;
+}
+export async function readLimitedBody(request: Request | Response, max: number) {
   if (Number(request.headers.get("content-length")) > max)
     throw new HttpError(413, "TOO_LARGE", "Mensagem excede o tamanho permitido.");
   const reader = request.body?.getReader();
@@ -68,6 +67,13 @@ export async function readJson(request: Request) {
     bytes.set(chunk, offset);
     offset += chunk.byteLength;
   }
+  return bytes;
+}
+export async function readJson(request: Request) {
+  assertOrigin(request);
+  if (!request.headers.get("content-type")?.toLowerCase().startsWith("application/json"))
+    throw new HttpError(415, "CONTENT_TYPE", "Envie conteúdo JSON.");
+  const bytes = await readLimitedBody(request, 12000);
   try {
     return JSON.parse(new TextDecoder().decode(bytes));
   } catch {

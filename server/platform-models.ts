@@ -1,0 +1,81 @@
+export type Actor = { id: string; email: string; name: string };
+export type Company = {
+  id: string;
+  kind: "hotel" | "operator";
+  name: string;
+  slug: string;
+  city: string;
+  description: string;
+  status: "draft" | "published" | "suspended";
+  created_at: string;
+};
+export type Room = {
+  id: string;
+  company_id: string;
+  code: string;
+  name: string;
+  capacity: number;
+  price_cents: number;
+  active: number;
+};
+export type Guide = {
+  id: string;
+  company_id: string;
+  slug: string;
+  name: string;
+  bio: string;
+  languages: string;
+  published: number;
+};
+export type Tour = {
+  id: string;
+  company_id: string;
+  slug: string;
+  name: string;
+  description: string;
+  city: string;
+  duration_minutes: number;
+  price_cents: number;
+  guide_id: string | null;
+  published: number;
+};
+export type Departure = {
+  id: string;
+  tour_id: string;
+  starts_at: string;
+  capacity: number;
+  active: number;
+  reserved?: number;
+};
+export type Booking = {
+  id: string;
+  user_id: string;
+  company_id: string;
+  kind: "hotel" | "tour";
+  room_id: string | null;
+  departure_id: string | null;
+  check_in: string | null;
+  check_out: string | null;
+  guests: number;
+  customer_name: string;
+  customer_email: string;
+  notes: string;
+  total_cents: number;
+  status: "pending" | "confirmed" | "declined" | "cancelled";
+  created_at: string;
+  updated_at: string;
+  item_name: string;
+  company_name: string;
+  starts_at: string | null;
+  country: string | null;
+  origin_city: string | null;
+  checked_in_at: string | null;
+  checked_out_at: string | null;
+};
+export type Member = {
+  company_id: string;
+  user_id: string;
+  role: "hotel_manager" | "hotel_staff" | "operator" | "guide";
+  name: string;
+  email: string;
+};

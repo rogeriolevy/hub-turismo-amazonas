@@ -1,6 +1,13 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "../vendor/shadcn-tailwind-4.13.0.css";
+.admin-login {
+  max-width: 28rem;
+  min-width: 0;
+  display: grid;
+  gap: 1.1rem;
+  margin-top: 1.5rem;
+}
 :root {
   --background: #fff;
   --foreground: #173c32;
@@ -92,7 +99,8 @@ textarea:focus-visible {
 button {
   cursor: pointer;
 }
-button:disabled {
+button:disabled,
+button[aria-disabled="true"] {
   cursor: wait;
   opacity: 0.7;
 }
@@ -189,6 +197,7 @@ svg {
   font-weight: 600;
   border-bottom: 1px solid #739384;
   padding-bottom: 7px;
+  min-height: 44px;
 }
 .skip-link {
   position: fixed;
@@ -249,6 +258,11 @@ svg {
 }
 .header-inner nav a:hover {
   color: #966111;
+}
+.header-inner nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 .header-cta {
   display: flex;
@@ -797,7 +811,7 @@ svg {
   padding: 11px 13px;
   color: #183c30;
   font: inherit;
-  font-size: 15px;
+  font-size: 16px;
 }
 .field textarea {
   resize: vertical;
@@ -837,8 +851,8 @@ svg {
 }
 .consent button {
   margin-top: 4px;
-  min-width: 18px;
-  min-height: 18px;
+  min-width: 24px;
+  min-height: 24px;
 }
 .consent label {
   font-size: 12px;
@@ -947,7 +961,8 @@ svg {
 .empty-inbox svg {
   margin: 0 auto 20px;
 }
-.pagination button:disabled {
+.pagination button:disabled,
+.pagination button[aria-disabled="true"] {
   cursor: default;
 }
 .inbox-heading button {
@@ -957,6 +972,18 @@ svg {
   border: 0;
 }
 @media (max-width: 640px) {
+  .admin-notice,
+  .inbox-list article {
+    padding: 20px;
+  }
+  .header-inner {
+    row-gap: 10px;
+  }
+  .form-select {
+    height: auto;
+    white-space: normal;
+    text-align: left;
+  }
   .inbox-heading {
     flex-wrap: wrap;
   }

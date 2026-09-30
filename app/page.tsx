@@ -36,7 +36,7 @@ export default function Home() {
   return (
     <>
       <Header />
-      <main id="conteudo">
+      <main id="conteudo" tabIndex={-1}>
         <section className="hero" aria-labelledby="hero-title">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -153,8 +153,8 @@ export default function Home() {
               ))}
             </div>
             <p className="section-note">
-              Solução em desenvolvimento. O site apresenta a proposta; a operação do sistema
-              hoteleiro será disponibilizada em uma etapa própria.
+              Conheça as hospedagens e os passeios disponíveis. As solicitações de reserva são
+              analisadas pelo hotel ou operador antes da confirmação.
             </p>
           </div>
         </section>

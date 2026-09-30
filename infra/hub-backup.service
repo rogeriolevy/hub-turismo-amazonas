@@ -1,0 +1,12 @@
+[Unit]
+Description=Backup local consistente da Hub Turismo Amazonas
+
+[Service]
+Type=oneshot
+User=hub
+Group=hub
+WorkingDirectory=/opt/hub-turismo
+ExecStart=/usr/bin/node --env-file=.env.local --experimental-strip-types scripts/backup.ts
+Environment=BACKUP_DIRECTORY=/var/backups/hub-turismo
+NoNewPrivileges=true
+UMask=0077

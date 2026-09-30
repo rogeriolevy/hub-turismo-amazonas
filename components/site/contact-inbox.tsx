@@ -40,37 +40,32 @@ export function ContactInbox() {
     return () => controller.abort();
   }, [page, refresh]);
   function reload(next = page) {
+    if (state.loading || next < 1 || (next !== page && next > Math.ceil(state.total / 20))) return;
     setState((prev) => ({ ...prev, loading: true, error: "" }));
     setPage(next);
     setRefresh((value) => value + 1);
   }
-  if (state.loading)
-    return (
-      <div aria-label="Carregando contatos" role="status" className="inbox-loading">
-        <Skeleton className="h-28 w-full" />
-        <Skeleton className="h-28 w-full" />
-        <span>Carregando mensagens…</span>
-      </div>
-    );
-  if (state.error)
-    return (
-      <div className="admin-notice" role="alert">
-        <p>{state.error}</p>
-        <button className="button button-dark" onClick={() => reload()}>
-          Tentar novamente
-        </button>
-      </div>
-    );
   return (
-    <>
+    <section aria-label="Caixa de contatos" aria-busy={state.loading}>
       <div className="inbox-heading">
-        <p>{state.total} contato(s) recebido(s)</p>
-        <button className="text-link" onClick={() => reload()}>
+        <p role="status">{state.total} contato(s) recebido(s)</p>
+        <button className="text-link" onClick={() => reload()} aria-disabled={state.loading}>
           <RefreshCw size={16} />
           Atualizar
         </button>
       </div>
-      {state.rows.length === 0 ? (
+      {state.loading ? (
+        <div aria-label="Carregando contatos" role="status" className="inbox-loading">
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
+          <span>Carregando mensagens…</span>
+        </div>
+      ) : state.error ? (
+        <div className="admin-notice" role="alert">
+          <p>{state.error}</p>
+          <p>Use Atualizar para tentar novamente.</p>
+        </div>
+      ) : state.rows.length === 0 ? (
         <div className="admin-notice empty-inbox">
           <Inbox size={40} />
           <h2>Nenhuma mensagem por aqui</h2>
@@ -103,7 +98,7 @@ export function ContactInbox() {
       <nav className="pagination" aria-label="Páginas de contatos">
         <button
           className="button button-dark"
-          disabled={page === 1}
+          aria-disabled={state.loading || page === 1}
           onClick={() => reload(page - 1)}
         >
           Anterior
@@ -113,12 +108,12 @@ export function ContactInbox() {
         </span>
         <button
           className="button button-dark"
-          disabled={page * 20 >= state.total}
+          aria-disabled={state.loading || page * 20 >= state.total}
           onClick={() => reload(page + 1)}
         >
           Próxima
         </button>
       </nav>
-    </>
+    </section>
   );
 }
