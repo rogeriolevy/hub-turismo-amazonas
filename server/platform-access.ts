@@ -12,10 +12,13 @@ export function requirePlatformAdmin(actor: Actor) {
 }
 export function companiesFor(db: Database.Database, actor: Actor) {
   return isPlatformAdmin(actor)
-    ? many<Company>(db, "SELECT * FROM companies ORDER BY name")
+    ? many<Company>(
+        db,
+        "SELECT * FROM companies ORDER BY COALESCE(NULLIF(TRIM(trade_name),''),name),id",
+      )
     : many<Company>(
         db,
-        "SELECT c.* FROM companies c JOIN company_members m ON m.company_id=c.id WHERE m.user_id=? AND c.status!='suspended' ORDER BY c.name",
+        "SELECT c.* FROM companies c JOIN company_members m ON m.company_id=c.id WHERE m.user_id=? AND c.status!='suspended' ORDER BY COALESCE(NULLIF(TRIM(c.trade_name),''),c.name),c.id",
         actor.id,
       );
 }

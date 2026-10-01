@@ -148,14 +148,9 @@ export default function Home() {
                   </div>
                   <h3>{title}</h3>
                   <p>{text}</p>
-                  <span className="stage-label">Proposta do MVP</span>
                 </article>
               ))}
             </div>
-            <p className="section-note">
-              Conheça as hospedagens e os passeios disponíveis. As solicitações de reserva são
-              analisadas pelo hotel ou operador antes da confirmação.
-            </p>
           </div>
         </section>
         <section className="section container journey" id="caminho">

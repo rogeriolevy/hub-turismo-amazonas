@@ -1,0 +1,5 @@
+https://dados.turismo.gov.br/dataset/restaurantes-cafeterias-e-bares
+https://dados.turismo.gov.br/dataset/meios-de-hospedagem
+https://dados.turismo.gov.br/dataset/agencia-de-turismo
+https://dados.turismo.gov.br/dataset/prestador-especializado-em-segmentos-turisticos
+https://dados.turismo.gov.br/dataset/prestadores-de-servicos-turisticos-guia-turismo_2

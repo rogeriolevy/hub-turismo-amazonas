@@ -66,7 +66,8 @@ export async function verifyPlatformHttp(
   const manager = cookieFrom(managerLogin);
   const company = {
     kind: "hotel",
-    name: "Pousada de demonstração",
+    name: "Empresa Hoteleira de Demonstração Ltda",
+    trade_name: "Pousada de demonstração",
     slug: "pousada-demonstracao",
     city: "Maués",
     description: "Dados fictícios usados somente para testar o catálogo e o fluxo de reservas.",
@@ -74,11 +75,27 @@ export async function verifyPlatformHttp(
   };
   assert.equal((await post("/api/plataforma/empresas", company, visitor)).status, 403);
   const hotel = (await data(await post("/api/plataforma/empresas", company, root))).id;
+  const catalog = await fetch(
+    base + "/api/catalogo/hospedagens?q=" + encodeURIComponent(company.trade_name),
+  );
+  assert.equal(catalog.status, 200);
+  const catalogData = (await catalog.json()).data;
+  assert.equal(catalogData.length, 1);
+  assert.equal(catalogData[0].name, company.name);
+  assert.equal(catalogData[0].trade_name, company.trade_name);
+  const catalogPage = await fetch(base + "/hospedagens");
+  assert.match(await catalogPage.text(), /<h2><a[^>]*>Pousada de demonstração<\/a><\/h2>/);
+  const companyPage = await fetch(base + "/painel/plataforma/empresas", {
+    headers: { cookie: root },
+  });
+  const companyHtml = await companyPage.text();
+  assert.match(companyHtml, /Nome fantasia \(opcional\)/);
+  assert.match(companyHtml, /<summary><span>Pousada de demonstração/);
   const second = (
     await data(
       await post(
         "/api/plataforma/empresas",
-        { ...company, name: "Outra empresa de teste", slug: "outra-empresa-teste" },
+        { ...company, name: "Outra empresa de teste", trade_name: "", slug: "outra-empresa-teste" },
         root,
       ),
     )

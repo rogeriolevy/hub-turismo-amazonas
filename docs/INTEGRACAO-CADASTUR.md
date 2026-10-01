@@ -1,6 +1,6 @@
 # Cadastur — pesquisa e proposta de integração
 
-Pesquisa em 29/09/2026. **Status: primeira implementação local concluída (v0.4.0): fontes oficiais, leitura CSV/XLSX, prévia, importação e revisão administrativa.** Publicação dos registros nos catálogos continua fora desta etapa.
+Pesquisa inicial em 29/09/2026. Este documento preserva o histórico e o escopo da primeira implementação (v0.4.0). **A evolução de 01/10/2026 acrescenta contatos comerciais, agências, serviços e publicação do diretório do Amazonas. As regras e instruções atuais estão em [Diretório público](DIRETORIO-PUBLICO.md).** Referências abaixo a etapas futuras ou campos bloqueados descrevem o escopo anterior.
 
 ## Conclusão
 
@@ -66,6 +66,8 @@ Acesse `/painel/plataforma/cadastur` com o administrador já configurado em `ADM
 7. Revise os registros no diretório interno. Hospedagens podem ser ligadas a uma empresa hoteleira já existente; guias, a um perfil já existente. Gastronomia e transportes ficam em revisão interna por enquanto.
 
 Importação, revisão e vínculo não criam contas, concedem permissões, publicam prestadores ou habilitam reservas. Dados operacionais editados na Hub são preservados. A próxima etapa é a apresentação pública por módulo, com origem e período visíveis e publicação administrativa explícita.
+
+A sugestão de nome para exibição prioriza **Nome Fantasia**. Quando o valor estiver vazio ou for um hífen, usa a razão social/nome alternativo selecionado. Sem coluna de nome fantasia, usa o nome disponível; guias pessoa física continuam identificados pelo nome do profissional. A prévia, a listagem e a busca utilizam esse nome. Para corrigir registros de importações anteriores, leia novamente a fonte, confira o mapeamento e confirme uma nova prévia: o nome fantasia não pode ser recuperado de uma coluna que não foi armazenada. O vínculo não substitui o nome editado da empresa na Hub.
 
 ## Estrutura e armazenamento
 

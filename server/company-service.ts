@@ -17,15 +17,15 @@ export function saveCompany(db: Database.Database, actor: Actor, input: unknown)
   requirePlatformAdmin(actor);
   const data = parse(companySchema, input);
   const id = data.id || crypto.randomUUID();
+  const old = data.id ? one<Company>(db, "SELECT * FROM companies WHERE id=?", data.id) : undefined;
   if (data.id) {
-    const old = one<Company>(db, "SELECT * FROM companies WHERE id=?", data.id);
     if (!old) throw new HttpError(404, "NOT_FOUND", "Empresa não encontrada.");
     if (old.kind !== data.kind)
       throw new HttpError(409, "KIND", "O tipo da empresa não pode ser alterado.");
   }
   return write(db, () => {
     db.prepare(
-      "INSERT INTO companies VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,slug=excluded.slug,city=excluded.city,description=excluded.description,status=excluded.status",
+      "INSERT INTO companies (id,kind,name,slug,city,description,status,created_at,trade_name) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,trade_name=excluded.trade_name,slug=excluded.slug,city=excluded.city,description=excluded.description,status=excluded.status",
     ).run(
       id,
       data.kind,
@@ -35,6 +35,7 @@ export function saveCompany(db: Database.Database, actor: Actor, input: unknown)
       data.description,
       data.status,
       new Date().toISOString(),
+      data.trade_name ?? old?.trade_name ?? "",
     );
     audit(db, actor.id, id, "company.saved", id);
     return { id };
@@ -78,7 +79,7 @@ export function listMembers(db: Database.Database, actor: Actor) {
   requirePlatformAdmin(actor);
   return many<Member & { company_name: string }>(
     db,
-    'SELECT m.*,u.name,u.email,c.name company_name FROM company_members m JOIN "user" u ON u.id=m.user_id JOIN companies c ON c.id=m.company_id ORDER BY c.name,u.name',
+    `SELECT m.*,u.name,u.email,COALESCE(NULLIF(TRIM(c.trade_name),''),c.name) company_name FROM company_members m JOIN "user" u ON u.id=m.user_id JOIN companies c ON c.id=m.company_id ORDER BY company_name,u.name`,
   );
 }
 function own(

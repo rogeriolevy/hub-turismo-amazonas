@@ -4,7 +4,7 @@ import {
   cadasturSources,
   fieldLabels,
   importOptionsSchema,
-  isSensitiveColumn,
+  isAllowedMappingColumn,
   states,
   MAX_FILE_BYTES,
   type CadasturCategory,
@@ -14,6 +14,7 @@ import {
   type SourceResource,
   type RegistryEntry,
   type ImportHistory,
+  type MappingField,
 } from "@/lib/cadastur-schema";
 import { PageIntro, EmptyState, PortalNotice } from "./shared";
 
@@ -56,6 +57,7 @@ export function CadasturPanel({ initial, companies, guides }: Props) {
     [uf, setUf] = useState("AM"),
     [city, setCity] = useState(""),
     [sheet, setSheet] = useState("1");
+  const [includeContacts, setIncludeContacts] = useState(true);
   const [inspection, setInspection] = useState<Inspection | null>(null),
     [mapping, setMapping] = useState<ColumnMapping | null>(null),
     [preview, setPreview] = useState<Preview | null>(null);
@@ -130,6 +132,7 @@ export function CadasturPanel({ initial, companies, guides }: Props) {
         city,
         sheet,
         mapping,
+        include_contacts: includeContacts,
         checksum: inspection?.checksum,
       });
       if (!options.success)
@@ -150,8 +153,8 @@ export function CadasturPanel({ initial, companies, guides }: Props) {
         description="Importe referências cadastrais, confira os dados e organize os vínculos com a Hub."
       />
       <PortalNotice>
-        Esta etapa mantém os registros em revisão interna. Importar ou revisar não publica
-        prestadores, cria contas ou habilita reservas.
+        Importe os dados e marque os registros que devem aparecer no diretório público. Os contatos
+        comerciais são opcionais na importação; contas e ofertas são gerenciadas separadamente.
       </PortalNotice>
       <div className="cadastur-feedback" aria-live="polite" aria-atomic="true">
         {busy && (
@@ -381,7 +384,7 @@ export function CadasturPanel({ initial, companies, guides }: Props) {
                       <option value={-1}>Não importar / selecionar</option>
                       {inspection.headers.map(
                         (header, i) =>
-                          !isSensitiveColumn(header) && (
+                          isAllowedMappingColumn(key as MappingField, header) && (
                             <option key={i} value={i}>
                               {i + 1}. {header || "Sem título"}
                             </option>
@@ -391,6 +394,18 @@ export function CadasturPanel({ initial, companies, guides }: Props) {
                   </label>
                 ))}
               </div>
+              <p>
+                O nome fantasia tem prioridade na sugestão. Se estiver vazio, será usado o nome
+                alternativo selecionado. Para guias sem nome fantasia, use o nome do profissional.
+              </p>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={includeContacts}
+                  onChange={(e) => setIncludeContacts(e.target.checked)}
+                />
+                Importar telefone, e-mail, endereço comercial e site divulgados na fonte
+              </label>
               <small>
                 Campos com * são obrigatórios. Só estes campos selecionados serão mantidos. Não
                 mapeie informações pessoais em campos cadastrais.
@@ -560,6 +575,11 @@ export function CadasturPanel({ initial, companies, guides }: Props) {
                   Certificado / CNPJ: {entry.external_id}
                   {entry.valid_until && " · Validade: " + entry.valid_until}
                 </p>
+                <p>
+                  {[entry.phone, entry.email, entry.address, entry.website]
+                    .filter(Boolean)
+                    .join(" · ") || "Contatos não informados na fonte."}
+                </p>
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -571,6 +591,7 @@ export function CadasturPanel({ initial, companies, guides }: Props) {
                           id: entry.id,
                           company_id: form.get("company_id") || null,
                           guide_id: form.get("guide_id") || null,
+                          published: form.get("published") === "on",
                         }),
                       );
                       await refresh(category, directory.page);
@@ -581,6 +602,10 @@ export function CadasturPanel({ initial, companies, guides }: Props) {
                   }}
                 >
                   <fieldset className="cadastur-fields" disabled={!!busy}>
+                    <label>
+                      <input name="published" type="checkbox" defaultChecked={!!entry.published} />
+                      Exibir no diretório público com os contatos comerciais disponíveis
+                    </label>
                     {entry.category === "hospedagens" && (
                       <label>
                         Vincular a hospedagem existente (opcional)
@@ -658,8 +683,7 @@ export function CadasturPanel({ initial, companies, guides }: Props) {
         )}
         <p className="cadastur-footnote">
           Fonte: Ministério do Turismo / Cadastur. Os dados representam o período informado; não
-          confirmam a situação atual nem parceria com a Hub. Publicação nos catálogos será uma etapa
-          separada.
+          confirmam a situação atual nem parceria com a Hub. Licença ODbL 1.0.
         </p>
       </section>
     </>

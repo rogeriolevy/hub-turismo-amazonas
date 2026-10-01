@@ -1,0 +1,495 @@
+import Link from "next/link";
+import {
+  BedDouble,
+  UtensilsCrossed,
+  Compass,
+  BriefcaseBusiness,
+  Sparkles,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  ArrowUpRight,
+  Search,
+  ArrowRight,
+} from "lucide-react";
+import { notFound } from "next/navigation";
+import { Header, Footer } from "@/components/site/navigation";
+import { getDatabase } from "@/db";
+import { publicHotels } from "@/server/catalog-service";
+import {
+  regionCities,
+  searchProviders,
+  publicProvider,
+  providerSource,
+  type DirectoryCategory,
+  type DirectorySearch,
+  type PublicProvider,
+} from "@/server/cadastur/public-directory";
+import { displayPublicPhone } from "@/lib/public-contacts";
+import { companyDisplayName, money } from "@/lib/platform-schema";
+import { lodgingHighlights } from "@/lib/lodging-highlights";
+import { CatalogCard } from "./shared";
+import "./provider-directory.css";
+
+const modules = {
+  hospedagens: {
+    label: "Hospedagens",
+    title: "Encontre seu lugar na Amazônia.",
+    description: "Hotéis e pousadas para descansar entre uma descoberta e outra.",
+    icon: BedDouble,
+  },
+  gastronomia: {
+    label: "Gastronomia",
+    title: "Sabores que contam histórias.",
+    description: "Restaurantes, bares e cafeterias para conhecer o Amazonas à mesa.",
+    icon: UtensilsCrossed,
+  },
+  guias: {
+    label: "Guias de turismo",
+    title: "Conheça o Amazonas com quem é daqui.",
+    description: "Encontre profissionais, confira os idiomas e planeje seu roteiro.",
+    icon: Compass,
+  },
+  agencias: {
+    label: "Agências de turismo",
+    title: "Sua próxima viagem começa aqui.",
+    description: "Agências para organizar passeios, pacotes e novas experiências.",
+    icon: BriefcaseBusiness,
+  },
+  servicos: {
+    label: "Serviços turísticos",
+    title: "Cada detalhe da sua viagem.",
+    description: "Encontre prestadores especializados em experiências e serviços turísticos.",
+    icon: Sparkles,
+  },
+} as const;
+function Contacts({
+  entry,
+}: {
+  entry: Pick<PublicProvider, "phone" | "email" | "address" | "website">;
+}) {
+  return (
+    <div className="provider-contacts">
+      {entry.phone ? (
+        <a href={"tel:" + entry.phone}>
+          <Phone size={15} aria-hidden="true" />
+          <span>{displayPublicPhone(entry.phone)}</span>
+        </a>
+      ) : (
+        <span>
+          <Phone size={15} aria-hidden="true" />
+          Telefone não informado
+        </span>
+      )}
+      {entry.email ? (
+        <a href={"mailto:" + entry.email}>
+          <Mail size={15} aria-hidden="true" />
+          <span>{entry.email}</span>
+        </a>
+      ) : (
+        <span>
+          <Mail size={15} aria-hidden="true" />
+          E-mail não informado
+        </span>
+      )}
+      <span>
+        <MapPin size={15} aria-hidden="true" />
+        <span>{entry.address || "Endereço não informado"}</span>
+      </span>
+      {entry.website && (
+        <a href={entry.website} target="_blank" rel="noopener noreferrer">
+          <Globe size={15} aria-hidden="true" />
+          <span>Visitar site</span>
+          <ArrowUpRight size={14} aria-hidden="true" />
+        </a>
+      )}
+    </div>
+  );
+}
+function ProviderCard({ entry }: { entry: PublicProvider }) {
+  const category = entry.category as DirectoryCategory;
+  const Icon = modules[category].icon;
+  return (
+    <article className="provider-card">
+      <div className="provider-card-top">
+        <span className="provider-icon">
+          <Icon size={24} aria-hidden="true" />
+        </span>
+        <span>
+          {entry.city} · {entry.uf}
+        </span>
+      </div>
+      <h2>
+        <Link href={"/prestadores/" + entry.id}>{entry.name}</Link>
+      </h2>
+      <p className="provider-subtype">{entry.subtype || modules[category].label}</p>
+      <Contacts entry={entry} />
+      <div className="provider-card-bottom">
+        <span>
+          {category === "hospedagens"
+            ? "Diárias sob consulta"
+            : category === "agencias"
+              ? "Pacotes sob consulta"
+              : "Conheça o prestador"}
+        </span>
+        <Link href={"/prestadores/" + entry.id} aria-label={"Ver detalhes de " + entry.name}>
+          <ArrowUpRight size={21} aria-hidden="true" />
+        </Link>
+      </div>
+    </article>
+  );
+}
+function LodgingHighlights({ city, query }: { city: string; query: string }) {
+  const fold = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  const highlights = lodgingHighlights.filter(
+    (item) =>
+      (!city || fold(item.city) === fold(city)) &&
+      (!query || fold(item.name + " " + item.city).includes(fold(query))),
+  );
+  if (!highlights.length) return null;
+  return (
+    <section className="lodging-highlights" aria-labelledby="lodging-highlights-title">
+      <div className="provider-section-heading">
+        <div>
+          <p className="eyebrow">PARA PLANEJAR SUA ESTADIA</p>
+          <h2 id="lodging-highlights-title">Hospedagens em Maués e região</h2>
+        </div>
+        <span>Informações dos hotéis</span>
+      </div>
+      <div className="lodging-highlight-grid">
+        {highlights.map((item) => (
+          <article key={item.name} className="lodging-highlight">
+            <div className="lodging-highlight-heading">
+              <BedDouble size={28} aria-hidden="true" />
+              <span>{item.city} · AM</span>
+            </div>
+            <h3>{item.name}</h3>
+            <p>{item.description}</p>
+            <strong className="lodging-rate">
+              {item.price === null ? (
+                "Diária sob consulta"
+              ) : (
+                <>
+                  <small>A partir de</small>R$ {item.price},00 <span>/ noite</span>
+                </>
+              )}
+            </strong>
+            <p className="lodging-terms">{item.terms}</p>
+            <Contacts entry={{ ...item, website: "" }} />
+            <div className="lodging-source">
+              <a href={item.source} target="_blank" rel="noopener noreferrer">
+                {item.sourceLabel} <ArrowUpRight size={15} aria-hidden="true" />
+              </a>
+              <small>Consulta: {item.checked.split("-").reverse().join("/")}</small>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+export function ProviderDirectory({
+  category,
+  search = {},
+}: {
+  category: DirectoryCategory;
+  search?: DirectorySearch;
+}) {
+  const db = getDatabase();
+  const results = searchProviders(db, category, search);
+  const info = modules[category];
+  const Icon = info.icon;
+  const hotels =
+    category === "hospedagens"
+      ? publicHotels(db, results.q).filter((hotel) => !results.city || hotel.city === results.city)
+      : [];
+  const pageUrl = (page: number) =>
+    "/" +
+    category +
+    "?" +
+    new URLSearchParams({ q: results.q, cidade: results.city, pagina: String(page) }).toString() +
+    "#resultados";
+  return (
+    <>
+      <Header />
+      <main id="conteudo" tabIndex={-1} className={"provider-page provider-" + category}>
+        <section className="provider-hero">
+          <div className="container provider-hero-inner">
+            <div>
+              <p className="eyebrow">HUB. {info.label.toLocaleUpperCase("pt-BR")}</p>
+              <h1>{info.title}</h1>
+              <p>{info.description}</p>
+              <span className="provider-hero-note">
+                <MapPin size={16} aria-hidden="true" />
+                Todo o Amazonas, com Maués e região em destaque.
+              </span>
+            </div>
+            <div className="provider-hero-symbol" aria-hidden="true">
+              <Icon size={96} strokeWidth={1} />
+              <span>AMAZONAS</span>
+            </div>
+          </div>
+        </section>
+        <div className="container">
+          <section className="provider-search-area" aria-label="Encontre um prestador">
+            <form
+              key={`${category}:${results.q}:${results.city}`}
+              className="provider-search"
+              role="search"
+              action={"/" + category}
+            >
+              <label>
+                <span>O que você procura?</span>
+                <div>
+                  <Search size={18} aria-hidden="true" />
+                  <input
+                    name="q"
+                    defaultValue={results.q}
+                    maxLength={100}
+                    placeholder="Nome, cidade ou tipo de serviço"
+                  />
+                </div>
+              </label>
+              <label>
+                <span>Município</span>
+                <select name="cidade" defaultValue={results.city}>
+                  <option value="">Todo o Amazonas</option>
+                  {results.cities.map((city) => (
+                    <option key={city}>{city}</option>
+                  ))}
+                  {results.city && !results.cities.includes(results.city) && (
+                    <option>{results.city}</option>
+                  )}
+                </select>
+              </label>
+              <button className="button button-dark" type="submit">
+                Buscar <ArrowRight size={17} aria-hidden="true" />
+              </button>
+            </form>
+            <div className="provider-city-links">
+              <span>Explore a região:</span>
+              {regionCities.map((city) => (
+                <Link
+                  key={city}
+                  href={"/" + category + "?" + new URLSearchParams({ cidade: city })}
+                  aria-current={city === results.city ? "page" : undefined}
+                >
+                  {city}
+                </Link>
+              ))}
+              {(results.city || results.q) && <Link href={"/" + category}>Limpar filtros</Link>}
+            </div>
+          </section>
+          {category === "hospedagens" && (
+            <LodgingHighlights city={results.city} query={results.q} />
+          )}
+          {!!hotels.length && (
+            <section className="provider-bookable">
+              <h2>Reserve pela Hub</h2>
+              <div className="catalog-grid">
+                {hotels.map((hotel) => (
+                  <CatalogCard
+                    key={hotel.id}
+                    kind="hotel"
+                    href={"/hospedagens/" + hotel.slug}
+                    title={companyDisplayName(hotel)}
+                    city={hotel.city}
+                    description={hotel.description}
+                    price={
+                      hotel.from_price === null
+                        ? "Quartos em preparação"
+                        : "A partir de " + money(hotel.from_price) + " / noite"
+                    }
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+          <section
+            id="resultados"
+            className="provider-results"
+            aria-labelledby="provider-results-title"
+          >
+            <div className="provider-section-heading">
+              <div>
+                <p className="eyebrow">EXPLORE O AMAZONAS</p>
+                <h2 id="provider-results-title">{results.city || info.label}</h2>
+              </div>
+              <span>
+                {results.total.toLocaleString("pt-BR")}{" "}
+                {results.total === 1 ? "cadastro" : "cadastros"}
+                {results.q && " · “" + results.q + "”"}
+              </span>
+            </div>
+            {results.entries.length ? (
+              <div className="provider-grid">
+                {results.entries.map((entry) => (
+                  <ProviderCard key={entry.id} entry={entry} />
+                ))}
+              </div>
+            ) : (
+              <div className="provider-empty">
+                <Icon size={36} aria-hidden="true" />
+                <h3>Nenhum cadastro encontrado.</h3>
+                <p>Experimente outro nome ou município.</p>
+                <Link className="text-link" href={"/" + category}>
+                  Ver todos no Amazonas
+                </Link>
+              </div>
+            )}
+            {results.pages > 1 && (
+              <nav className="provider-pagination" aria-label="Páginas de prestadores">
+                {results.page > 1 ? (
+                  <Link href={pageUrl(results.page - 1)}>← Anterior</Link>
+                ) : (
+                  <span />
+                )}
+                <span>
+                  Página {results.page} de {results.pages}
+                </span>
+                {results.page < results.pages ? (
+                  <Link href={pageUrl(results.page + 1)}>Próxima →</Link>
+                ) : (
+                  <span />
+                )}
+              </nav>
+            )}
+          </section>
+          <div className="provider-attribution">
+            <span>
+              Fonte:{" "}
+              <a href={providerSource(category)} target="_blank" rel="noreferrer">
+                Ministério do Turismo · Cadastur
+              </a>{" "}
+              ·{" "}
+              <a
+                href="https://opendatacommons.org/licenses/odbl/1-0/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                ODbL 1.0
+              </a>
+            </span>
+            <a href={"/api/diretorio?categoria=" + category}>Baixar dados desta categoria</a>
+          </div>
+        </div>
+      </main>
+      <Footer photoCredit={false} />
+    </>
+  );
+}
+export function ProviderDetail({ id }: { id: string }) {
+  const entry = publicProvider(getDatabase(), id);
+  if (!entry) notFound();
+  const category = entry.category as DirectoryCategory;
+  const info = modules[category],
+    Icon = info.icon;
+  return (
+    <>
+      <Header />
+      <main
+        id="conteudo"
+        tabIndex={-1}
+        className={"provider-page provider-detail provider-" + category}
+      >
+        <div className="container">
+          <Link href={"/" + category} className="text-link">
+            ← {info.label}
+          </Link>
+          <div className="provider-detail-layout">
+            <section>
+              <div className="provider-detail-art">
+                <Icon size={82} strokeWidth={1} aria-hidden="true" />
+                <span>{info.label} · Amazonas</span>
+              </div>
+              <p className="eyebrow">
+                {entry.city} · {entry.uf}
+              </p>
+              <h1>{entry.name}</h1>
+              <p>{entry.subtype || info.label}</p>
+              <dl className="provider-facts">
+                <div>
+                  <dt>Município</dt>
+                  <dd>
+                    {entry.city} / {entry.uf}
+                  </dd>
+                </div>
+                {entry.languages && (
+                  <div>
+                    <dt>Idiomas informados</dt>
+                    <dd>{entry.languages}</dd>
+                  </div>
+                )}
+                {entry.units !== null && entry.units > 0 && (
+                  <div>
+                    <dt>Unidades habitacionais</dt>
+                    <dd>{entry.units}</dd>
+                  </div>
+                )}
+                {entry.beds !== null && entry.beds > 0 && (
+                  <div>
+                    <dt>Leitos</dt>
+                    <dd>{entry.beds}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt>Referência do cadastro</dt>
+                  <dd>{entry.period.replace(/^(\d{4})-T(\d)$/, "$2º trimestre de $1")}</dd>
+                </div>
+              </dl>
+            </section>
+            <aside className="provider-contact-panel">
+              <p className="eyebrow">PLANEJE SUA VISITA</p>
+              <h2>Fale com {category === "guias" ? "o profissional" : "o estabelecimento"}</h2>
+              <Contacts entry={entry} />
+              {entry.phone && (
+                <a className="button button-dark" href={"tel:" + entry.phone}>
+                  Ligar agora <Phone size={17} aria-hidden="true" />
+                </a>
+              )}
+              {entry.website && (
+                <a
+                  className="button button-outline"
+                  href={entry.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Acessar site <ArrowUpRight size={17} aria-hidden="true" />
+                </a>
+              )}
+              {(category === "hospedagens" || category === "agencias") && (
+                <p>
+                  {category === "hospedagens"
+                    ? "Consulte diárias, quartos e disponibilidade para sua viagem."
+                    : "Consulte roteiros, pacotes e valores para suas datas."}
+                </p>
+              )}
+            </aside>
+          </div>
+          <div className="provider-attribution">
+            <span>
+              Fonte:{" "}
+              <a href={providerSource(category)} target="_blank" rel="noreferrer">
+                Ministério do Turismo · Cadastur
+              </a>{" "}
+              ·{" "}
+              <a
+                href="https://opendatacommons.org/licenses/odbl/1-0/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                ODbL 1.0
+              </a>
+            </span>
+          </div>
+        </div>
+      </main>
+      <Footer photoCredit={false} />
+    </>
+  );
+}

@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   importOptionsSchema,
   categorySchema,
-  isSensitiveColumn,
+  isAllowedMappingColumn,
   normalizeLabel,
   states,
   type RegistryData,
@@ -12,7 +12,15 @@ import {
   type Preview,
   type RegistryEntry,
   type ImportHistory,
+  type MappingField,
 } from "../../lib/cadastur-schema.ts";
+import {
+  cleanPublicText,
+  publicName,
+  publicPhone,
+  publicEmail,
+  publicWebsite,
+} from "../../lib/public-contacts.ts";
 import { requirePlatformAdmin } from "../platform-access.ts";
 import type { Actor } from "../platform-models.ts";
 import { one, many, parse, write, audit } from "../platform-store.ts";
@@ -34,6 +42,8 @@ const activities = {
   guias: "Guia de Turismo",
   gastronomia: "Restaurante, Cafeteria, Bar e Similares",
   transportes: "Transportadora Turística",
+  agencias: "Agência de Turismo",
+  servicos: "Prestador Especializado em Segmentos Turísticos",
 };
 const clean = (value: string) =>
   value
@@ -77,12 +87,16 @@ export function createPreview(
       "FILE_CHANGED",
       "O arquivo ou a aba mudou. Leia as colunas novamente.",
     );
-  for (const index of Object.values(options.mapping))
-    if (index >= 0 && (index >= file.headers.length || isSensitiveColumn(file.headers[index])))
+  for (const [field, index] of Object.entries(options.mapping))
+    if (
+      index >= 0 &&
+      (index >= file.headers.length ||
+        !isAllowedMappingColumn(field as MappingField, file.headers[index]))
+    )
       throw new HttpError(
         422,
         "MAPPING",
-        "Selecione somente colunas cadastrais. CPF, contatos e dados pessoais adicionais não são importados.",
+        "Mapeie contatos apenas nas colunas comerciais correspondentes. CPF, dados pessoais e e-mail do administrador não são importados.",
       );
   const required = [
     options.mapping.external_id,
@@ -146,7 +160,7 @@ export function createPreview(
         throw Error("Identificador de 11 dígitos exige a coluna de certificado Cadastur.");
       if (cpfIndex >= 0 && external_id === (row[cpfIndex] || "").replace(/\D/g, ""))
         throw Error("O identificador corresponde ao CPF; selecione o certificado Cadastur.");
-      const name = get("name") || get("fallback_name");
+      const name = publicName(get("name")) || publicName(get("fallback_name"));
       if (
         name.length < 2 ||
         name.length > 200 ||
@@ -167,6 +181,13 @@ export function createPreview(
         subtype,
         registry_status,
         valid_until: date(get("valid_until")),
+        phone: options.include_contacts ? publicPhone(get("phone")) : "",
+        email: options.include_contacts ? publicEmail(get("email")) : "",
+        address: options.include_contacts ? cleanPublicText(get("address")).slice(0, 500) : "",
+        website: options.include_contacts ? publicWebsite(get("website")) : "",
+        languages: cleanPublicText(get("languages")).slice(0, 500),
+        units: /^\d{1,5}$/.test(get("units")) ? Number(get("units")) : null,
+        beds: /^\d{1,5}$/.test(get("beds")) ? Number(get("beds")) : null,
       };
       if (conflicting.has(external_id)) {
         counts.conflicts++;
@@ -311,8 +332,8 @@ export function commitImport(db: Database.Database, actor: Actor, input: unknown
       if (entry.action === "unchanged") continue;
       const r = entry.record;
       db.prepare(
-        `INSERT INTO cadastur_entries (id,category,external_id,name,uf,city,subtype,registry_status,valid_until,period,data_hash,source_json,import_id,imported_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(category,external_id) DO UPDATE SET name=excluded.name,uf=excluded.uf,city=excluded.city,subtype=excluded.subtype,registry_status=excluded.registry_status,valid_until=excluded.valid_until,period=excluded.period,data_hash=excluded.data_hash,source_json=excluded.source_json,import_id=excluded.import_id,imported_at=excluded.imported_at,review_status='pending'`,
+        `INSERT INTO cadastur_entries (id,category,external_id,name,uf,city,subtype,registry_status,valid_until,period,data_hash,source_json,import_id,imported_at,phone,email,address,website,languages,units,beds)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(category,external_id) DO UPDATE SET name=excluded.name,uf=excluded.uf,city=excluded.city,subtype=excluded.subtype,registry_status=excluded.registry_status,valid_until=excluded.valid_until,period=excluded.period,data_hash=excluded.data_hash,source_json=excluded.source_json,import_id=excluded.import_id,imported_at=excluded.imported_at,phone=excluded.phone,email=excluded.email,address=excluded.address,website=excluded.website,languages=excluded.languages,units=excluded.units,beds=excluded.beds,review_status='pending',published=0`,
       ).run(
         crypto.randomUUID(),
         batch.category,
@@ -328,6 +349,13 @@ export function commitImport(db: Database.Database, actor: Actor, input: unknown
         batch.source_json,
         id,
         now,
+        r.phone,
+        r.email,
+        r.address,
+        r.website,
+        r.languages,
+        r.units,
+        r.beds,
       );
     }
     db.prepare(
@@ -345,6 +373,7 @@ export function reviewEntry(db: Database.Database, actor: Actor, input: unknown)
         id: z.string().uuid(),
         company_id: z.string().uuid().nullable().default(null),
         guide_id: z.string().uuid().nullable().default(null),
+        published: z.boolean().optional(),
       })
       .strict(),
     input,
@@ -371,8 +400,13 @@ export function reviewEntry(db: Database.Database, actor: Actor, input: unknown)
     )
       throw new HttpError(422, "LINK", "Selecione um perfil de guia existente.");
     db.prepare(
-      "UPDATE cadastur_entries SET review_status='reviewed',company_id=?,guide_id=? WHERE id=?",
-    ).run(data.company_id, data.guide_id, data.id);
+      "UPDATE cadastur_entries SET review_status='reviewed',company_id=?,guide_id=?,published=? WHERE id=?",
+    ).run(
+      data.company_id,
+      data.guide_id,
+      Number(data.published ?? Boolean(entry.published)),
+      data.id,
+    );
     audit(db, actor.id, data.company_id, "cadastur.review", data.id);
     return { id: data.id };
   });
@@ -392,7 +426,7 @@ export function listDirectory(db: Database.Database, actor: Actor, input: unknow
   return {
     entries: many<RegistryEntry>(
       db,
-      "SELECT id,category,external_id,name,uf,city,subtype,registry_status,valid_until,period,company_id,guide_id,review_status,imported_at FROM cadastur_entries WHERE " +
+      "SELECT id,category,external_id,name,uf,city,subtype,registry_status,valid_until,period,company_id,guide_id,review_status,imported_at,phone,email,address,website,languages,units,beds,published FROM cadastur_entries WHERE " +
         where +
         " ORDER BY name,id LIMIT 20 OFFSET ?",
       category,

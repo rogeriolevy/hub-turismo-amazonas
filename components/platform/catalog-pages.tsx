@@ -11,7 +11,7 @@ import {
   publicTour,
   publicGuide,
 } from "@/server/catalog-service";
-import { money, displayTime } from "@/lib/platform-schema";
+import { money, displayTime, companyDisplayName } from "@/lib/platform-schema";
 import { CatalogCard, EmptyState, PageIntro, PortalNotice } from "./shared";
 import { BookingForm } from "./booking-form";
 export function Directory({ kind, query }: { kind: "hotel" | "tour"; query: string }) {
@@ -79,7 +79,7 @@ export function Directory({ kind, query }: { kind: "hotel" | "tour"; query: stri
                   key={hotel.id}
                   kind="hotel"
                   href={"/hospedagens/" + hotel.slug}
-                  title={hotel.name}
+                  title={companyDisplayName(hotel)}
                   city={hotel.city}
                   description={hotel.description}
                   price={
@@ -120,7 +120,11 @@ export async function HotelDetail({ slug }: { slug: string }) {
           <Link className="text-link" href="/hospedagens">
             ← Todas as hospedagens
           </Link>
-          <PageIntro eyebrow="HOSPEDAGEM" title={hotel.name} description={hotel.city} />
+          <PageIntro
+            eyebrow="HOSPEDAGEM"
+            title={companyDisplayName(hotel)}
+            description={hotel.city}
+          />
           <div className="detail-layout">
             <div>
               <div className="detail-art hotel">

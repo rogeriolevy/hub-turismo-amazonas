@@ -4,7 +4,7 @@ import type { Inspection, Preview } from "../lib/cadastur-schema.ts";
 export async function verifyCadasturHttp(base: string, root: string, visitor: string) {
   const endpoint = "/api/cadastur/";
   const csv =
-    "Certificado;Nome;UF;Município\n00123456000199;Hospedagem fictícia Cadastur;AM;Manaus";
+    "Certificado;Nome Completo;Nome Fantasia;Razão Social;UF;Município\n00123456000199;Nome cadastral fictício;Hospedagem fictícia Cadastur;Empresa fictícia Ltda;AM;Manaus";
   const request = (action: string, data: unknown, cookie = root, origin = base) =>
     fetch(base + endpoint + action, {
       method: "POST",
@@ -63,6 +63,7 @@ export async function verifyCadasturHttp(base: string, root: string, visitor: st
   assert.equal(result.status, 200);
   const preview = (await result.json()).data as Preview;
   assert.equal(preview.counts.added, 1);
+  assert.equal(preview.records[0].name, "Hospedagem fictícia Cadastur");
   assert.equal((await request("confirmar", { id: preview.id }, visitor)).status, 403);
   assert.equal((await request("confirmar", { id: preview.id })).status, 200);
   assert.equal((await request("confirmar", { id: preview.id })).status, 200);
@@ -71,7 +72,39 @@ export async function verifyCadasturHttp(base: string, root: string, visitor: st
   });
   const entries = (await directory.json()).data;
   assert.equal(entries.total, 1);
+  assert.equal(entries.entries[0].name, "Hospedagem fictícia Cadastur");
   assert.equal((await request("revisar", { id: entries.entries[0].id })).status, 200);
+  const publicUrl = base + "/api/diretorio?categoria=hospedagens";
+  assert.equal((await (await fetch(publicUrl)).json()).data.length, 0);
+  assert.equal(
+    (await request("revisar", { id: entries.entries[0].id, published: true }, visitor)).status,
+    403,
+  );
+  assert.equal(
+    (await request("revisar", { id: entries.entries[0].id, published: true })).status,
+    200,
+  );
+  assert.equal(
+    (await (await fetch(publicUrl)).json()).data[0].name,
+    "Hospedagem fictícia Cadastur",
+  );
+  const publicHtml = await (await fetch(base + "/hospedagens?q=ficticia")).text();
+  assert.match(publicHtml, /Hospedagem fictícia Cadastur/);
+  assert.match(
+    await (await fetch(base + "/prestadores/" + entries.entries[0].id)).text(),
+    /Hospedagem fictícia Cadastur/,
+  );
+  assert.equal(
+    (await request("revisar", { id: entries.entries[0].id, published: false })).status,
+    200,
+  );
+  assert.equal((await (await fetch(publicUrl)).json()).data.length, 0);
+  assert.ok(
+    !(await (await fetch(base + "/prestadores/" + entries.entries[0].id)).text()).includes(
+      "Hospedagem fictícia Cadastur",
+    ),
+  );
+  assert.equal((await fetch(base + "/api/diretorio?categoria=invalida")).status, 400);
   const bytes = await readFile(new URL("./fixtures/cadastur-ficticio.xlsx", import.meta.url));
   const excel = await upload(
     "inspecionar",

@@ -22,7 +22,8 @@
     "qa:preview": "node --experimental-strip-types tests/integration.ts --preview",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write --ignore-unknown app components/site components/platform lib server db scripts tests docs README.md next.config.ts tsconfig.json package.json .github infra",
-    "format:check": "prettier --check --ignore-unknown app components/site components/platform lib server db scripts tests docs README.md next.config.ts tsconfig.json package.json .github infra"
+    "format:check": "prettier --check --ignore-unknown app components/site components/platform lib server db scripts tests docs README.md next.config.ts tsconfig.json package.json .github infra",
+    "cadastur:sync": "node --env-file=.env.local --experimental-strip-types scripts/cadastur-sync.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

@@ -83,6 +83,7 @@ try {
   for (const path of [
     "/",
     "/privacidade",
+    "/navegacao",
     "/admin",
     "/api/health",
     "/api/openapi",
@@ -90,6 +91,24 @@ try {
     "/sitemap.xml",
   ])
     assert.equal((await fetch(base + path)).status, 200, path);
+  const navigationPage = await (await fetch(base + "/navegacao")).text();
+  assert.match(navigationPage, /Seu caminho/);
+  assert.match(navigationPage, /Boa Vista do Ramos/);
+  assert.match(navigationPage, /Sob consulta/);
+  assert.match(navigationPage, /roteiro-folha-de-maues\.png/);
+  assert.match(navigationPage, /25\/11\/2026/);
+  assert.match(navigationPage, /tel:\+5592991517907/);
+  assert.match(navigationPage, /Fonte e condições/);
+  assert.match(await (await fetch(base + "/sitemap.xml")).text(), /\/navegacao/);
+  for (const image of [
+    "rios-e-ceus.webp",
+    "roteiro-folha-de-maues.png",
+    "roteiro-navegacao-pp.png",
+  ]) {
+    const asset = await fetch(base + "/images/navegacao/" + image);
+    assert.equal(asset.status, 200);
+    assert.match(asset.headers.get("content-type") || "", /^image\//);
+  }
   assert.equal((await fetch(base + "/pagina-inexistente")).status, 404);
   assert.equal((await fetch(base + "/api/admin/contatos")).status, 401);
   assert.equal(

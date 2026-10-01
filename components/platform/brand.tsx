@@ -7,13 +7,21 @@ export function PlatformBrand() {
   const area =
     path.startsWith("/hospedagens") || path.startsWith("/painel/hotel")
       ? "hospedagem"
-      : path.startsWith("/passeios") ||
-          path.startsWith("/guias") ||
-          path.startsWith("/painel/passeios")
-        ? "passeios"
-        : path.startsWith("/painel/plataforma") || path === "/admin"
-          ? "gestão"
-          : "turismo";
+      : path.startsWith("/guias")
+        ? "guias"
+        : path.startsWith("/gastronomia")
+          ? "gastronomia"
+          : path.startsWith("/agencias")
+            ? "agências"
+            : path.startsWith("/servicos")
+              ? "serviços"
+              : path.startsWith("/passeios") || path.startsWith("/painel/passeios")
+                ? "passeios"
+                : path.startsWith("/navegacao")
+                  ? "navegação"
+                  : path.startsWith("/painel/plataforma") || path === "/admin"
+                    ? "gestão"
+                    : "turismo";
   return (
     <Link className="brand platform-brand" href="/" aria-label="Hub Turismo Amazonas, início">
       <Waves className="brand-mark" size={37} strokeWidth={2} />

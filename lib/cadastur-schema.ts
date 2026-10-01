@@ -11,20 +11,39 @@ export const cadasturSources = {
     dataset: "restaurantes-cafeterias-e-bares",
   },
   transportes: { label: "Transportadoras turísticas", dataset: "transportadora-turistica" },
+  agencias: { label: "Agências de turismo", dataset: "agencia-de-turismo" },
+  servicos: {
+    label: "Serviços especializados",
+    dataset: "prestador-especializado-em-segmentos-turisticos",
+  },
 } as const;
-export const categorySchema = z.enum(["hospedagens", "guias", "gastronomia", "transportes"]);
+export const categorySchema = z.enum([
+  "hospedagens",
+  "guias",
+  "gastronomia",
+  "transportes",
+  "agencias",
+  "servicos",
+]);
 export type CadasturCategory = z.infer<typeof categorySchema>;
 export const states =
   "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(" ");
 export const fieldLabels = {
   external_id: "Certificado Cadastur ou CNPJ (nunca CPF)",
-  name: "Nome do prestador",
-  fallback_name: "Nome alternativo, se o principal estiver vazio",
+  name: "Nome para exibição (prefira Nome Fantasia)",
+  fallback_name: "Razão social ou nome alternativo, se o principal estiver vazio",
   uf: "UF",
   city: "Município",
   subtype: "Tipo / categoria na fonte",
   registry_status: "Situação cadastral",
   valid_until: "Validade do certificado",
+  phone: "Telefone comercial ou institucional",
+  email: "E-mail comercial ou institucional",
+  address: "Endereço comercial",
+  website: "Site divulgado",
+  languages: "Idiomas",
+  units: "Unidades habitacionais",
+  beds: "Leitos",
 } as const;
 export type MappingField = keyof typeof fieldLabels;
 const column = z.number().int().min(-1).max(99);
@@ -38,6 +57,13 @@ export const mappingSchema = z
     subtype: column.default(-1),
     registry_status: column.default(-1),
     valid_until: column.default(-1),
+    phone: column.default(-1),
+    email: column.default(-1),
+    address: column.default(-1),
+    website: column.default(-1),
+    languages: column.default(-1),
+    units: column.default(-1),
+    beds: column.default(-1),
   })
   .strict();
 export type ColumnMapping = z.infer<typeof mappingSchema>;
@@ -49,6 +75,7 @@ export const importOptionsSchema = z
     city: z.string().trim().max(100).default(""),
     sheet: z.string().trim().min(1).max(100).default("1"),
     mapping: mappingSchema,
+    include_contacts: z.boolean().default(false),
     checksum: z.string().regex(/^[a-f0-9]{64}$/),
   })
   .strict();
@@ -77,6 +104,13 @@ export type RegistryData = {
   subtype: string;
   registry_status: string;
   valid_until: string;
+  phone: string;
+  email: string;
+  address: string;
+  website: string;
+  languages: string;
+  units: number | null;
+  beds: number | null;
 };
 export type ImportCounts = {
   total: number;
@@ -114,6 +148,7 @@ export type RegistryEntry = RegistryData & {
   guide_id: string | null;
   review_status: "pending" | "reviewed";
   imported_at: string;
+  published: number;
 };
 export type ImportHistory = {
   id: string;
@@ -135,12 +170,43 @@ export const isSensitiveColumn = (header: string) =>
     normalizeLabel(header),
   );
 
+const contactColumns: Partial<Record<MappingField, string[]>> = {
+  phone: ["Telefone Comercial", "Telefone Institucional"],
+  email: ["E-mail Comercial", "E-mail Institucional"],
+  address: ["Endereço Completo Comercial", "Endereço Comercial"],
+  website: ["Website", "Site", "Site Comercial"],
+};
+export function isAllowedMappingColumn(field: MappingField, header: string) {
+  const allowed = contactColumns[field];
+  return allowed
+    ? allowed.some((name) => normalizeLabel(name) === normalizeLabel(header))
+    : !isSensitiveColumn(header);
+}
+
 export function suggestMapping(headers: string[]): ColumnMapping {
   const normalized = headers.map(normalizeLabel);
   const find = (...labels: string[]) => {
     for (const label of labels) {
       const i = normalized.indexOf(normalizeLabel(label));
       if (i >= 0 && !isSensitiveColumn(headers[i])) return i;
+    }
+    return -1;
+  };
+  const name = find(
+    "Nome Fantasia",
+    "Nome Completo",
+    "Nome",
+    "Nome da Pessoa Jurídica",
+    "Razão Social",
+  );
+  const fallback =
+    ["Nome da Pessoa Jurídica", "Razão Social", "Nome Completo", "Nome"]
+      .map((label) => find(label))
+      .find((index) => index >= 0 && index !== name) ?? -1;
+  const contact = (field: MappingField) => {
+    for (const label of contactColumns[field] || []) {
+      const index = normalized.indexOf(normalizeLabel(label));
+      if (index >= 0) return index;
     }
     return -1;
   };
@@ -152,12 +218,26 @@ export function suggestMapping(headers: string[]): ColumnMapping {
       "Número de Inscrição do CNPJ",
       "CNPJ",
     ),
-    name: find("Nome Completo", "Nome Fantasia", "Nome", "Nome da Pessoa Jurídica"),
-    fallback_name: find("Nome da Pessoa Jurídica", "Razão Social"),
+    name,
+    fallback_name: fallback,
     uf: find("UF", "Sigla UF"),
     city: find("Município", "Cidade"),
-    subtype: find("Tipo de Hospedagem", "Categoria(s)", "Tipo", "Modalidades"),
+    subtype: find(
+      "Tipo de Hospedagem",
+      "Categoria(s)",
+      "Categoria de Atuação",
+      "Tipo",
+      "Segmentos Turísticos",
+      "Modalidades",
+    ),
     registry_status: find("Situação Cadastral", "Situação"),
     valid_until: find("Validade do Certificado", "Validade"),
+    phone: contact("phone"),
+    email: contact("email"),
+    address: contact("address"),
+    website: contact("website"),
+    languages: find("Idiomas"),
+    units: find("Unidade Habitacionais", "Unidades Habitacionais"),
+    beds: find("Leitos"),
   };
 }

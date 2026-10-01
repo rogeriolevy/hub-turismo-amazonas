@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, rmSync, existsSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
-import { randomBytes } from "node:crypto";
+import { randomBytes, createHash } from "node:crypto";
 import { openDatabase } from "../db/index.ts";
 import { migrateContacts } from "../db/migrate.ts";
 import { migrateDatabase } from "../db/migrate-auth.ts";
@@ -36,7 +36,7 @@ test("migration can run twice and persistence survives reopening", async () => {
     assert.equal(db.prepare<[], { n: number }>("SELECT COUNT(*) n FROM contacts").get()?.n, 1);
     assert.equal(
       db.prepare<[], { n: number }>("SELECT COUNT(*) n FROM schema_migrations").get()?.n,
-      3,
+      5,
     );
     const backupPath = resolve(dir, "backup.sqlite");
     const backup = spawnSync(
@@ -82,6 +82,104 @@ test("migration can run twice and persistence survives reopening", async () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+test("trade name migration preserves existing company names and records", () => {
+  const db = openDatabase(":memory:");
+  try {
+    db.exec(
+      "CREATE TABLE schema_migrations (name TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at TEXT NOT NULL)",
+    );
+    for (const name of ["001_contacts.sql", "002_platform.sql", "003_cadastur.sql"]) {
+      const sql = readFileSync(
+        new URL("../db/migrations/" + name, import.meta.url),
+        "utf8",
+      ).replace(/\r\n/g, "\n");
+      db.exec(sql);
+      db.prepare("INSERT INTO schema_migrations VALUES (?,?,?)").run(
+        name,
+        createHash("sha256").update(sql).digest("hex"),
+        new Date().toISOString(),
+      );
+    }
+    db.prepare("INSERT INTO companies VALUES (?,?,?,?,?,?,?,?)").run(
+      "existing",
+      "hotel",
+      "Nome original",
+      "hotel-original",
+      "Manaus",
+      "Empresa existente antes da migração.",
+      "published",
+      "2026-09-29T12:00:00Z",
+    );
+    const before = db.prepare("SELECT * FROM companies").get()!;
+    migrateContacts(db);
+    migrateContacts(db);
+    assert.deepEqual(db.prepare("SELECT * FROM companies").get(), { ...before, trade_name: "" });
+    assert.equal(
+      db.prepare<[], { n: number }>("SELECT COUNT(*) n FROM schema_migrations").get()!.n,
+      5,
+    );
+  } finally {
+    db.close();
+  }
+});
+
+test("public directory migration preserves existing imports, entries and company links", () => {
+  const db = openDatabase(":memory:");
+  try {
+    db.exec(
+      "CREATE TABLE user (id TEXT PRIMARY KEY); INSERT INTO user VALUES ('admin'); CREATE TABLE schema_migrations (name TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at TEXT NOT NULL)",
+    );
+    for (const name of [
+      "001_contacts.sql",
+      "002_platform.sql",
+      "003_cadastur.sql",
+      "004_company_trade_name.sql",
+    ]) {
+      const sql = readFileSync(
+        new URL("../db/migrations/" + name, import.meta.url),
+        "utf8",
+      ).replace(/\r\n/g, "\n");
+      db.exec(sql);
+      db.prepare("INSERT INTO schema_migrations VALUES (?,?,?)").run(
+        name,
+        createHash("sha256").update(sql).digest("hex"),
+        "2026-10-01",
+      );
+    }
+    db.exec(
+      "INSERT INTO companies (id,kind,name,slug,city,description,status,created_at) VALUES ('hotel','hotel','Hotel','hotel','Maués','Teste','draft','2026-10-01')",
+    );
+    db.exec(
+      "INSERT INTO cadastur_imports VALUES ('batch','admin','hospedagens','2026-T2','{}','hash','{}',NULL,'committed','2026-10-01','2026-10-02','2026-10-01')",
+    );
+    db.exec(
+      "INSERT INTO cadastur_entries VALUES ('entry','hospedagens','12345678000100','Hotel','AM','Maués','Hotel','Regular','','2026-T2','hash','{}','batch','2026-10-01','reviewed','hotel',NULL)",
+    );
+    const before = db.prepare("SELECT * FROM cadastur_entries").get();
+    migrateContacts(db);
+    assert.deepEqual(db.prepare("SELECT * FROM cadastur_entries").get(), {
+      ...(before as object),
+      phone: "",
+      email: "",
+      address: "",
+      website: "",
+      languages: "",
+      units: null,
+      beds: null,
+      published: 0,
+    });
+    assert.deepEqual(db.pragma("foreign_key_check"), []);
+    assert.equal(db.pragma("foreign_keys", { simple: true }), 1);
+    assert.throws(() => db.prepare("DELETE FROM cadastur_imports WHERE id='batch'").run());
+    assert.equal(
+      db.prepare<[], { n: number }>("SELECT COUNT(*) n FROM cadastur_imports").get()!.n,
+      1,
+    );
+  } finally {
+    db.close();
+  }
+});
+
 test("client IP is trusted only through an explicitly configured proxy header", () => {
   const previous = process.env.TRUST_PROXY_IP_HEADER;
   try {

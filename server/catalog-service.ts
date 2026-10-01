@@ -15,7 +15,8 @@ export function publicHotels(db: Database.Database, search = "") {
   const query = search.trim().slice(0, 100);
   return many<Company & { from_price: number | null }>(
     db,
-    "SELECT c.*,(SELECT MIN(price_cents) FROM rooms r WHERE r.company_id=c.id AND r.active=1) from_price FROM companies c WHERE c.kind='hotel' AND c.status='published' AND (c.name LIKE ? OR c.city LIKE ?) ORDER BY c.name",
+    "SELECT c.*,(SELECT MIN(price_cents) FROM rooms r WHERE r.company_id=c.id AND r.active=1) from_price FROM companies c WHERE c.kind='hotel' AND c.status='published' AND (c.trade_name LIKE ? OR c.name LIKE ? OR c.city LIKE ?) ORDER BY COALESCE(NULLIF(TRIM(c.trade_name),''),c.name),c.id",
+    "%" + query + "%",
     "%" + query + "%",
     "%" + query + "%",
   );
@@ -41,7 +42,7 @@ export function publicTours(db: Database.Database, search = "") {
   const query = search.trim().slice(0, 100);
   return many<Tour & { company_name: string }>(
     db,
-    "SELECT t.*,c.name company_name FROM tours t JOIN companies c ON c.id=t.company_id WHERE t.published=1 AND c.status='published' AND (t.name LIKE ? OR t.city LIKE ?) ORDER BY t.name",
+    "SELECT t.*,COALESCE(NULLIF(TRIM(c.trade_name),''),c.name) company_name FROM tours t JOIN companies c ON c.id=t.company_id WHERE t.published=1 AND c.status='published' AND (t.name LIKE ? OR t.city LIKE ?) ORDER BY t.name",
     "%" + query + "%",
     "%" + query + "%",
   );
@@ -49,7 +50,7 @@ export function publicTours(db: Database.Database, search = "") {
 export function publicTour(db: Database.Database, slug: string) {
   const tour = one<Tour & { company_name: string }>(
     db,
-    "SELECT t.*,c.name company_name FROM tours t JOIN companies c ON c.id=t.company_id WHERE t.slug=? AND t.published=1 AND c.status='published'",
+    "SELECT t.*,COALESCE(NULLIF(TRIM(c.trade_name),''),c.name) company_name FROM tours t JOIN companies c ON c.id=t.company_id WHERE t.slug=? AND t.published=1 AND c.status='published'",
     slug,
   );
   if (!tour) return null;
@@ -69,7 +70,7 @@ export function publicTour(db: Database.Database, slug: string) {
 export function publicGuide(db: Database.Database, slug: string) {
   const guide = one<Guide & { company_name: string; city: string }>(
     db,
-    "SELECT g.*,c.name company_name,c.city FROM guides g JOIN companies c ON c.id=g.company_id WHERE g.slug=? AND g.published=1 AND c.status='published'",
+    "SELECT g.*,COALESCE(NULLIF(TRIM(c.trade_name),''),c.name) company_name,c.city FROM guides g JOIN companies c ON c.id=g.company_id WHERE g.slug=? AND g.published=1 AND c.status='published'",
     slug,
   );
   return guide

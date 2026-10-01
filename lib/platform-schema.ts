@@ -30,6 +30,7 @@ export const companySchema = z
     id: id.optional(),
     kind: z.enum(["hotel", "operator"]),
     name: text(2, 100),
+    trade_name: z.union([text(2, 100), z.string().trim().length(0)]).optional(),
     slug,
     city: text(2, 100),
     description: text(20, 2000),
@@ -132,6 +133,9 @@ export const registrationSchema = z
     consent: z.literal(true, { errorMap: () => ({ message: "Aceite o aviso de privacidade." }) }),
   })
   .strict();
+export function companyDisplayName(company: { name: string; trade_name?: string }) {
+  return company.trade_name?.trim() || company.name;
+}
 export function money(cents: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 }

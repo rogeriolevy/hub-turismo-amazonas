@@ -3,7 +3,7 @@
   "info": {
     "title": "Hub Turismo Amazonas API",
     "version": "3.1.0",
-    "description": "Plataforma local Node.js/SQLite. Reservas por aprovação, sem pagamentos. POSTs exigem Origin igual à origem configurada e JSON limitado a 12000 bytes. Contas básicas não têm confirmação automática de e-mail. Importação Cadastur exclusiva do administrador: CSV/XLSX até 20 MB, prévia e revisão; não publica nem cria contas."
+    "description": "Plataforma local Node.js/SQLite. Reservas por aprovação, sem pagamentos. POSTs exigem Origin igual à origem configurada e JSON limitado a 12000 bytes. Contas básicas não têm confirmação automática de e-mail. Importação Cadastur exclusiva do administrador: CSV/XLSX até 20 MB, prévia e revisão; Contatos comerciais opcionais e publicação administrativa explícita no diretório do Amazonas; não cria contas."
   },
   "servers": [
     {
@@ -144,17 +144,17 @@
     "/api/auth/sign-in/email": {
       "post": {
         "responses": {
-          "401": {
-            "description": "Credenciais inválidas"
-          },
-          "429": {
-            "description": "Limite de tentativas"
-          },
           "200": {
             "description": "Autenticado; cookie de sessão emitido pelo servidor"
           },
+          "401": {
+            "description": "Credenciais inválidas"
+          },
           "403": {
             "description": "Origem inválida"
+          },
+          "429": {
+            "description": "Limite de tentativas"
           }
         },
         "description": "Exige Origin igual a SITE_URL. Limite de 5 tentativas por IP em 60 segundos. Cadastro básico disponível exclusivamente em /api/conta/cadastro. Erros do Better Auth retornam code e message; erros da camada HTTP retornam error.code, error.message e requestId.",
@@ -3547,7 +3547,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["hospedagens", "guias", "gastronomia", "transportes"]
+              "enum": ["hospedagens", "guias", "gastronomia", "transportes", "agencias", "servicos"]
             }
           }
         ]
@@ -3596,7 +3596,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["hospedagens", "guias", "gastronomia", "transportes"]
+              "enum": ["hospedagens", "guias", "gastronomia", "transportes", "agencias", "servicos"]
             }
           },
           {
@@ -3665,7 +3665,14 @@
                 "properties": {
                   "category": {
                     "type": "string",
-                    "enum": ["hospedagens", "guias", "gastronomia", "transportes"]
+                    "enum": [
+                      "hospedagens",
+                      "guias",
+                      "gastronomia",
+                      "transportes",
+                      "agencias",
+                      "servicos"
+                    ]
                   },
                   "sheet": {
                     "type": "string",
@@ -3903,6 +3910,10 @@
                   "guide_id": {
                     "type": ["string", "null"],
                     "format": "uuid"
+                  },
+                  "published": {
+                    "type": "boolean",
+                    "description": "Define a visibilidade pública do registro revisado. Se omitido, preserva a visibilidade anterior."
                   }
                 },
                 "additionalProperties": false
@@ -3920,6 +3931,32 @@
             }
           }
         ]
+      }
+    },
+    "/api/diretorio": {
+      "get": {
+        "summary": "Exportar dados públicos do diretório do Amazonas",
+        "tags": ["Diretório"],
+        "security": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "categoria",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["hospedagens", "gastronomia", "guias", "agencias", "servicos"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JSON para download com source, license e data; somente campos comerciais de registros AM publicados e revisados. Sem IDs cadastrais, vínculos operacionais ou payload de importação."
+          },
+          "400": {
+            "description": "Categoria inválida."
+          }
+        }
       }
     }
   },
@@ -3986,7 +4023,8 @@
           "name": {
             "type": "string",
             "minLength": 2,
-            "maxLength": 100
+            "maxLength": 100,
+            "description": "Razão social ou nome cadastrado, preservado quando existe nome fantasia."
           },
           "slug": {
             "type": "string",
@@ -4007,6 +4045,11 @@
           "status": {
             "type": "string",
             "enum": ["draft", "published", "suspended"]
+          },
+          "trade_name": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Nome fantasia usado nas listagens quando preenchido (mínimo de 2 caracteres). Vazio usa name como alternativa. Na atualização, omitir preserva o valor existente."
           }
         },
         "required": ["kind", "name", "slug", "city", "description", "status"]
@@ -4429,7 +4472,8 @@
           "name": {
             "type": "string",
             "minLength": 2,
-            "maxLength": 100
+            "maxLength": 100,
+            "description": "Razão social ou nome cadastrado, preservado quando existe nome fantasia."
           },
           "slug": {
             "type": "string",
@@ -4458,6 +4502,11 @@
           "from_price": {
             "type": ["integer", "null"],
             "minimum": 0
+          },
+          "trade_name": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Nome fantasia usado nas listagens quando preenchido (mínimo de 2 caracteres). Vazio usa name como alternativa. Na atualização, omitir preserva o valor existente."
           }
         },
         "required": ["id", "kind", "name", "slug", "city", "description", "status"]
@@ -4874,7 +4923,8 @@
           "name": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 99
+            "maximum": 99,
+            "description": "Coluna do nome para exibição; a sugestão prioriza Nome Fantasia."
           },
           "uf": {
             "type": "integer",
@@ -4889,7 +4939,8 @@
           "fallback_name": {
             "type": "integer",
             "minimum": -1,
-            "maximum": 99
+            "maximum": 99,
+            "description": "Coluna da razão social ou nome alternativo, usada quando o nome principal estiver vazio ou for um hífen."
           },
           "subtype": {
             "type": "integer",
@@ -4905,6 +4956,48 @@
             "type": "integer",
             "minimum": -1,
             "maximum": 99
+          },
+          "phone": {
+            "type": "integer",
+            "minimum": -1,
+            "maximum": 99,
+            "default": -1
+          },
+          "email": {
+            "type": "integer",
+            "minimum": -1,
+            "maximum": 99,
+            "default": -1
+          },
+          "address": {
+            "type": "integer",
+            "minimum": -1,
+            "maximum": 99,
+            "default": -1
+          },
+          "website": {
+            "type": "integer",
+            "minimum": -1,
+            "maximum": 99,
+            "default": -1
+          },
+          "languages": {
+            "type": "integer",
+            "minimum": -1,
+            "maximum": 99,
+            "default": -1
+          },
+          "units": {
+            "type": "integer",
+            "minimum": -1,
+            "maximum": 99,
+            "default": -1
+          },
+          "beds": {
+            "type": "integer",
+            "minimum": -1,
+            "maximum": 99,
+            "default": -1
           }
         },
         "additionalProperties": false
@@ -4915,7 +5008,7 @@
         "properties": {
           "category": {
             "type": "string",
-            "enum": ["hospedagens", "guias", "gastronomia", "transportes"]
+            "enum": ["hospedagens", "guias", "gastronomia", "transportes", "agencias", "servicos"]
           },
           "period": {
             "type": "string",
@@ -4942,6 +5035,11 @@
           "resource_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "include_contacts": {
+            "type": "boolean",
+            "default": false,
+            "description": "Importar somente contatos comerciais ou institucionais mapeados. CPF e e-mail do administrador permanecem bloqueados."
           }
         }
       }

@@ -12,7 +12,7 @@ import { companyAccess } from "./platform-access.ts";
 import { HttpError } from "./http.ts";
 import type { Actor, Room, Booking, Departure } from "./platform-models.ts";
 
-const bookingQuery = `SELECT b.*,c.name company_name,COALESCE(r.name,t.name) item_name,d.starts_at,s.country,s.origin_city,s.checked_in_at,s.checked_out_at FROM bookings b JOIN companies c ON c.id=b.company_id LEFT JOIN rooms r ON r.id=b.room_id LEFT JOIN departures d ON d.id=b.departure_id LEFT JOIN tours t ON t.id=d.tour_id LEFT JOIN stay_records s ON s.booking_id=b.id`;
+const bookingQuery = `SELECT b.*,COALESCE(NULLIF(TRIM(c.trade_name),''),c.name) company_name,COALESCE(r.name,t.name) item_name,d.starts_at,s.country,s.origin_city,s.checked_in_at,s.checked_out_at FROM bookings b JOIN companies c ON c.id=b.company_id LEFT JOIN rooms r ON r.id=b.room_id LEFT JOIN departures d ON d.id=b.departure_id LEFT JOIN tours t ON t.id=d.tour_id LEFT JOIN stay_records s ON s.booking_id=b.id`;
 export function myBookings(db: Database.Database, actor: Actor) {
   return many<Booking>(
     db,

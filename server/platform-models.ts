@@ -3,6 +3,7 @@ export type Company = {
   id: string;
   kind: "hotel" | "operator";
   name: string;
+  trade_name: string;
   slug: string;
   city: string;
   description: string;

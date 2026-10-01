@@ -36,7 +36,14 @@ export function CompanyEditor({ company }: { company?: Company }) {
               } as Field,
             ]
           : []),
-        name,
+        { ...name, label: "Razão social ou nome cadastrado" },
+        {
+          name: "trade_name",
+          label: "Nome fantasia (opcional)",
+          maxLength: 100,
+          required: false,
+          hint: "Nome mostrado nas listagens. Se ficar vazio, usaremos o nome cadastrado.",
+        },
         slug,
         { name: "city", label: "Cidade", maxLength: 100 },
         description,

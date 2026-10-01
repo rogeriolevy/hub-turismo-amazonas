@@ -14,6 +14,12 @@ import {
 import { parseCadasturFile } from "../server/cadastur/files.ts";
 import { sourceInfo, safeOfficialUrl, periodFromName } from "../server/cadastur/sources.ts";
 import { suggestMapping, type CadasturCategory } from "../lib/cadastur-schema.ts";
+import {
+  publicProviders,
+  publicProvider,
+  searchProviders,
+} from "../server/cadastur/public-directory.ts";
+import { publicName, publicWebsite } from "../lib/public-contacts.ts";
 import { HttpError } from "../server/http.ts";
 import { saveCompany, saveGuide } from "../server/company-service.ts";
 process.env.SITE_URL = "http://127.0.0.1:3100";
@@ -91,6 +97,68 @@ test("Cadastur: prévia filtra, confirma de forma idempotente e não cria contas
     db.close();
   }
 });
+test("Cadastur: lista e busca por nome fantasia, com alternativa para nomes ausentes", async () => {
+  const { db, admin } = await fixture();
+  try {
+    const f = await parseCadasturFile(
+      Buffer.from(
+        [
+          "Certificado;Nome Completo;Nome Fantasia;Razão Social;UF;Município",
+          "00123456000199;Nome genérico;Pousada Rio Verde;Empresa Rio Verde Ltda;AM;Manaus",
+          "00223456000199;Nome genérico;;Hotel Sem Fantasia Ltda;AM;Manaus",
+          "00323456000199;Nome genérico; - ;Outra Hospedagem Ltda;AM;Manaus",
+        ].join("\n"),
+      ),
+      "csv",
+    );
+    const p = createPreview(db, admin, f, options(f), sourceInfo("hospedagens"));
+    assert.equal(p.counts.added, 3);
+    assert.deepEqual(
+      p.records.map((r) => r.name),
+      ["Pousada Rio Verde", "Hotel Sem Fantasia Ltda", "Outra Hospedagem Ltda"],
+    );
+    commitImport(db, admin, { id: p.id });
+    assert.deepEqual(
+      listDirectory(db, admin, { category: "hospedagens" }).entries.map((r) => r.name),
+      ["Hotel Sem Fantasia Ltda", "Outra Hospedagem Ltda", "Pousada Rio Verde"],
+    );
+    const found = listDirectory(db, admin, { category: "hospedagens", q: "Rio Verde" });
+    assert.equal(found.total, 1);
+    assert.equal(found.entries[0].name, "Pousada Rio Verde");
+
+    const withoutTradeName = await parseCadasturFile(
+      Buffer.from(
+        "Certificado;Razão Social;UF;Município\n00423456000199;Empresa sem coluna fantasia;AM;Manaus",
+      ),
+      "csv",
+    );
+    const alternate = createPreview(
+      db,
+      admin,
+      withoutTradeName,
+      options(withoutTradeName),
+      sourceInfo("hospedagens"),
+    );
+    assert.equal(alternate.records[0].name, "Empresa sem coluna fantasia");
+    const guide = await parseCadasturFile(
+      Buffer.from(
+        "Certificado;Nome Fantasia;Nome Completo;UF;Município\n00523456000199;;Guia de Teste;AM;Manaus",
+      ),
+      "csv",
+    );
+    const guidePreview = createPreview(
+      db,
+      admin,
+      guide,
+      options(guide, "guias"),
+      sourceInfo("guias"),
+    );
+    assert.equal(guidePreview.records[0].name, "Guia de Teste");
+  } finally {
+    db.close();
+  }
+});
+
 test("Cadastur: rejeita usuário comum, mapeamento pessoal, categoria divergente e prévia de outro administrador", async () => {
   const { db, admin, second, visitor } = await fixture();
   try {
@@ -291,4 +359,125 @@ test("Cadastur: XLSX reconhece abas e preserva zeros de identificadores textuais
   const oversized = Buffer.from(bytes);
   oversized.writeUInt32LE(200 * 1024 * 1024, 22);
   await assert.rejects(parseCadasturFile(oversized, "xlsx"), denied(422));
+});
+
+test("Cadastur: contatos comerciais só são publicados após revisão explícita e atualização retira publicação", async () => {
+  const { db, admin } = await fixture();
+  try {
+    const f = await parseCadasturFile(
+      Buffer.from(
+        [
+          "Certificado;Nome Fantasia;Razão Social;UF;Município;Telefone Comercial;E-mail Comercial;Endereço Completo Comercial;Website;CPF;E-mail do usuário administrador;Idiomas;Unidade Habitacionais;Leitos",
+          "00123456000199;***;Empresa Teste 123.456.789-09;AM;Maués;(92) 99999-1234;contato@example.test;Rua Teste 12;www.example.test;12345678909;privado@example.test;Português;12;24",
+        ].join("\n"),
+      ),
+      "csv",
+    );
+    const opts = { ...options(f), include_contacts: true };
+    const preview = createPreview(db, admin, f, opts, sourceInfo("hospedagens"));
+    assert.equal(preview.records[0].name, "Empresa Teste");
+    assert.equal(preview.records[0].phone, "+5592999991234");
+    assert.equal(preview.records[0].website, "https://www.example.test/");
+    assert.equal(preview.records[0].units, 12);
+    assert.ok(!JSON.stringify(preview).includes("privado@example.test"));
+    assert.ok(!JSON.stringify(preview).includes("123456789"));
+    assert.throws(
+      () =>
+        createPreview(
+          db,
+          admin,
+          f,
+          { ...opts, mapping: { ...f.mapping, email: 10 } },
+          sourceInfo("hospedagens"),
+        ),
+      denied(422),
+    );
+    assert.throws(
+      () =>
+        createPreview(
+          db,
+          admin,
+          f,
+          { ...opts, mapping: { ...f.mapping, name: 6 } },
+          sourceInfo("hospedagens"),
+        ),
+      denied(422),
+    );
+    commitImport(db, admin, { id: preview.id });
+    const entry = listDirectory(db, admin, { category: "hospedagens" }).entries[0];
+    assert.equal(publicProvider(db, entry.id), null);
+    reviewEntry(db, admin, { id: entry.id });
+    assert.equal(publicProviders(db, "hospedagens").length, 0);
+    reviewEntry(db, admin, { id: entry.id, published: true });
+    const published = publicProvider(db, entry.id)!;
+    assert.equal(published.email, "contato@example.test");
+    assert.equal(published.address, "Rua Teste 12");
+    assert.ok(!("external_id" in published) && !("source_json" in published));
+    reviewEntry(db, admin, { id: entry.id, published: false });
+    assert.equal(publicProvider(db, entry.id), null);
+    reviewEntry(db, admin, { id: entry.id, published: true });
+    const update = createPreview(
+      db,
+      admin,
+      f,
+      { ...opts, period: "2026-T3" },
+      sourceInfo("hospedagens"),
+    );
+    commitImport(db, admin, { id: update.id });
+    assert.equal(publicProvider(db, entry.id), null);
+  } finally {
+    db.close();
+  }
+});
+
+test("Diretório: ordena Maués e região, filtra acentos, pagina e isola categorias e publicações", async () => {
+  const { db, admin } = await fixture();
+  try {
+    const rows = [
+      line("00123456000199", "Agência Manaus"),
+      line("00223456000199", "Z Agência", "AM", "Maués"),
+      line("00323456000199", "A Agência", "AM", "Parintins"),
+      line("00423456000199", "B Agência", "AM", "Boa Vista do Ramos"),
+      ...Array.from({ length: 25 }, (_, i) =>
+        line("12345678000" + String(i).padStart(3, "0"), "Agência " + i),
+      ),
+    ];
+    const f = await file(rows);
+    const preview = createPreview(db, admin, f, options(f, "agencias"), sourceInfo("agencias"));
+    commitImport(db, admin, { id: preview.id });
+    const entries = db.prepare<[], { id: string }>("SELECT id FROM cadastur_entries").all();
+    for (const entry of entries) reviewEntry(db, admin, { id: entry.id, published: true });
+    const result = searchProviders(db, "agencias");
+    assert.equal(result.total, 29);
+    assert.equal(result.entries.length, 24);
+    assert.deepEqual(
+      result.entries.slice(0, 3).map((r) => r.city),
+      ["Maués", "Parintins", "Boa Vista do Ramos"],
+    );
+    assert.equal(searchProviders(db, "agencias", { cidade: "maues", q: "agencia" }).total, 1);
+    assert.equal(searchProviders(db, "agencias", { pagina: "2" }).entries.length, 5);
+    assert.equal(searchProviders(db, "agencias", { pagina: "NaN" }).page, 1);
+    assert.equal(searchProviders(db, "agencias", { pagina: "999" }).page, 2);
+    assert.equal(searchProviders(db, "hospedagens").total, 0);
+    db.prepare("UPDATE cadastur_entries SET uf='PA'").run();
+    assert.equal(publicProviders(db, "agencias").length, 0);
+  } finally {
+    db.close();
+  }
+});
+
+test("Contatos públicos: nomes mascarados e URLs inseguras não viram nomes ou links", () => {
+  assert.equal(publicName("********"), "");
+  assert.equal(publicName("12345678909 Nome Profissional"), "Nome Profissional");
+  assert.equal(publicName("12.345.678 Empresa"), "Empresa");
+  for (const url of [
+    "javascript:alert(1)",
+    "data:text/html,test",
+    "https://admin:secret@example.com",
+    "http://127.0.0.1/test",
+    "https://localhost",
+    "***",
+  ])
+    assert.equal(publicWebsite(url), "");
+  assert.equal(publicWebsite("example.com"), "https://example.com/");
 });

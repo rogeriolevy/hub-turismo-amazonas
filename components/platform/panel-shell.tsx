@@ -3,6 +3,7 @@ import { PlatformBrand } from "./brand";
 import { ModuleSwitcher, publicModules, type ModuleLink } from "./shared";
 import { SignOutButton } from "@/components/site/admin-auth";
 import type { Company } from "@/server/platform-models";
+import { companyDisplayName } from "@/lib/platform-schema";
 export function PanelShell({
   module,
   section,
@@ -85,7 +86,7 @@ export function PanelShell({
               <select id="company-picker" name="empresa" defaultValue={companyId}>
                 {companies.map((company) => (
                   <option key={company.id} value={company.id}>
-                    {company.name}
+                    {companyDisplayName(company)}
                   </option>
                 ))}
               </select>

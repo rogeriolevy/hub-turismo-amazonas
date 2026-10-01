@@ -20,7 +20,7 @@ import { companyInventory, listMembers } from "@/server/company-service";
 import { businessBookings } from "@/server/booking-service";
 import { one, many } from "@/server/platform-store";
 import { getDatabase } from "@/db";
-import { roles, money, displayTime, displayDate } from "@/lib/platform-schema";
+import { roles, money, displayTime, displayDate, companyDisplayName } from "@/lib/platform-schema";
 export const metadata = { title: "Painel de operação", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 function Denied() {
@@ -101,7 +101,7 @@ export default async function Page({
           initial={listDirectory(db, actor, { category: "hospedagens" })}
           companies={allCompanies
             .filter((c) => c.kind === "hotel")
-            .map((c) => ({ id: c.id, name: c.name }))}
+            .map((c) => ({ id: c.id, name: companyDisplayName(c) }))}
           guides={many<{ id: string; name: string }>(
             db,
             "SELECT id,name FROM guides ORDER BY name",
@@ -125,7 +125,7 @@ export default async function Page({
               <details className="editor-card" key={company.id}>
                 <summary>
                   <span>
-                    {company.name}
+                    {companyDisplayName(company)}
                     <small>
                       {company.kind === "hotel" ? "Hotel / pousada" : "Operador"} · {company.city}
                     </small>
@@ -167,7 +167,10 @@ export default async function Page({
                     name: "company_id",
                     label: "Empresa",
                     type: "select",
-                    options: allCompanies.map((c) => ({ value: c.id, label: c.name })),
+                    options: allCompanies.map((c) => ({
+                      value: c.id,
+                      label: companyDisplayName(c),
+                    })),
                   },
                   {
                     name: "email",
@@ -277,7 +280,7 @@ export default async function Page({
       content = (
         <>
           <PageIntro
-            eyebrow={company.name}
+            eyebrow={companyDisplayName(company)}
             title="Quartos"
             description="Cada registro representa um quarto físico. A aprovação de reservas respeita os períodos já confirmados."
           />
@@ -307,7 +310,7 @@ export default async function Page({
       content = (
         <>
           <PageIntro
-            eyebrow={company.name}
+            eyebrow={companyDisplayName(company)}
             title={area === "hotel" ? "Reservas" : "Vagas e solicitações"}
             description="Analise os pedidos. A disponibilidade é conferida novamente no momento da aprovação."
           />
@@ -333,7 +336,7 @@ export default async function Page({
       content = (
         <>
           <PageIntro
-            eyebrow={company.name}
+            eyebrow={companyDisplayName(company)}
             title="FNRH · Registro de estadias"
             description="Organize chegadas e saídas vinculadas às reservas confirmadas."
           />
@@ -393,7 +396,7 @@ export default async function Page({
       content = (
         <>
           <PageIntro
-            eyebrow={company.name}
+            eyebrow={companyDisplayName(company)}
             title="Guias"
             description="Apresente os profissionais e vincule seus perfis aos passeios."
           />
@@ -419,7 +422,7 @@ export default async function Page({
       content = (
         <>
           <PageIntro
-            eyebrow={company.name}
+            eyebrow={companyDisplayName(company)}
             title="Passeios"
             description="Descreva a experiência, o guia, a duração e o valor por pessoa."
           />
@@ -447,7 +450,7 @@ export default async function Page({
       content = (
         <>
           <PageIntro
-            eyebrow={company.name}
+            eyebrow={companyDisplayName(company)}
             title="Agenda de saídas"
             description="Horários no fuso de Manaus. Controle a capacidade de cada saída."
           />
@@ -480,7 +483,7 @@ export default async function Page({
         <>
           <PageIntro
             eyebrow={area === "hotel" ? "OPERAÇÃO HOTELEIRA" : "OPERAÇÃO DE PASSEIOS"}
-            title={company.name}
+            title={companyDisplayName(company)}
             description={
               company.city +
               " · " +

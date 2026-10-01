@@ -547,17 +547,6 @@ svg {
   background: #f4f7f4;
   padding: 40px 0 22px;
 }
-.footer-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 30px;
-  padding-bottom: 34px;
-}
-.footer-top p,
-.footer-top > a {
-  font-size: 14px;
-}
 .footer-bottom {
   border-top: 1px solid #d9e3db;
   padding-top: 20px;
@@ -750,14 +739,6 @@ svg {
   }
   .contact-location {
     margin-top: 24px;
-  }
-  .footer-top {
-    flex-wrap: wrap;
-    gap: 22px;
-  }
-  .footer-top p {
-    width: 100%;
-    order: 3;
   }
   .footer-bottom {
     font-size: 12px;

@@ -14,7 +14,7 @@ export default function Privacy() {
         <h1>Seu contato, com cuidado.</h1>
         <p>
           Este aviso explica como os dados enviados no site da Hub Turismo Amazonas são utilizados.
-          Atualizado em 29 de setembro de 2026.
+          Atualizado em 1º de outubro de 2026.
         </p>
         <h2>O que você compartilha</h2>
         <p>
@@ -50,6 +50,12 @@ export default function Privacy() {
           cadastro de contato.
         </p>
         <h2>Suas solicitações</h2>
+        <p>
+          O diretório de turismo apresenta nomes e contatos comerciais divulgados nos dados abertos
+          do Ministério do Turismo / Cadastur, com fonte e período de referência. CPF, data de
+          nascimento e e-mail de administração do cadastro não são publicados. Para corrigir ou
+          retirar um contato do diretório, utilize o formulário abaixo e identifique o prestador.
+        </p>
         <p>
           Você pode solicitar informações, correção ou exclusão da sua mensagem pelo{" "}
           <a href="/#contato">formulário de contato</a>, selecionando “Privacidade”. A equipe poderá

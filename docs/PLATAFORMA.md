@@ -29,7 +29,13 @@ O seletor **Alternar módulo** reúne os catálogos, a conta e os painéis autor
 5. Volte a **Empresas** e altere a situação para **Publicado**. Passeios e perfis de guia também têm seu próprio controle de publicação. Quartos e saídas precisam estar ativos para novas solicitações.
 6. Um turista entra no catálogo, solicita e acompanha a resposta em **Minhas reservas**. A empresa aprova ou recusa no seu painel.
 
-Não foram inseridas empresas, guias ou ofertas fictícias no banco de uso local. Catálogos vazios são esperados até o primeiro cadastro. A prévia de QA tem dados fictícios separados.
+Não foram inseridas empresas, guias ou ofertas fictícias no banco de uso local. O diretório público contém referências reais do Cadastur, separadas das empresas, contas e ofertas operacionais. A prévia de QA tem dados fictícios separados. Veja [diretório público](DIRETORIO-PUBLICO.md) para as abas de gastronomia, guias, agências, hospedagens e serviços.
+
+### Nome fantasia nas listagens
+
+Em **Empresas**, mantenha a razão social ou nome cadastrado e preencha **Nome fantasia** com o nome pelo qual o estabelecimento é conhecido. O nome fantasia tem prioridade nos catálogos, painéis, seletores de empresa, permissões e reservas. Se ficar vazio, o nome cadastrado continua sendo exibido. A busca de hospedagens aceita os dois nomes, e a ordenação usa o nome exibido. Nomes de hóspedes, guias, quartos e passeios mantêm seus próprios campos.
+
+A migração `004_company_trade_name.sql` acrescenta o campo sem alterar nomes ou registros existentes. Antes de usar esta atualização, faça backup e execute `npm run db:migrate`. Na API de empresas, `name` mantém o nome cadastrado e `trade_name` é opcional: omitir o campo numa atualização preserva seu valor; enviar texto vazio remove o nome fantasia.
 
 ## Modelo de autorização
 

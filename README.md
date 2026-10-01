@@ -1,6 +1,6 @@
 # Hub Turismo Amazonas — versão Node.js + SQLite
 
-Site institucional, catálogos de hospedagens/passeios, contas de turistas, reservas por aprovação e painéis de empresas, em Next.js oficial com Node.js. Esta versão local é independente da publicação existente no Sites.
+Site institucional, diretórios de hospedagens, gastronomia, guias, agências e serviços turísticos do Amazonas, navegação, passeios, contas de turistas, reservas por aprovação e painéis de empresas, em Next.js oficial com Node.js. Esta versão local é independente da publicação existente no Sites.
 
 Para usar diariamente no Windows, iniciar o servidor, fazer backup ou recuperar o acesso, consulte [Uso local](docs/USO-LOCAL.md). A prioridade atual é a operação local; a publicação na VPS foi adiada pelo proprietário.
 
@@ -29,11 +29,14 @@ A configuração local fica em .env.local, ignorada pelo Git. setup gera um segr
 - Login por e-mail/senha, logout, sessão e autorização no servidor.
 - Respostas aos contatos continuam manuais, pelo aplicativo de e-mail do operador.
 - Catálogos públicos, perfis de guia, cadastro/login e acompanhamento das reservas do turista.
+- Módulo público de Navegação: filtros de transporte e destinos, roteiros Maués ↔ Manaus, contatos, tarifas de referência e pacotes com fontes. Consulte [Navegação e pesquisa](docs/NAVEGACAO.md).
 - Painéis de hotel (quartos, reservas e estadias locais), operador (guias, passeios, agenda e vagas) e administração (empresas e permissões).
 - Aprovação de solicitações com controle transacional de disponibilidade e isolamento por empresa.
 - Sem pagamentos, e-mails automáticos ou transmissão oficial de FNRH.
 
 Veja [Módulos e operação](docs/PLATAFORMA.md) para o mapa completo de rotas, regras, permissões e primeiro cadastro de empresas.
+
+Empresas podem ter nome fantasia separado do nome cadastrado, com prioridade nas listagens, painéis e reservas. A importação Cadastur também prioriza a coluna Nome Fantasia, usando o nome alternativo quando necessário. Esta atualização exige backup e `npm run db:migrate` para aplicar a migração 004, que preserva os dados existentes.
 
 ## Arquitetura e pastas
 
@@ -122,4 +125,6 @@ A aplicação precisa de disco persistente, HTTPS e backup fora da máquina. Con
 
 ## Cadastur — v0.4.0
 
-O administrador encontra o importador em `/painel/plataforma/cadastur`: fontes oficiais do MTur, CSV/XLSX, prévia, filtros, confirmação e revisão com vínculos opcionais. A importação não publica prestadores nem cria contas. Veja [integração Cadastur](docs/INTEGRACAO-CADASTUR.md). O worker em `server/cadastur/file-worker.mjs` deve acompanhar o projeto na execução local; não copie somente a pasta `.next`.
+O administrador encontra o importador em `/painel/plataforma/cadastur`: fontes oficiais do MTur, CSV/XLSX, prévia, filtros, contatos comerciais e revisão com publicação explícita e vínculos opcionais. A migração 005 preserva registros existentes e amplia as categorias. Veja [diretório público e importação](docs/DIRETORIO-PUBLICO.md) e [histórico da integração Cadastur](docs/INTEGRACAO-CADASTUR.md). O worker em `server/cadastur/file-worker.mjs` deve acompanhar o projeto na execução local; não copie somente a pasta `.next`.
+
+Para atualizar os cinco conjuntos do Amazonas: `npm run cadastur:sync -- --apply --publish`. O comando cria e verifica um backup antes de migrar/importar e registra as contagens de cada aba. Omita `--publish` para manter as inclusões/alterações em revisão interna. A execução exige um administrador existente em `ADMIN_EMAILS`; não cria contas.

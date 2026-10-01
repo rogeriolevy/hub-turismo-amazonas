@@ -4,7 +4,24 @@ export type ModuleLink = { href: string; label: string; description: string };
 export const publicModules: ModuleLink[] = [
   { href: "/", label: "Institucional", description: "Conheça a Hub e nossa proposta." },
   { href: "/hospedagens", label: "Hospedagens", description: "Um lugar para viver a Amazônia." },
-  { href: "/passeios", label: "Passeios e guias", description: "Descubra experiências locais." },
+  {
+    href: "/gastronomia",
+    label: "Gastronomia",
+    description: "Restaurantes, bares e sabores locais.",
+  },
+  { href: "/guias", label: "Guias de turismo", description: "Encontre quem conhece o Amazonas." },
+  { href: "/agencias", label: "Agências de turismo", description: "Planeje roteiros e pacotes." },
+  {
+    href: "/servicos",
+    label: "Serviços turísticos",
+    description: "Especialistas para sua viagem.",
+  },
+  { href: "/passeios", label: "Passeios", description: "Descubra experiências locais." },
+  {
+    href: "/navegacao",
+    label: "Navegação",
+    description: "Passagens, horários e caminhos pelo Amazonas.",
+  },
   { href: "/minha-conta", label: "Minha conta", description: "Acompanhe suas solicitações." },
 ];
 export function ModuleSwitcher({ modules = publicModules }: { modules?: ModuleLink[] }) {

@@ -12,6 +12,7 @@ import {
   saveGuide,
   saveDeparture,
   companyInventory,
+  listMembers,
 } from "../server/company-service.ts";
 import { companiesFor, companyAccess } from "../server/platform-access.ts";
 import {
@@ -22,8 +23,14 @@ import {
   businessBookings,
   recordStay,
 } from "../server/booking-service.ts";
-import { publicHotels, publicTours, publicGuide } from "../server/catalog-service.ts";
-import { todayInManaus } from "../lib/platform-schema.ts";
+import {
+  publicHotels,
+  publicHotel,
+  publicTours,
+  publicTour,
+  publicGuide,
+} from "../server/catalog-service.ts";
+import { todayInManaus, companyDisplayName } from "../lib/platform-schema.ts";
 import { HttpError } from "../server/http.ts";
 process.env.SITE_URL = "http://127.0.0.1:3100";
 process.env.BETTER_AUTH_SECRET = randomBytes(48).toString("base64url");
@@ -123,6 +130,73 @@ async function fixture() {
     hotelRequest,
   };
 }
+test("companies use trade names in listings, searches and bookings without losing registered names", async () => {
+  const f = await fixture();
+  try {
+    const input = {
+      id: f.hotel,
+      kind: "hotel",
+      name: "Z Empresa Legal Ltda",
+      slug: "hotel-teste",
+      city: "Maués",
+      description: "Empresa fictícia para testes automatizados.",
+      status: "published",
+    };
+    saveCompany(f.db, f.root, { ...input, trade_name: "  A Pousada do Rio  " });
+    const found = publicHotels(f.db, "Pousada do Rio");
+    assert.equal(found.length, 1);
+    assert.equal(found[0].name, "Z Empresa Legal Ltda");
+    assert.equal(found[0].trade_name, "A Pousada do Rio");
+    assert.equal(companyDisplayName(found[0]), "A Pousada do Rio");
+    assert.equal(publicHotels(f.db, "Empresa Legal")[0].id, f.hotel);
+    assert.equal(publicHotels(f.db)[0].id, f.hotel);
+    assert.equal(companiesFor(f.db, f.root)[0].id, f.hotel);
+    assert.equal(companyDisplayName(companiesFor(f.db, f.manager)[0]), "A Pousada do Rio");
+    assert.equal(companyDisplayName(publicHotel(f.db, "hotel-teste")!), "A Pousada do Rio");
+    assert.equal(listMembers(f.db, f.root)[0].company_name, "A Pousada do Rio");
+    requestBooking(f.db, f.tourist, f.hotelRequest, randomUUID());
+    assert.equal(myBookings(f.db, f.tourist)[0].company_name, "A Pousada do Rio");
+    assert.equal(businessBookings(f.db, f.manager, f.hotel)[0].company_name, "A Pousada do Rio");
+    saveCompany(f.db, f.root, {
+      ...input,
+      description: "Descrição alterada por cliente sem campo fantasia.",
+    });
+    assert.equal(publicHotel(f.db, "hotel-teste")!.trade_name, "A Pousada do Rio");
+    assert.throws(() => saveCompany(f.db, f.root, { ...input, trade_name: "x" }), denied(422));
+    assert.throws(
+      () => saveCompany(f.db, f.root, { ...input, trade_name: "x".repeat(101) }),
+      denied(422),
+    );
+    saveCompany(f.db, f.root, { ...input, trade_name: " " });
+    assert.equal(companyDisplayName(publicHotel(f.db, "hotel-teste")!), input.name);
+    assert.equal(myBookings(f.db, f.tourist)[0].company_name, input.name);
+
+    saveCompany(f.db, f.root, {
+      id: f.operator,
+      kind: "operator",
+      name: "Operador de teste",
+      trade_name: "Rios da Amazônia",
+      slug: "operador-teste",
+      city: "Maués",
+      description: "Operador fictício para testar nome fantasia.",
+      status: "published",
+    });
+    assert.equal(publicTours(f.db)[0].company_name, "Rios da Amazônia");
+    assert.equal(publicTour(f.db, "passeio-teste")!.company_name, "Rios da Amazônia");
+    saveGuide(f.db, f.root, {
+      company_id: f.operator,
+      slug: "guia-fantasia",
+      name: "Guia de Teste",
+      bio: "Guia fictício para verificar a empresa.",
+      languages: "Português",
+      published: true,
+    });
+    assert.equal(publicGuide(f.db, "guia-fantasia")!.company_name, "Rios da Amazônia");
+  } finally {
+    f.db.close();
+  }
+});
+
 test("tenant permissions are isolated, role grants are admin-only, and revocation is immediate", async () => {
   const f = await fixture();
   try {
