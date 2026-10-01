@@ -34,6 +34,10 @@ A configuração local fica em .env.local, ignorada pelo Git. setup gera um segr
 - Aprovação de solicitações com controle transacional de disponibilidade e isolamento por empresa.
 - Sem pagamentos, e-mails automáticos ou transmissão oficial de FNRH.
 
+### Navegação pública
+
+O cabeçalho mantém a marca e o acesso à área **Minha conta**. O footer funciona como um mapa abrangente do site, com blocos para a marca e contato, **Explore o Amazonas** (Hospedagens, Gastronomia, Passeios, Guias, Agências, Serviços turísticos e Navegação), **Sua conta** e **Informações**. A disposição dos blocos se adapta a telas menores.
+
 Veja [Módulos e operação](docs/PLATAFORMA.md) para o mapa completo de rotas, regras, permissões e primeiro cadastro de empresas.
 
 Empresas podem ter nome fantasia separado do nome cadastrado, com prioridade nas listagens, painéis e reservas. A importação Cadastur também prioriza a coluna Nome Fantasia, usando o nome alternativo quando necessário. Esta atualização exige backup e `npm run db:migrate` para aplicar a migração 004, que preserva os dados existentes.
@@ -44,7 +48,7 @@ Uma aplicação, uma origem HTTP e um banco local ao servidor; frontend e backen
 
 ```text
 app/                  Páginas, metadados e rotas HTTP
-components/site/      Interface institucional, formulário, login e contatos
+components/site/      Cabeçalho, footer institucional, formulário, login e contatos
 components/platform/  Catálogos, reservas, seletor de módulos e painéis
 components/ui/        Componentes reutilizáveis preservados
 lib/                  Validação compartilhada e configuração do site
