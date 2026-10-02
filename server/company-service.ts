@@ -6,12 +6,22 @@ import {
   tourSchema,
   guideSchema,
   departureSchema,
+  roomOperationalStatusSchema,
   todayInManaus,
 } from "../lib/platform-schema.ts";
 import { one, many, parse, audit, write } from "./platform-store.ts";
 import { companyAccess, requirePlatformAdmin } from "./platform-access.ts";
 import { HttpError } from "./http.ts";
-import type { Actor, Company, Room, Guide, Tour, Departure, Member } from "./platform-models.ts";
+import type {
+  Actor,
+  Company,
+  OperationalRoom,
+  Room,
+  Guide,
+  Tour,
+  Departure,
+  Member,
+} from "./platform-models.ts";
 
 export function saveCompany(db: Database.Database, actor: Actor, input: unknown) {
   requirePlatformAdmin(actor);
@@ -112,7 +122,7 @@ export function saveRoom(db: Database.Database, actor: Actor, input: unknown) {
         "Há reservas confirmadas com mais hóspedes do que essa capacidade.",
       );
     db.prepare(
-      "INSERT INTO rooms VALUES (?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET code=excluded.code,name=excluded.name,capacity=excluded.capacity,price_cents=excluded.price_cents,active=excluded.active",
+      "INSERT INTO rooms (id,company_id,code,name,capacity,price_cents,active) VALUES (?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET code=excluded.code,name=excluded.name,capacity=excluded.capacity,price_cents=excluded.price_cents,active=excluded.active",
     ).run(
       id,
       data.company_id,
@@ -124,6 +134,38 @@ export function saveRoom(db: Database.Database, actor: Actor, input: unknown) {
     );
     audit(db, actor.id, data.company_id, "room.saved", id);
     return { id };
+  });
+}
+export function setRoomOperationalStatus(db: Database.Database, actor: Actor, input: unknown) {
+  const data = parse(roomOperationalStatusSchema, input);
+  companyAccess(db, actor, data.company_id, "hotel");
+  return write(db, () => {
+    const room = one<Room>(
+      db,
+      "SELECT * FROM rooms WHERE id=? AND company_id=?",
+      data.room_id,
+      data.company_id,
+    );
+    if (!room) throw new HttpError(404, "NOT_FOUND", "Quarto não encontrado nesta hospedagem.");
+    const currentStay = one<{ id: string }>(
+      db,
+      "SELECT b.id FROM bookings b JOIN stay_records s ON s.booking_id=b.id WHERE b.room_id=? AND b.status='confirmed' AND s.checked_in_at IS NOT NULL AND s.checked_out_at IS NULL LIMIT 1",
+      room.id,
+    );
+    if (currentStay)
+      throw new HttpError(
+        409,
+        "OCCUPIED",
+        "O quarto está ocupado. Registre o check-out para atualizar sua situação.",
+      );
+    if (room.operational_status === data.operational_status) return { id: room.id };
+    db.prepare("UPDATE rooms SET operational_status=? WHERE id=? AND company_id=?").run(
+      data.operational_status,
+      room.id,
+      data.company_id,
+    );
+    audit(db, actor.id, data.company_id, "room.status_changed", room.id);
+    return { id: room.id, operational_status: data.operational_status };
   });
 }
 export function saveGuide(db: Database.Database, actor: Actor, input: unknown) {
@@ -218,7 +260,18 @@ export function companyInventory(db: Database.Database, actor: Actor, companyId:
   const company = companyAccess(db, actor, companyId);
   return {
     company,
-    rooms: many<Room>(db, "SELECT * FROM rooms WHERE company_id=? ORDER BY code", companyId),
+    rooms: many<OperationalRoom>(
+      db,
+      `SELECT r.*,
+        (SELECT b.customer_name FROM bookings b JOIN stay_records s ON s.booking_id=b.id
+         WHERE b.room_id=r.id AND b.status='confirmed' AND s.checked_in_at IS NOT NULL AND s.checked_out_at IS NULL
+         ORDER BY s.checked_in_at DESC LIMIT 1) AS current_guest,
+        (SELECT b.check_out FROM bookings b JOIN stay_records s ON s.booking_id=b.id
+         WHERE b.room_id=r.id AND b.status='confirmed' AND s.checked_in_at IS NOT NULL AND s.checked_out_at IS NULL
+         ORDER BY s.checked_in_at DESC LIMIT 1) AS current_departure
+       FROM rooms r WHERE r.company_id=? ORDER BY r.code`,
+      companyId,
+    ),
     guides: many<Guide>(db, "SELECT * FROM guides WHERE company_id=? ORDER BY name", companyId),
     tours: many<Tour>(db, "SELECT * FROM tours WHERE company_id=? ORDER BY name", companyId),
     departures: many<Departure & { tour_name: string }>(

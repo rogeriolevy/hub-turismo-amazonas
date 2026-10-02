@@ -17,7 +17,7 @@ Mantenha esse terminal aberto durante o uso. `Ctrl+C` encerra o servidor. A apli
 
 - Site: http://127.0.0.1:3005
 - Contato: http://127.0.0.1:3005/#contato
-- Contatos: http://127.0.0.1:3005/admin
+- Contatos: http://127.0.0.1:3005/painel/contato (`/admin` redireciona para esta página)
 - Administração da plataforma: http://127.0.0.1:3005/painel/plataforma
 - Minha conta: http://127.0.0.1:3005/minha-conta
 - Cadastro básico: http://127.0.0.1:3005/cadastro
@@ -41,7 +41,7 @@ npm run build
 npm start
 ```
 
-Para desenvolvimento com atualização automática, use `npm run dev` em vez de `npm start`, mantendo apenas um servidor na porta 3005. Para atualizar dependências a partir do lockfile, use `npm ci` com o servidor parado. Migrações necessárias são executadas por `npm run db:migrate` depois de um backup.
+Para desenvolvimento com atualização automática, use `npm run dev` em vez de `npm start`, mantendo apenas um servidor na porta 3005. O script usa Webpack porque o projeto está em uma unidade exFAT, que não oferece suporte às junctions usadas pelo Turbopack. Para atualizar dependências a partir do lockfile, use `npm ci` com o servidor parado. Migrações necessárias são executadas por `npm run db:migrate` depois de um backup.
 
 ## Banco e backup
 
@@ -94,14 +94,14 @@ Após os testes, abra http://127.0.0.1:3100/__qa/layout. A revisão oferece iní
 
 ## Problemas comuns
 
-| Situação                                  | Ação                                                                                  |
-| ----------------------------------------- | ------------------------------------------------------------------------------------- |
-| O navegador não consegue conectar         | Inicie com `npm start` e mantenha o terminal aberto.                                  |
-| Porta 3005 já está em uso                 | Confira se o site já está aberto; evite iniciar uma segunda instância.                |
-| As alterações não aparecem                | Pare, execute `npm run build` e reinicie.                                             |
-| Origem do login não autorizada            | Use exatamente `http://127.0.0.1:3005`, conforme `SITE_URL`.                          |
-| E-mail ou senha incorretos                | Confira a digitação ou use o comando de recuperação acima.                            |
-| Contato enviado não aparece na porta 3005 | Confira se o envio ocorreu no site real local, e não na prévia isolada da porta 3100. |
+| Situação                                  | Ação                                                                                                                                                          |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| O navegador não consegue conectar         | Inicie com `npm start` e mantenha o terminal aberto.                                                                                                          |
+| Porta 3005 já está em uso                 | Confira se o site já está aberto; evite iniciar uma segunda instância.                                                                                        |
+| As alterações não aparecem                | Pare, execute `npm run build` e reinicie.                                                                                                                     |
+| Origem do login não autorizada            | Use `http://127.0.0.1:3005` ou `http://localhost:3005`. Outros nomes/portas precisam corresponder a `SITE_URL`; em produção, use o domínio HTTPS configurado. |
+| E-mail ou senha incorretos                | Confira a digitação ou use o comando de recuperação acima.                                                                                                    |
+| Contato enviado não aparece na porta 3005 | Confira se o envio ocorreu no site real local, e não na prévia isolada da porta 3100.                                                                         |
 
 ## Limites desta etapa
 

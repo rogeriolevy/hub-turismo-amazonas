@@ -1,17 +1,62 @@
+import type { CSSProperties } from "react";
+import type { LucideIcon } from "lucide-react";
+import "./account.css";
+import Image from "next/image";
 import Link from "next/link";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  BedDouble,
+  BriefcaseBusiness,
+  CalendarCheck2,
+  Clock3,
+  Compass,
+  Grid2X2,
+  MapPinned,
+  Settings2,
+  Ship,
+  Sparkles,
+  UtensilsCrossed,
+} from "lucide-react";
 import { Header, Footer } from "@/components/site/navigation";
-import { SignOutButton } from "@/components/site/admin-auth";
-import { PageIntro, ModuleSwitcher, publicModules } from "@/components/platform/shared";
+import { ModuleSwitcher, publicModules } from "@/components/platform/shared";
+import { ProfileEditor } from "@/components/platform/profile-editor";
 import { pageActor } from "@/server/platform-session";
 import { getDatabase } from "@/db";
 import { companiesFor, isPlatformAdmin } from "@/server/platform-access";
 import { myBookings } from "@/server/booking-service";
+import { avatarKeyFromImage, defaultAvatarForUser, profileAvatarUrl } from "@/lib/profile-avatars";
+
 export const metadata = {
   title: "Minha conta",
   robots: { index: false, follow: false },
   alternates: { canonical: "/minha-conta" },
 };
-export default async function Page() {
+
+const moduleIcons: Record<string, LucideIcon> = {
+  "/": Compass,
+  "/hospedagens": BedDouble,
+  "/gastronomia": UtensilsCrossed,
+  "/guias": MapPinned,
+  "/agencias": BriefcaseBusiness,
+  "/servicos": Sparkles,
+  "/passeios": Compass,
+  "/navegacao": Ship,
+  "/painel/hotel": BedDouble,
+  "/painel/passeios": MapPinned,
+  "/painel/plataforma": Settings2,
+};
+
+function entranceStyle(index: number): CSSProperties {
+  return { animationDelay: `${Math.min(index * 65, 390)}ms` };
+}
+
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ editar?: string }>;
+}) {
+  const { editar } = await searchParams;
   const actor = await pageActor(),
     db = getDatabase(),
     companies = companiesFor(db, actor),
@@ -36,52 +81,129 @@ export default async function Page() {
       label: "Administração geral",
       description: "Empresas e permissões.",
     });
+  const visibleModules = modules.filter((module) => module.href !== "/minha-conta");
+  const avatar = avatarKeyFromImage(actor.image) ?? defaultAvatarForUser(actor.id);
+  const metrics = [
+    {
+      label: "Solicitações",
+      value: bookings.length,
+      detail: "Acompanhe suas reservas",
+      icon: CalendarCheck2,
+      href: "/minha-conta/reservas",
+    },
+    {
+      label: "Aguardando resposta",
+      value: bookings.filter((booking) => booking.status === "pending").length,
+      detail: "Decisão do estabelecimento",
+      icon: Clock3,
+    },
+    {
+      label: "Módulos disponíveis",
+      value: visibleModules.length,
+      detail: "Acessos para sua conta",
+      icon: Grid2X2,
+    },
+  ];
+
   return (
     <>
       <Header />
-      <main id="conteudo" tabIndex={-1} className="portal-main">
+      <main id="conteudo" tabIndex={-1} className="portal-main account-main">
         <div className="container">
-          <div className="portal-toolbar">
-            <span>MINHA CONTA</span>
-            <SignOutButton />
-          </div>
-          <PageIntro
-            eyebrow="QUE BOM TER VOCÊ AQUI"
-            title={"Olá, " + actor.name.split(" ")[0] + "."}
-            description="Suas experiências e seus módulos, em um só lugar."
-          />
-          <div className="account-grid">
-            <Link className="metric-card" href="/minha-conta/reservas">
-              <span>Solicitações</span>
-              <strong>{bookings.length}</strong>
-              <span>Ver minhas reservas →</span>
-            </Link>
-            <div className="metric-card">
-              <span>Aguardando resposta</span>
-              <strong>{bookings.filter((b) => b.status === "pending").length}</strong>
-              <span>A aprovação é feita pelo responsável.</span>
+          <section className="account-welcome account-motion" aria-labelledby="account-title">
+            <div className="account-welcome-profile">
+              <div className="account-avatar-frame">
+                <Image
+                  src={profileAvatarUrl(avatar)}
+                  alt={`Avatar de ${actor.name}`}
+                  width={100}
+                  height={100}
+                  priority
+                />
+              </div>
+              <div className="account-welcome-copy">
+                <p className="account-overline">MINHA CONTA</p>
+                <h1 id="account-title">Olá, {actor.name.trim().split(/\s+/)[0]}.</h1>
+                <p>Suas experiências e seus módulos, em um só lugar.</p>
+                <span className="account-user-email">{actor.email}</span>
+              </div>
             </div>
-            <div className="metric-card">
-              <span>Seu cadastro</span>
-              <strong className="account-name">{actor.name}</strong>
-              <span>{actor.email}</span>
-            </div>
-          </div>
-          <h2 className="subheading">Para onde vamos?</h2>
-          <div className="module-cards">
-            {modules
-              .filter((m) => m.href !== "/minha-conta")
-              .map((m) => (
-                <Link href={m.href} key={m.href}>
-                  <h3>{m.label}</h3>
-                  <p>{m.description}</p>
-                  <span>Explorar →</span>
+            <ProfileEditor
+              name={actor.name}
+              email={actor.email}
+              avatar={avatar}
+              defaultOpen={editar === "perfil" || editar === "avatar"}
+            />
+          </section>
+
+          <section className="account-stats" aria-label="Resumo da sua conta">
+            {metrics.map(({ label, value, detail, icon: Icon, href }, index) => {
+              const card = (
+                <>
+                  <span className="account-stat-heading">
+                    <span className="account-stat-icon">
+                      <Icon size={19} strokeWidth={1.8} aria-hidden="true" />
+                    </span>
+                    <span>{label}</span>
+                  </span>
+                  <strong>{value}</strong>
+                  <span className="account-stat-detail">
+                    {detail}
+                    {href && <ArrowRight size={15} aria-hidden="true" />}
+                  </span>
+                </>
+              );
+              const className = "account-stat-card account-motion";
+              return href ? (
+                <Link className={className} href={href} key={label} style={entranceStyle(index)}>
+                  {card}
                 </Link>
-              ))}
-          </div>
-          <div className="portal-toolbar">
+              ) : (
+                <article className={className} key={label} style={entranceStyle(index)}>
+                  {card}
+                </article>
+              );
+            })}
+          </section>
+
+          <section className="account-modules-section" aria-labelledby="account-modules-title">
+            <div className="account-modules-heading">
+              <div>
+                <p className="account-section-kicker">EXPLORE A HUB</p>
+                <h2 id="account-modules-title">Para onde vamos?</h2>
+              </div>
+              <p>Encontre os catálogos e as áreas liberadas para sua conta.</p>
+            </div>
+            <div className="account-modules">
+              {visibleModules.map((module, index) => {
+                const Icon = moduleIcons[module.href] ?? Compass;
+                return (
+                  <Link
+                    className="account-module-card account-motion"
+                    href={module.href}
+                    key={module.href}
+                    style={entranceStyle(index)}
+                  >
+                    <div className="account-module-top">
+                      <span className="account-module-icon">
+                        <Icon size={23} strokeWidth={1.8} aria-hidden="true" />
+                      </span>
+                      <ArrowUpRight className="account-module-arrow" size={19} aria-hidden="true" />
+                    </div>
+                    <h3>{module.label}</h3>
+                    <p>{module.description}</p>
+                    <span className="account-module-action">
+                      Explorar <ArrowRight size={15} aria-hidden="true" />
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+
+          <div className="portal-toolbar account-tools">
             <ModuleSwitcher modules={modules} />
-            <p>Os painéis são exibidos conforme os acessos concedidos à sua conta.</p>
+            <p>Os painéis aparecem conforme os acessos concedidos à sua conta.</p>
           </div>
         </div>
       </main>

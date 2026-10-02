@@ -70,7 +70,7 @@ function seatsAvailable(
 function availableRoom(db: Database.Database, id: string) {
   const room = one<Room>(
     db,
-    "SELECT r.* FROM rooms r JOIN companies c ON c.id=r.company_id WHERE r.id=? AND r.active=1 AND c.status='published'",
+    "SELECT r.* FROM rooms r JOIN companies c ON c.id=r.company_id WHERE r.id=? AND r.active=1 AND r.operational_status='ready' AND c.status='published'",
     id,
   );
   if (!room) throw new HttpError(404, "NOT_FOUND", "Quarto indisponível para solicitações.");
@@ -240,6 +240,18 @@ export function recordStay(db: Database.Database, actor: Actor, input: unknown) 
       const today = todayInManaus();
       if (today < booking.check_in! || today >= booking.check_out!)
         throw new HttpError(409, "DATE", "Registre a chegada durante o período da reserva.");
+      const room = one<{ operational_status: string }>(
+        db,
+        "SELECT operational_status FROM rooms WHERE id=? AND company_id=?",
+        booking.room_id!,
+        data.company_id,
+      );
+      if (!room || room.operational_status !== "ready")
+        throw new HttpError(
+          409,
+          "ROOM_STATUS",
+          "Marque o quarto como pronto antes de registrar o check-in.",
+        );
       db.prepare("INSERT INTO stay_records VALUES (?,?,?,?,NULL)").run(
         booking.id,
         data.country,
@@ -252,6 +264,10 @@ export function recordStay(db: Database.Database, actor: Actor, input: unknown) 
       db.prepare("UPDATE stay_records SET checked_out_at=? WHERE booking_id=?").run(
         now,
         booking.id,
+      );
+      db.prepare("UPDATE rooms SET operational_status='cleaning' WHERE id=? AND company_id=?").run(
+        booking.room_id,
+        data.company_id,
       );
     }
     audit(db, actor.id, data.company_id, "stay." + data.action, booking.id);

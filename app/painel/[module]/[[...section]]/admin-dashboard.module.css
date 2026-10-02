@@ -1,0 +1,488 @@
+.dashboard {
+  max-width: 1220px;
+  margin: 0 auto;
+}
+
+.motion {
+  animation: dashboard-rise 480ms cubic-bezier(0.2, 0.7, 0.25, 1) both;
+}
+
+.welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 26px;
+  min-height: 190px;
+  padding: 27px 30px;
+  border: 1px solid #2d6453;
+  border-radius: 16px;
+  background:
+    radial-gradient(ellipse at 11% 120%, #42818a45 0, transparent 42%),
+    linear-gradient(115deg, #103d30, #174b3d 66%, #205c51);
+  box-shadow: 0 15px 35px #173c3214;
+  color: #fff;
+}
+
+.welcomeProfile {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+}
+
+.avatarFrame {
+  display: grid;
+  width: 92px;
+  height: 92px;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  border: 3px solid #ffffff54;
+  border-radius: 50%;
+  background: #f4c56c;
+  box-shadow: 0 5px 22px #06261d40;
+}
+
+.avatarFrame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.welcomeCopy {
+  min-width: 0;
+}
+
+.eyebrow,
+.sectionKicker {
+  margin: 0;
+  color: #d7e7dc;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+}
+
+.welcomeCopy h1 {
+  margin: 7px 0 0;
+  color: #fff;
+  font-size: clamp(29px, 3.3vw, 40px);
+  font-weight: 500;
+  letter-spacing: -1.4px;
+}
+
+.welcomeCopy > p:not(.eyebrow) {
+  margin: 6px 0 0;
+  color: #e0ebe4;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.welcomeCopy > span {
+  display: inline-block;
+  max-width: 100%;
+  margin-top: 10px;
+  color: #c6dacf;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.welcomeActions {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.welcomeActions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 41px;
+  padding: 8px 13px;
+  border: 1px solid #ffffff55;
+  border-radius: 7px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.welcomeActions a:first-child {
+  border-color: #f4c56c;
+  background: #f4c56c;
+  color: #193c30;
+}
+
+.welcomeActions a:hover {
+  transform: translateY(-1px);
+  border-color: #f4c56c;
+  background: #ffffff12;
+}
+
+.welcomeActions a:first-child:hover {
+  background: #ffda92;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 13px;
+  margin: 18px 0 37px;
+}
+
+.metric {
+  display: flex;
+  min-width: 0;
+  min-height: 148px;
+  flex-direction: column;
+  gap: 9px;
+  padding: 17px;
+  border: 1px solid #d6e2d8;
+  border-radius: 11px;
+  background: #fff;
+  color: #173c32;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.metric:hover {
+  transform: translateY(-3px);
+  border-color: #9bbca6;
+  box-shadow: 0 10px 24px #193c3010;
+}
+
+.metricHeading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #617366;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.metricIcon,
+.actionIcon,
+.footerIcon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 10px;
+  background: #e8f1e8;
+  color: #287258;
+}
+
+.metricIcon {
+  width: 33px;
+  height: 33px;
+}
+
+.metric > strong {
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1.05;
+}
+
+.metricDetail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: auto;
+  color: #65776c;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.metricDetail svg {
+  flex: 0 0 auto;
+  color: #287258;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 22px;
+  margin-bottom: 15px;
+}
+
+.sectionKicker {
+  margin-bottom: 5px;
+  color: #64806e;
+  font-size: 9px;
+}
+
+.sectionHeading h2 {
+  margin: 0;
+  color: #173c32;
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.sectionHeading > p {
+  max-width: 350px;
+  margin: 0;
+  color: #617366;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.actionCard {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 204px;
+  flex-direction: column;
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid #d6e2d8;
+  border-radius: 12px;
+  background: #f1f6ef;
+  color: #173c32;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.actionCard::after {
+  position: absolute;
+  top: -25px;
+  right: -27px;
+  width: 82px;
+  height: 82px;
+  border: 1px solid #7ca58a30;
+  border-radius: 50%;
+  content: "";
+  transition: transform 180ms ease;
+}
+
+.actionCard:hover {
+  transform: translateY(-4px);
+  border-color: #9bbca6;
+  background: linear-gradient(145deg, #eaf3e9, #fff 85%);
+  box-shadow: 0 12px 25px #193c3010;
+}
+
+.actionCard:hover::after {
+  transform: scale(1.25);
+}
+
+.actionIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  transition:
+    transform 180ms ease,
+    background 180ms ease;
+}
+
+.actionCard:hover .actionIcon {
+  transform: rotate(-5deg) scale(1.06);
+  background: #d7e8dc;
+}
+
+.actionArrow {
+  position: absolute;
+  top: 22px;
+  right: 20px;
+  color: #718f7d;
+  transition:
+    transform 180ms ease,
+    color 180ms ease;
+}
+
+.actionCard:hover .actionArrow {
+  transform: translate(2px, -2px);
+  color: #b78127;
+}
+
+.actionCard h3 {
+  margin: 16px 0 5px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.25px;
+}
+
+.actionCard > p {
+  flex: 1;
+  margin: 0 0 14px;
+  color: #627469;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.actionLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #275c48;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.footerNote {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 14px 16px;
+  border: 1px solid #dce7dc;
+  border-radius: 9px;
+  background: #fbfdfb;
+  color: #617366;
+}
+
+.footerIcon {
+  width: 36px;
+  height: 36px;
+}
+
+.footerNote p {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.footerNote strong {
+  color: #275c48;
+}
+
+.welcomeActions a:focus-visible,
+.metric:focus-visible,
+.actionCard:focus-visible {
+  outline: 3px solid #bd7c18;
+  outline-offset: 3px;
+}
+
+@keyframes dashboard-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1160px) {
+  .metrics,
+  .actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .welcome {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+    padding: 21px;
+  }
+
+  .welcomeProfile {
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .avatarFrame {
+    width: 70px;
+    height: 70px;
+  }
+
+  .welcomeCopy h1 {
+    font-size: 28px;
+  }
+
+  .welcomeActions {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metrics {
+    gap: 9px;
+    margin-bottom: 31px;
+  }
+
+  .metric {
+    min-height: 136px;
+    padding: 13px;
+  }
+
+  .metricHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .metric > strong {
+    font-size: 30px;
+  }
+
+  .sectionHeading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .actions {
+    gap: 9px;
+  }
+
+  .actionCard {
+    min-height: 194px;
+    padding: 14px;
+  }
+}
+
+@media (max-width: 390px) {
+  .metrics,
+  .actions {
+    grid-template-columns: 1fr;
+  }
+
+  .metric {
+    min-height: 120px;
+  }
+
+  .metricHeading {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .actionCard {
+    min-height: 174px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion {
+    animation: none;
+  }
+
+  .welcomeActions a,
+  .metric,
+  .actionCard,
+  .actionCard::after,
+  .actionIcon,
+  .actionArrow {
+    transition: none;
+  }
+}

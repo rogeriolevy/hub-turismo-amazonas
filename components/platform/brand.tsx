@@ -4,8 +4,9 @@ import { usePathname } from "next/navigation";
 import { Waves } from "lucide-react";
 export function PlatformBrand() {
   const path = usePathname();
-  const area =
-    path.startsWith("/hospedagens") || path.startsWith("/painel/hotel")
+  const area = path.startsWith("/minha-conta")
+    ? "usuário"
+    : path.startsWith("/hospedagens") || path.startsWith("/painel/hotel")
       ? "hospedagem"
       : path.startsWith("/guias")
         ? "guias"
@@ -19,7 +20,9 @@ export function PlatformBrand() {
                 ? "passeios"
                 : path.startsWith("/navegacao")
                   ? "navegação"
-                  : path.startsWith("/painel/plataforma") || path === "/admin"
+                  : path.startsWith("/painel/plataforma") ||
+                      path.startsWith("/painel/contato") ||
+                      path === "/admin"
                     ? "gestão"
                     : "turismo";
   return (

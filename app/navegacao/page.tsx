@@ -2,6 +2,9 @@ import Image from "next/image";
 import { ArrowDown, ArrowUpRight, Ship, Plane } from "lucide-react";
 import { Header, Footer } from "@/components/site/navigation";
 import { NavigationExplorer } from "@/components/platform/navigation-explorer";
+import { HubContentGrid } from "@/components/platform/provider-directory";
+import { getDatabase } from "@/db";
+import { publicCatalogItems } from "@/server/catalog-content-service";
 import { todayInManaus } from "@/lib/platform-schema";
 import "./navigation.css";
 
@@ -72,6 +75,10 @@ export default function NavigationPage() {
         </nav>
         <div className="container">
           <NavigationExplorer today={todayInManaus()} />
+          <HubContentGrid
+            items={publicCatalogItems(getDatabase(), "navegacao")}
+            title="Operadores e serviços de navegação"
+          />
         </div>
       </main>
       <Footer photoCredit={false} />

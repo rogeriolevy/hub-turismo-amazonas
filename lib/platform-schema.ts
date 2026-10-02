@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { profileAvatarKeys } from "./profile-avatars.ts";
+import { catalogCategories } from "./catalog-content.ts";
 
 const id = z.string().uuid();
 const text = (min: number, max: number) =>
@@ -24,6 +26,11 @@ export const bookingLabels = {
   confirmed: "Confirmada",
   declined: "Não aprovada",
   cancelled: "Cancelada",
+} as const;
+export const roomOperationalStatusLabels = {
+  ready: "Pronto",
+  cleaning: "Em limpeza",
+  maintenance: "Em manutenção",
 } as const;
 export const companySchema = z
   .object({
@@ -53,6 +60,13 @@ export const roomSchema = z
     capacity: z.number().int().min(1).max(20),
     price_cents: price,
     active: z.boolean(),
+  })
+  .strict();
+export const roomOperationalStatusSchema = z
+  .object({
+    company_id: id,
+    room_id: id,
+    operational_status: z.enum(["ready", "cleaning", "maintenance"]),
   })
   .strict();
 export const guideSchema = z
@@ -90,6 +104,61 @@ export const departureSchema = z
     active: z.boolean(),
   })
   .strict();
+const catalogImageUrl = z
+  .string()
+  .trim()
+  .max(500)
+  .refine(
+    (value) =>
+      !value ||
+      (/^\/uploads\/catalog\/[a-f0-9-]{36}\.(?:jpg|png|webp)$/i.test(value) &&
+        !value.includes("..")) ||
+      (() => {
+        try {
+          return new URL(value).protocol === "https:";
+        } catch {
+          return false;
+        }
+      })(),
+    "Use uma imagem HTTPS ou envie o arquivo pelo formulário.",
+  );
+const catalogWebsite = z
+  .string()
+  .trim()
+  .max(500)
+  .refine(
+    (value) =>
+      !value ||
+      (() => {
+        try {
+          return ["https:", "http:"].includes(new URL(value).protocol);
+        } catch {
+          return false;
+        }
+      })(),
+    "Informe um endereço começando com https:// ou http://.",
+  );
+export const catalogItemSchema = z
+  .object({
+    id: id.optional(),
+    source_entry_id: id.nullable().optional().default(null),
+    category: z.enum(catalogCategories),
+    name: text(2, 120),
+    slug,
+    city: text(2, 100),
+    subtype: z.string().trim().max(100).default(""),
+    summary: text(15, 260),
+    description: text(20, 5000),
+    details: z.string().trim().max(5000).default(""),
+    address: z.string().trim().max(300).default(""),
+    phone: z.string().trim().max(40).default(""),
+    email: z.union([z.string().trim().email().max(254), z.literal("")]).default(""),
+    website: catalogWebsite.default(""),
+    image_urls: z.array(catalogImageUrl).max(8),
+    status: z.enum(["draft", "published"]),
+  })
+  .strict();
+export const catalogItemDeleteSchema = z.object({ id }).strict();
 const date = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -131,6 +200,12 @@ export const registrationSchema = z
     email: z.string().trim().toLowerCase().email().max(254),
     password: z.string().min(12, "Use ao menos 12 caracteres.").max(128),
     consent: z.literal(true, { errorMap: () => ({ message: "Aceite o aviso de privacidade." }) }),
+  })
+  .strict();
+export const profileSchema = z
+  .object({
+    name: text(2, 100),
+    avatar: z.enum(profileAvatarKeys),
   })
   .strict();
 export function companyDisplayName(company: { name: string; trade_name?: string }) {

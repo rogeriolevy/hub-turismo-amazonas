@@ -1,24 +1,24 @@
 # Plataforma local — módulos e operação
 
-Versão 0.3.0, 29/09/2026. Escopo autorizado: ampliar a instalação Node.js/SQLite com catálogos, contas e painéis. As reservas são **solicitações sujeitas à aprovação do hotel ou operador**, sem cobrança online. O site institucional e a caixa de contatos permanecem disponíveis. A publicação anterior no Sites é independente.
+Versão 0.5.0, 02/10/2026. Escopo autorizado: ampliar a instalação Node.js/SQLite com catálogos, contas e painéis. As reservas são **solicitações sujeitas à aprovação do hotel ou operador**, sem cobrança online. O site institucional e a caixa de contatos permanecem disponíveis. A publicação anterior no Sites é independente.
 
 ## Rotas e permissões
 
-| Área             | Rotas                                                                                                                          | Quem acessa                                          |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
-| Institucional    | `/`, `/privacidade`                                                                                                            | Público                                              |
-| Hospedagens      | `/hospedagens`, `/hospedagens/[slug]`                                                                                          | Público; solicitar exige login                       |
-| Passeios e guias | `/passeios`, `/passeios/[slug]`, `/guias/[slug]`                                                                               | Público; solicitar exige login                       |
-| Acesso           | `/entrar`, `/cadastro`                                                                                                         | Visitantes; contas autenticadas seguem para sua área |
-| Turista          | `/minha-conta`, `/minha-conta/reservas`                                                                                        | Conta autenticada; somente suas reservas             |
-| Hotel            | `/painel/hotel`, `/painel/hotel/quartos`, `/painel/hotel/reservas`, `/painel/hotel/fnrh`                                       | Gestor/equipe vinculados ao hotel ou administrador   |
-| Operador         | `/painel/passeios`, `/painel/passeios/passeios`, `/painel/passeios/guias`, `/painel/passeios/agenda`, `/painel/passeios/vagas` | Guia/operador vinculados à empresa ou administrador  |
-| Administração    | `/painel/plataforma`, `/painel/plataforma/empresas`, `/painel/plataforma/acessos`                                              | Administrador definido em `ADMIN_EMAILS`             |
-| Contatos         | `/admin`                                                                                                                       | Administrador definido em `ADMIN_EMAILS`             |
+| Área             | Rotas                                                                                                                                            | Quem acessa                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| Institucional    | `/`, `/sobre`, `/privacidade`                                                                                                                    | Público                                              |
+| Hospedagens      | `/hospedagens`, `/hospedagens/[slug]`                                                                                                            | Público; solicitar exige login                       |
+| Passeios e guias | `/passeios`, `/passeios/[slug]`, `/guias/[slug]`                                                                                                 | Público; solicitar exige login                       |
+| Acesso           | `/entrar`, `/cadastro`                                                                                                                           | Visitantes; contas autenticadas seguem para sua área |
+| Turista          | `/minha-conta`, `/minha-conta/reservas`                                                                                                          | Conta autenticada; somente suas reservas             |
+| Hotel            | `/painel/hotel`, `/painel/hotel/quartos`, `/painel/hotel/reservas`, `/painel/hotel/fnrh`                                                         | Gestor/equipe vinculados ao hotel ou administrador   |
+| Operador         | `/painel/passeios`, `/painel/passeios/passeios`, `/painel/passeios/guias`, `/painel/passeios/agenda`, `/painel/passeios/vagas`                   | Guia/operador vinculados à empresa ou administrador  |
+| Administração    | `/painel/plataforma`, `/painel/plataforma/empresas`, `/painel/plataforma/acessos`, `/painel/plataforma/cadastur`, `/painel/plataforma/conteudos` | Administrador definido em `ADMIN_EMAILS`             |
+| Contatos         | `/painel/contato` (`/admin` redireciona para esta rota)                                                                                          | Administrador definido em `ADMIN_EMAILS`             |
 
 `/painel/passeios/reservas` também abre a lista de solicitações. A empresa em atendimento é selecionada pelo campo do painel; o parâmetro `?empresa=UUID` nunca concede autorização por si só. Endereços não previstos exibem a página de recurso não encontrado.
 
-O seletor **Alternar módulo** reúne os catálogos, a conta e os painéis autorizados. A marca muda seu complemento entre turismo, hospedagem, passeios e gestão, inspirada na animação fornecida. Não foi criado um módulo de navegação/transporte.
+O menu principal mantém os links dos módulos também após o login; a conta autenticada aparece pelo avatar. O seletor **Alternar módulo** reúne a conta e os painéis autorizados. A administração pública dos conteúdos dos catálogos fica em **Conteúdos dos catálogos**.
 
 ## Primeiro uso pelo administrador
 
@@ -29,7 +29,7 @@ O seletor **Alternar módulo** reúne os catálogos, a conta e os painéis autor
 5. Volte a **Empresas** e altere a situação para **Publicado**. Passeios e perfis de guia também têm seu próprio controle de publicação. Quartos e saídas precisam estar ativos para novas solicitações.
 6. Um turista entra no catálogo, solicita e acompanha a resposta em **Minhas reservas**. A empresa aprova ou recusa no seu painel.
 
-Não foram inseridas empresas, guias ou ofertas fictícias no banco de uso local. O diretório público contém referências reais do Cadastur, separadas das empresas, contas e ofertas operacionais. A prévia de QA tem dados fictícios separados. Veja [diretório público](DIRETORIO-PUBLICO.md) para as abas de gastronomia, guias, agências, hospedagens e serviços.
+O diretório público contém referências do Cadastur e conteúdos revisados pela Hub. Na administração, **Conteúdos dos catálogos** permite cadastrar, editar, ilustrar, publicar, deixar como rascunho e remover itens de hospedagens, gastronomia, passeios, guias, agências, serviços turísticos e navegação. Na revisão do Cadastur, **Completar perfil com informações e imagens** cria um complemento editorial ligado ao registro oficial. Remover esse complemento preserva o registro oficial; sua publicação é controlada pela revisão do Cadastur. A exportação de dados do Cadastur continua usando os campos da fonte oficial. Veja [diretório público](DIRETORIO-PUBLICO.md) para as categorias e atribuição de fonte.
 
 ### Nome fantasia nas listagens
 
@@ -52,6 +52,8 @@ Estados: `pending` (aguardando aprovação), `confirmed`, `declined` e `cancelle
 
 Hospedagens aceitam períodos de 1 a 30 noites, a partir da data atual em Manaus, respeitando a capacidade do quarto. A saída de uma reserva pode coincidir com a entrada de outra. Cada registro de quarto representa uma unidade física, não um estoque de uma categoria.
 
+Cada quarto também possui uma situação operacional: `ready` (pronto), `cleaning` (em limpeza) ou `maintenance` (em manutenção). A ocupação é derivada de uma reserva confirmada com check-in registrado e sem check-out; não pode ser marcada manualmente. O check-out muda o quarto automaticamente para limpeza. A equipe o libera para novas solicitações ao marcá-lo como pronto. Quartos em limpeza ou manutenção não aparecem como disponíveis no catálogo e não aceitam novos pedidos nem check-in até voltarem ao estado pronto.
+
 Passeios têm uma saída futura, capacidade e preço por pessoa. A soma das pessoas em reservas confirmadas não pode exceder a capacidade. Uma saída com solicitações pendentes/confirmadas não pode mudar de passeio ou horário; crie outra saída. Não é permitido reduzir a capacidade abaixo das confirmações existentes.
 
 Valores são calculados no servidor, em centavos, e registrados na solicitação: diária × noites ou valor por pessoa × participantes. Alterar o preço do catálogo não muda os pedidos existentes. O valor é uma referência da solicitação; esta versão não recebe pagamentos.
@@ -60,9 +62,9 @@ O turista pode cancelar sua própria solicitação pendente/confirmada antes do 
 
 ## Estadias e FNRH
 
-A rota `/painel/hotel/fnrh` implementa **somente o registro local de estadia**, com país/cidade de origem e horários de check-in/check-out. Exige reserva confirmada, chegada dentro do período e check-in anterior ao check-out. Impede registros repetidos.
+A rota `/painel/hotel/fnrh` implementa **somente o registro local de estadia**, com país/cidade de origem e horários de check-in/check-out. Exige reserva confirmada, chegada dentro do período e check-in anterior ao check-out. Impede registros repetidos. As ações de check-in e check-out também aparecem diretamente nas reservas confirmadas da operação hoteleira; o quarto passa a ocupado ao registrar a chegada e para limpeza ao registrar a saída.
 
-Não gera, preenche nem transmite a FNRH oficial e não substitui o procedimento governamental. Não coleta documentos de identificação. Integração e homologação oficiais são uma etapa futura específica.
+Não gera, preenche nem transmite a FNRH oficial e não substitui o procedimento governamental. Não coleta documentos de identificação. Integração e homologação oficiais são uma etapa futura específica. O resumo operacional do painel é local e baseado em regras e contagens de reservas e situações de quartos; não envia dados de hóspedes a um serviço de IA.
 
 ## Arquitetura, banco e API
 
@@ -84,7 +86,7 @@ docs/openapi.json          Contrato HTTP servido em /api/openapi
 infra/                     Exemplos para publicação futura
 ```
 
-A migração aditiva `002_platform.sql` cria `companies`, `company_members`, `rooms`, `guides`, `tours`, `departures`, `bookings`, `stay_records` e `platform_audit`. Mantém as tabelas de contatos e autenticação. Chaves estrangeiras e índices apoiam escopo empresarial, consultas de reservas e disponibilidade. O histórico de auditoria guarda ator, empresa, ação, entidade e horário; não registra senhas nem corpos de requisições.
+A migração aditiva `002_platform.sql` cria `companies`, `company_members`, `rooms`, `guides`, `tours`, `departures`, `bookings`, `stay_records` e `platform_audit`. Mantém as tabelas de contatos e autenticação. A migração `007_room_operations.sql` acrescenta a situação de limpeza/manutenção aos quartos, preservando os registros existentes como prontos. Chaves estrangeiras e índices apoiam escopo empresarial, consultas de reservas e disponibilidade. O histórico de auditoria guarda ator, empresa, ação, entidade e horário; não registra senhas nem corpos de requisições.
 
 As APIs públicas ficam em `/api/catalogo/*`; cadastro básico em `POST /api/conta/cadastro`; operação autenticada em `/api/plataforma/*`. O contrato OpenAPI descreve entradas, autenticação e erros. Datas de saída na API usam ISO UTC; a interface converte o horário de Manaus. Campos monetários na API usam centavos inteiros.
 

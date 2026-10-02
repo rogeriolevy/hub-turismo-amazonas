@@ -1,4 +1,6 @@
 import type Database from "better-sqlite3";
+import { catalogCategories } from "../lib/catalog-content.ts";
+import { publicCatalogItems } from "./catalog-content-service.ts";
 import { one, many } from "./platform-store.ts";
 import type { Company, Room, Tour, Guide, Departure } from "./platform-models.ts";
 export function publicCatalogPaths(db: Database.Database) {
@@ -9,13 +11,16 @@ export function publicCatalogPaths(db: Database.Database) {
       db,
       "SELECT g.slug FROM guides g JOIN companies c ON c.id=g.company_id WHERE g.published=1 AND c.status='published'",
     ).map((item) => "/guias/" + item.slug),
+    ...catalogCategories.flatMap((category) =>
+      publicCatalogItems(db, category).map((item) => "/prestadores/" + item.id),
+    ),
   ];
 }
 export function publicHotels(db: Database.Database, search = "") {
   const query = search.trim().slice(0, 100);
   return many<Company & { from_price: number | null }>(
     db,
-    "SELECT c.*,(SELECT MIN(price_cents) FROM rooms r WHERE r.company_id=c.id AND r.active=1) from_price FROM companies c WHERE c.kind='hotel' AND c.status='published' AND (c.trade_name LIKE ? OR c.name LIKE ? OR c.city LIKE ?) ORDER BY COALESCE(NULLIF(TRIM(c.trade_name),''),c.name),c.id",
+    "SELECT c.*,(SELECT MIN(price_cents) FROM rooms r WHERE r.company_id=c.id AND r.active=1 AND r.operational_status='ready') from_price FROM companies c WHERE c.kind='hotel' AND c.status='published' AND (c.trade_name LIKE ? OR c.name LIKE ? OR c.city LIKE ?) ORDER BY COALESCE(NULLIF(TRIM(c.trade_name),''),c.name),c.id",
     "%" + query + "%",
     "%" + query + "%",
     "%" + query + "%",
@@ -32,7 +37,7 @@ export function publicHotel(db: Database.Database, slug: string) {
         ...company,
         rooms: many<Room>(
           db,
-          "SELECT * FROM rooms WHERE company_id=? AND active=1 ORDER BY price_cents,code",
+          "SELECT * FROM rooms WHERE company_id=? AND active=1 AND operational_status='ready' ORDER BY price_cents,code",
           company.id,
         ),
       }

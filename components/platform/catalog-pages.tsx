@@ -4,6 +4,8 @@ import { BedDouble, Compass, MapPin, Clock, Languages } from "lucide-react";
 import { Header, Footer } from "@/components/site/navigation";
 import { getDatabase } from "@/db";
 import { getSession } from "@/server/admin";
+import { publicCatalogItems } from "@/server/catalog-content-service";
+import { normalizeLabel } from "@/lib/cadastur-schema";
 import {
   publicHotels,
   publicHotel,
@@ -14,9 +16,20 @@ import {
 import { money, displayTime, companyDisplayName } from "@/lib/platform-schema";
 import { CatalogCard, EmptyState, PageIntro, PortalNotice } from "./shared";
 import { BookingForm } from "./booking-form";
+import { NearbyRecommendations } from "./nearby-recommendations";
+import { HubContentGrid } from "./provider-directory";
 export function Directory({ kind, query }: { kind: "hotel" | "tour"; query: string }) {
-  const hotels = kind === "hotel" ? publicHotels(getDatabase(), query) : [];
-  const tours = kind === "tour" ? publicTours(getDatabase(), query) : [];
+  const db = getDatabase();
+  const hotels = kind === "hotel" ? publicHotels(db, query) : [];
+  const tours = kind === "tour" ? publicTours(db, query) : [];
+  const experiences =
+    kind === "tour"
+      ? publicCatalogItems(db, "passeios").filter((item) =>
+          normalizeLabel(`${item.name} ${item.city} ${item.subtype} ${item.summary}`).includes(
+            normalizeLabel(query),
+          ),
+        )
+      : [];
   return (
     <>
       <Header />
@@ -55,11 +68,12 @@ export function Directory({ kind, query }: { kind: "hotel" | "tour"; query: stri
           </form>
           <div className="catalog-count">
             <span>
-              {hotels.length + tours.length} {kind === "hotel" ? "hospedagem(ns)" : "passeio(s)"}
+              {hotels.length + tours.length + experiences.length}{" "}
+              {kind === "hotel" ? "hospedagem(ns)" : "experiência(s)"}
             </span>
             <span>Solicitação online · Aprovação pelo responsável</span>
           </div>
-          {!hotels.length && !tours.length ? (
+          {!hotels.length && !tours.length && !experiences.length ? (
             <EmptyState
               title={query ? "Nenhum resultado por aqui." : "Estamos preparando novas conexões."}
             >
@@ -73,34 +87,41 @@ export function Directory({ kind, query }: { kind: "hotel" | "tour"; query: stri
               </Link>
             </EmptyState>
           ) : (
-            <div className="catalog-grid">
-              {hotels.map((hotel) => (
-                <CatalogCard
-                  key={hotel.id}
-                  kind="hotel"
-                  href={"/hospedagens/" + hotel.slug}
-                  title={companyDisplayName(hotel)}
-                  city={hotel.city}
-                  description={hotel.description}
-                  price={
-                    hotel.from_price === null
-                      ? "Quartos em preparação"
-                      : "A partir de " + money(hotel.from_price) + " / noite"
-                  }
-                />
-              ))}
-              {tours.map((tour) => (
-                <CatalogCard
-                  key={tour.id}
-                  kind="tour"
-                  href={"/passeios/" + tour.slug}
-                  title={tour.name}
-                  city={tour.city}
-                  description={tour.description}
-                  price={money(tour.price_cents) + " / pessoa"}
-                />
-              ))}
-            </div>
+            <>
+              {!!(hotels.length || tours.length) && (
+                <div className="catalog-grid">
+                  {hotels.map((hotel) => (
+                    <CatalogCard
+                      key={hotel.id}
+                      kind="hotel"
+                      href={"/hospedagens/" + hotel.slug}
+                      title={companyDisplayName(hotel)}
+                      city={hotel.city}
+                      description={hotel.description}
+                      price={
+                        hotel.from_price === null
+                          ? "Quartos em preparação"
+                          : "A partir de " + money(hotel.from_price) + " / noite"
+                      }
+                    />
+                  ))}
+                  {tours.map((tour) => (
+                    <CatalogCard
+                      key={tour.id}
+                      kind="tour"
+                      href={"/passeios/" + tour.slug}
+                      title={tour.name}
+                      city={tour.city}
+                      description={tour.description}
+                      price={money(tour.price_cents) + " / pessoa"}
+                    />
+                  ))}
+                </div>
+              )}
+              {kind === "tour" && (
+                <HubContentGrid items={experiences} title="Atividades e roteiros da Hub" />
+              )}
+            </>
           )}
         </div>
       </main>
@@ -165,6 +186,7 @@ export async function HotelDetail({ slug }: { slug: string }) {
               }))}
             />
           </div>
+          <NearbyRecommendations providerId={hotel.id} source="company" />
         </div>
       </main>
       <Footer />

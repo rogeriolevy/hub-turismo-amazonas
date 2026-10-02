@@ -4,11 +4,14 @@ import { requireActor } from "@/server/platform-session";
 import { json, readJson, errorResponse, HttpError } from "@/server/http";
 import { parse } from "@/server/platform-store";
 import { companiesFor } from "@/server/platform-access";
+import { catalogItemDeleteSchema } from "@/lib/platform-schema";
+import { deleteCatalogItem, saveCatalogItem } from "@/server/catalog-content-service";
 import {
   saveCompany,
   saveMember,
   removeMember,
   saveRoom,
+  setRoomOperationalStatus,
   saveGuide,
   saveTour,
   saveDeparture,
@@ -39,10 +42,16 @@ async function handle(request: Request, { params }: { params: Promise<{ path: st
       if (path === "reservas") return json({ data: businessBookings(db, actor, companyId) });
     } else if (request.method === "POST") {
       const body = await readJson(request);
+      if (path === "conteudos") return json({ data: saveCatalogItem(db, actor, body) });
+      if (path === "excluir-conteudo") {
+        const input = parse(catalogItemDeleteSchema, body);
+        return json({ data: deleteCatalogItem(db, actor, input.id) });
+      }
       const handlers = {
         empresas: saveCompany,
         acessos: saveMember,
         quartos: saveRoom,
+        "quarto-status": setRoomOperationalStatus,
         guias: saveGuide,
         passeios: saveTour,
         saidas: saveDeparture,

@@ -40,6 +40,7 @@ export function PanelShell({
             ["empresas", "Empresas"],
             ["acessos", "Contas e permissões"],
             ["cadastur", "Cadastur · Diretório"],
+            ["conteudos", "Conteúdos dos catálogos"],
           ];
   const suffix = companyId ? "?empresa=" + companyId : "";
   return (
@@ -66,7 +67,7 @@ export function PanelShell({
               {label}
             </Link>
           ))}
-          {module === "plataforma" && <Link href="/admin">Contatos do site</Link>}
+          {module === "plataforma" && <Link href="/painel/contato">Contatos do site</Link>}
         </nav>
         <div className="sidebar-bottom">
           <Link href="/minha-conta">Minha conta</Link>

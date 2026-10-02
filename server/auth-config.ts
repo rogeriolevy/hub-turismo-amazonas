@@ -1,5 +1,6 @@
 import type Database from "better-sqlite3";
 import type { BetterAuthOptions } from "better-auth";
+import { trustedSiteOrigins } from "../lib/trusted-origins.ts";
 
 export function authOptions(database: Database.Database, provision = false) {
   const secret = process.env.BETTER_AUTH_SECRET;
@@ -17,7 +18,7 @@ export function authOptions(database: Database.Database, provision = false) {
     database,
     secret,
     baseURL: url.origin,
-    trustedOrigins: [url.origin],
+    trustedOrigins: trustedSiteOrigins(url),
     emailAndPassword: {
       enabled: true,
       disableSignUp: !provision,

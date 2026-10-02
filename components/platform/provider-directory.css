@@ -79,6 +79,9 @@
   gap: 15px;
   align-items: end;
 }
+.provider-search--lodging {
+  grid-template-columns: minmax(0, 1.5fr) minmax(165px, 0.8fr) minmax(190px, 1fr) auto;
+}
 .provider-search label {
   display: flex;
   flex-direction: column;
@@ -119,6 +122,12 @@
 }
 .provider-search .button {
   min-height: 49px;
+}
+.provider-filter-note {
+  margin-top: 9px;
+  color: #58726c;
+  font-size: 11px;
+  line-height: 1.5;
 }
 .provider-city-links {
   display: flex;
@@ -179,6 +188,69 @@
   border-radius: 8px;
   padding: 25px;
   min-width: 0;
+}
+.provider-card-photo {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin: 17px 0 0;
+  border-radius: 6px;
+  background: var(--provider-soft);
+  object-fit: cover;
+}
+.provider-card-summary {
+  margin: -12px 0 17px;
+  color: #526b60;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.provider-detail-art img {
+  flex: 1 1 auto;
+  width: 100%;
+  height: clamp(220px, 32vw, 420px);
+  border-radius: inherit;
+  object-fit: cover;
+}
+.provider-detail-summary {
+  color: #385847;
+  font-size: 16px;
+  line-height: 1.65;
+}
+.provider-extra-details {
+  margin-top: 25px;
+  padding-top: 18px;
+  border-top: 1px solid #dfe8e1;
+}
+.provider-extra-details h2 {
+  margin: 0 0 8px;
+  color: #234a39;
+  font-size: 18px;
+  font-weight: 600;
+}
+.provider-extra-details p {
+  color: #516a5c;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.provider-detail-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 20px 0;
+}
+.provider-detail-gallery img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 6px;
+  background: var(--provider-soft);
+  object-fit: cover;
+}
+.provider-hub-credit {
+  margin-top: 25px;
+  padding-top: 15px;
+  border-top: 1px solid #dfe8e1;
+  color: #6a7e70;
+  font-size: 11px;
 }
 .provider-card-top {
   display: flex;
@@ -321,9 +393,6 @@
   gap: 7px;
   font-size: 13px;
 }
-.lodging-source small {
-  font-size: 11px;
-}
 .provider-pagination {
   display: flex;
   align-items: center;
@@ -341,13 +410,17 @@
 .provider-attribution {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  justify-content: space-between;
+  gap: 8px 20px;
+  align-items: center;
   border-top: 1px solid #d9e3df;
-  padding-top: 24px;
+  padding: 18px 0;
   font-size: 11px;
   line-height: 1.8;
   color: #58726c;
+}
+.provider-attribution a {
+  color: inherit;
+  text-underline-offset: 2px;
 }
 .provider-empty {
   text-align: center;

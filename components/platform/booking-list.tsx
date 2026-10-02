@@ -1,4 +1,10 @@
-import { bookingLabels, money, displayDate, displayTime } from "@/lib/platform-schema";
+import {
+  bookingLabels,
+  money,
+  displayDate,
+  displayTime,
+  todayInManaus,
+} from "@/lib/platform-schema";
 import type { Booking } from "@/server/platform-models";
 import { ActionForm } from "./action-form";
 import { EmptyState } from "./shared";
@@ -9,6 +15,7 @@ export function BookingList({
   bookings: Booking[];
   business?: boolean;
 }) {
+  const today = todayInManaus();
   if (!bookings.length)
     return (
       <EmptyState title="Nenhuma solicitação por aqui.">
@@ -82,6 +89,36 @@ export function BookingList({
                     label="Cancelar solicitação"
                   />
                 )}
+            {business &&
+              item.kind === "hotel" &&
+              item.status === "confirmed" &&
+              !item.checked_in_at &&
+              item.check_in &&
+              item.check_out &&
+              item.check_in <= today &&
+              today < item.check_out && (
+                <ActionForm
+                  action="estadia"
+                  fixed={{ company_id: item.company_id, booking_id: item.id, action: "checkin" }}
+                  initial={{ country: "Brasil" }}
+                  fields={[
+                    { name: "country", label: "País de origem", maxLength: 80 },
+                    { name: "origin_city", label: "Cidade de origem", maxLength: 100 },
+                  ]}
+                  label="Registrar check-in"
+                />
+              )}
+            {business &&
+              item.kind === "hotel" &&
+              item.status === "confirmed" &&
+              item.checked_in_at &&
+              !item.checked_out_at && (
+                <ActionForm
+                  action="estadia"
+                  fixed={{ company_id: item.company_id, booking_id: item.id, action: "checkout" }}
+                  label="Registrar check-out"
+                />
+              )}
           </div>
         </article>
       ))}

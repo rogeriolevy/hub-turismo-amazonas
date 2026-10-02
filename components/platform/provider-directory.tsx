@@ -5,6 +5,7 @@ import {
   Compass,
   BriefcaseBusiness,
   Sparkles,
+  Ship,
   MapPin,
   Phone,
   Mail,
@@ -17,11 +18,13 @@ import { notFound } from "next/navigation";
 import { Header, Footer } from "@/components/site/navigation";
 import { getDatabase } from "@/db";
 import { publicHotels } from "@/server/catalog-service";
+import type { CatalogCategory, CatalogItem } from "@/lib/catalog-content";
 import {
   regionCities,
   searchProviders,
   publicProvider,
   providerSource,
+  fromHub,
   type DirectoryCategory,
   type DirectorySearch,
   type PublicProvider,
@@ -30,6 +33,7 @@ import { displayPublicPhone } from "@/lib/public-contacts";
 import { companyDisplayName, money } from "@/lib/platform-schema";
 import { lodgingHighlights } from "@/lib/lodging-highlights";
 import { CatalogCard } from "./shared";
+import { NearbyRecommendations } from "./nearby-recommendations";
 import "./provider-directory.css";
 
 const modules = {
@@ -62,6 +66,18 @@ const modules = {
     title: "Cada detalhe da sua viagem.",
     description: "Encontre prestadores especializados em experiências e serviços turísticos.",
     icon: Sparkles,
+  },
+  passeios: {
+    label: "Passeios",
+    title: "Experiências para descobrir o Amazonas.",
+    description: "Encontre atividades locais, roteiros e serviços para viver a região.",
+    icon: Compass,
+  },
+  navegacao: {
+    label: "Navegação",
+    title: "Caminhos que conectam a Amazônia.",
+    description: "Conheça operadores, serviços e informações para seguir pelos rios.",
+    icon: Ship,
   },
 } as const;
 function Contacts({
@@ -108,7 +124,7 @@ function Contacts({
   );
 }
 function ProviderCard({ entry }: { entry: PublicProvider }) {
-  const category = entry.category as DirectoryCategory;
+  const category = entry.category as CatalogCategory;
   const Icon = modules[category].icon;
   return (
     <article className="provider-card">
@@ -120,10 +136,19 @@ function ProviderCard({ entry }: { entry: PublicProvider }) {
           {entry.city} · {entry.uf}
         </span>
       </div>
+      {entry.images[0] && (
+        <img
+          className="provider-card-photo"
+          src={entry.images[0]}
+          alt={`Imagem de ${entry.name}`}
+          loading="lazy"
+        />
+      )}
       <h2>
         <Link href={"/prestadores/" + entry.id}>{entry.name}</Link>
       </h2>
       <p className="provider-subtype">{entry.subtype || modules[category].label}</p>
+      {entry.summary && <p className="provider-card-summary">{entry.summary}</p>}
       <Contacts entry={entry} />
       <div className="provider-card-bottom">
         <span>
@@ -131,7 +156,9 @@ function ProviderCard({ entry }: { entry: PublicProvider }) {
             ? "Diárias sob consulta"
             : category === "agencias"
               ? "Pacotes sob consulta"
-              : "Conheça o prestador"}
+              : entry.editorial
+                ? "Conteúdo Hub"
+                : "Conheça o prestador"}
         </span>
         <Link href={"/prestadores/" + entry.id} aria-label={"Ver detalhes de " + entry.name}>
           <ArrowUpRight size={21} aria-hidden="true" />
@@ -140,7 +167,52 @@ function ProviderCard({ entry }: { entry: PublicProvider }) {
     </article>
   );
 }
-function LodgingHighlights({ city, query }: { city: string; query: string }) {
+export function HubContentGrid({ items, title }: { items: CatalogItem[]; title: string }) {
+  if (!items.length) return null;
+  return (
+    <section className="provider-results hub-content-results" aria-label={title}>
+      <div className="provider-section-heading">
+        <div>
+          <p className="eyebrow">CONTEÚDO DA HUB</p>
+          <h2>{title}</h2>
+        </div>
+        <span>
+          {items.length} {items.length === 1 ? "apresentação" : "apresentações"}
+        </span>
+      </div>
+      <div className="provider-grid">
+        {items.map((item) => (
+          <ProviderCard key={item.id} entry={fromHub(item)} />
+        ))}
+      </div>
+    </section>
+  );
+}
+function ProviderAttribution({
+  category,
+  includesHub = false,
+}: {
+  category: DirectoryCategory;
+  includesHub?: boolean;
+}) {
+  return (
+    <div className="provider-attribution">
+      <span>
+        Dados do{" "}
+        <a href={providerSource(category)} target="_blank" rel="noreferrer">
+          Cadastur · Ministério do Turismo
+        </a>{" "}
+        sob a licença{" "}
+        <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noreferrer">
+          ODbL 1.0
+        </a>
+        .{includesHub && " Conteúdos adicionais são mantidos pela Hub."}
+      </span>
+      <a href={"/api/diretorio?categoria=" + category}>Dados abertos (JSON)</a>
+    </div>
+  );
+}
+function LodgingHighlights({ city, query, type }: { city: string; query: string; type: string }) {
   const fold = (s: string) =>
     s
       .normalize("NFD")
@@ -149,7 +221,8 @@ function LodgingHighlights({ city, query }: { city: string; query: string }) {
   const highlights = lodgingHighlights.filter(
     (item) =>
       (!city || fold(item.city) === fold(city)) &&
-      (!query || fold(item.name + " " + item.city).includes(fold(query))),
+      (!query || fold(item.name + " " + item.city).includes(fold(query))) &&
+      (!type || fold(item.subtype) === fold(type)),
   );
   if (!highlights.length) return null;
   return (
@@ -185,7 +258,6 @@ function LodgingHighlights({ city, query }: { city: string; query: string }) {
               <a href={item.source} target="_blank" rel="noopener noreferrer">
                 {item.sourceLabel} <ArrowUpRight size={15} aria-hidden="true" />
               </a>
-              <small>Consulta: {item.checked.split("-").reverse().join("/")}</small>
             </div>
           </article>
         ))}
@@ -212,7 +284,12 @@ export function ProviderDirectory({
     "/" +
     category +
     "?" +
-    new URLSearchParams({ q: results.q, cidade: results.city, pagina: String(page) }).toString() +
+    new URLSearchParams({
+      q: results.q,
+      cidade: results.city,
+      tipo: results.type,
+      pagina: String(page),
+    }).toString() +
     "#resultados";
   return (
     <>
@@ -238,8 +315,12 @@ export function ProviderDirectory({
         <div className="container">
           <section className="provider-search-area" aria-label="Encontre um prestador">
             <form
-              key={`${category}:${results.q}:${results.city}`}
-              className="provider-search"
+              key={`${category}:${results.q}:${results.city}:${results.type}`}
+              className={
+                category === "hospedagens"
+                  ? "provider-search provider-search--lodging"
+                  : "provider-search"
+              }
               role="search"
               action={"/" + category}
             >
@@ -251,7 +332,11 @@ export function ProviderDirectory({
                     name="q"
                     defaultValue={results.q}
                     maxLength={100}
-                    placeholder="Nome, cidade ou tipo de serviço"
+                    placeholder={
+                      category === "hospedagens"
+                        ? "Nome, cidade ou subtipo"
+                        : "Nome, cidade ou tipo de serviço"
+                    }
                   />
                 </div>
               </label>
@@ -267,26 +352,53 @@ export function ProviderDirectory({
                   )}
                 </select>
               </label>
+              {category === "hospedagens" && (
+                <label>
+                  <span>Tipo de hospedagem</span>
+                  <select name="tipo" defaultValue={results.type}>
+                    <option value="">Todos os tipos</option>
+                    {results.types.map((type) => (
+                      <option key={type}>{type}</option>
+                    ))}
+                    {results.type && !results.types.includes(results.type) && (
+                      <option>{results.type}</option>
+                    )}
+                  </select>
+                </label>
+              )}
               <button className="button button-dark" type="submit">
                 Buscar <ArrowRight size={17} aria-hidden="true" />
               </button>
             </form>
+            {category === "hospedagens" && (
+              <p className="provider-filter-note">
+                O tipo filtra os cadastros públicos pelo subtipo informado no Cadastur; não indica
+                avaliação ou disponibilidade.
+              </p>
+            )}
             <div className="provider-city-links">
               <span>Explore a região:</span>
               {regionCities.map((city) => (
                 <Link
                   key={city}
-                  href={"/" + category + "?" + new URLSearchParams({ cidade: city })}
+                  href={
+                    "/" +
+                    category +
+                    "?" +
+                    new URLSearchParams({ q: results.q, tipo: results.type, cidade: city })
+                  }
                   aria-current={city === results.city ? "page" : undefined}
                 >
                   {city}
                 </Link>
               ))}
-              {(results.city || results.q) && <Link href={"/" + category}>Limpar filtros</Link>}
+              {(results.city || results.q || results.type) && (
+                <Link href={"/" + category}>Limpar filtros</Link>
+              )}
             </div>
           </section>
           {category === "hospedagens" && (
-            <LodgingHighlights city={results.city} query={results.q} />
+            <LodgingHighlights city={results.city} query={results.q} type={results.type} />
           )}
           {!!hotels.length && (
             <section className="provider-bookable">
@@ -324,6 +436,7 @@ export function ProviderDirectory({
                 {results.total.toLocaleString("pt-BR")}{" "}
                 {results.total === 1 ? "cadastro" : "cadastros"}
                 {results.q && " · “" + results.q + "”"}
+                {results.type && " · " + results.type}
               </span>
             </div>
             {results.entries.length ? (
@@ -360,23 +473,12 @@ export function ProviderDirectory({
               </nav>
             )}
           </section>
-          <div className="provider-attribution">
-            <span>
-              Fonte:{" "}
-              <a href={providerSource(category)} target="_blank" rel="noreferrer">
-                Ministério do Turismo · Cadastur
-              </a>{" "}
-              ·{" "}
-              <a
-                href="https://opendatacommons.org/licenses/odbl/1-0/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                ODbL 1.0
-              </a>
-            </span>
-            <a href={"/api/diretorio?categoria=" + category}>Baixar dados desta categoria</a>
-          </div>
+          {results.entries.some((entry) => entry.source === "cadastur") && (
+            <ProviderAttribution
+              category={category}
+              includesHub={results.entries.some((entry) => entry.editorial)}
+            />
+          )}
         </div>
       </main>
       <Footer photoCredit={false} />
@@ -386,7 +488,7 @@ export function ProviderDirectory({
 export function ProviderDetail({ id }: { id: string }) {
   const entry = publicProvider(getDatabase(), id);
   if (!entry) notFound();
-  const category = entry.category as DirectoryCategory;
+  const category = entry.category;
   const info = modules[category],
     Icon = info.icon;
   return (
@@ -404,7 +506,11 @@ export function ProviderDetail({ id }: { id: string }) {
           <div className="provider-detail-layout">
             <section>
               <div className="provider-detail-art">
-                <Icon size={82} strokeWidth={1} aria-hidden="true" />
+                {entry.images[0] ? (
+                  <img src={entry.images[0]} alt={`Imagem de ${entry.name}`} />
+                ) : (
+                  <Icon size={82} strokeWidth={1} aria-hidden="true" />
+                )}
                 <span>{info.label} · Amazonas</span>
               </div>
               <p className="eyebrow">
@@ -412,36 +518,34 @@ export function ProviderDetail({ id }: { id: string }) {
               </p>
               <h1>{entry.name}</h1>
               <p>{entry.subtype || info.label}</p>
-              <dl className="provider-facts">
-                <div>
-                  <dt>Município</dt>
-                  <dd>
-                    {entry.city} / {entry.uf}
-                  </dd>
+              {entry.summary && <p className="provider-detail-summary">{entry.summary}</p>}
+              {entry.description && <p className="preserve-lines">{entry.description}</p>}
+              {entry.details && (
+                <section className="provider-extra-details" aria-label="Informações adicionais">
+                  <h2>Mais informações</h2>
+                  <p className="preserve-lines">{entry.details}</p>
+                </section>
+              )}
+              {entry.images.length > 1 && (
+                <div className="provider-detail-gallery" aria-label="Outras imagens">
+                  {entry.images.slice(1).map((image, index) => (
+                    <img
+                      key={image}
+                      src={image}
+                      alt={`Imagem ${index + 2} de ${entry.name}`}
+                      loading="lazy"
+                    />
+                  ))}
                 </div>
-                {entry.languages && (
+              )}
+              {category === "guias" && entry.languages && (
+                <dl className="provider-facts">
                   <div>
-                    <dt>Idiomas informados</dt>
+                    <dt>Idiomas de atendimento</dt>
                     <dd>{entry.languages}</dd>
                   </div>
-                )}
-                {entry.units !== null && entry.units > 0 && (
-                  <div>
-                    <dt>Unidades habitacionais</dt>
-                    <dd>{entry.units}</dd>
-                  </div>
-                )}
-                {entry.beds !== null && entry.beds > 0 && (
-                  <div>
-                    <dt>Leitos</dt>
-                    <dd>{entry.beds}</dd>
-                  </div>
-                )}
-                <div>
-                  <dt>Referência do cadastro</dt>
-                  <dd>{entry.period.replace(/^(\d{4})-T(\d)$/, "$2º trimestre de $1")}</dd>
-                </div>
-              </dl>
+                </dl>
+              )}
             </section>
             <aside className="provider-contact-panel">
               <p className="eyebrow">PLANEJE SUA VISITA</p>
@@ -471,22 +575,19 @@ export function ProviderDetail({ id }: { id: string }) {
               )}
             </aside>
           </div>
-          <div className="provider-attribution">
-            <span>
-              Fonte:{" "}
-              <a href={providerSource(category)} target="_blank" rel="noreferrer">
-                Ministério do Turismo · Cadastur
-              </a>{" "}
-              ·{" "}
-              <a
-                href="https://opendatacommons.org/licenses/odbl/1-0/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                ODbL 1.0
-              </a>
-            </span>
-          </div>
+          {category === "hospedagens" && entry.source === "cadastur" && (
+            <NearbyRecommendations providerId={entry.id} source="cadastur" />
+          )}
+          {entry.source === "cadastur" ? (
+            <ProviderAttribution
+              category={category as DirectoryCategory}
+              includesHub={entry.editorial}
+            />
+          ) : (
+            <p className="provider-hub-credit">
+              Conteúdo enviado e mantido pela equipe da Hub Amazonas.
+            </p>
+          )}
         </div>
       </main>
       <Footer photoCredit={false} />

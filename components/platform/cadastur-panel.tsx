@@ -1,5 +1,7 @@
 "use client";
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
+import { catalogCategories, type CatalogCategory } from "@/lib/catalog-content";
 import {
   cadasturSources,
   fieldLabels,
@@ -580,6 +582,16 @@ export function CadasturPanel({ initial, companies, guides }: Props) {
                     .filter(Boolean)
                     .join(" · ") || "Contatos não informados na fonte."}
                 </p>
+                {catalogCategories.includes(entry.category as CatalogCategory) && (
+                  <p>
+                    <Link
+                      className="button button-outline"
+                      href={`/painel/plataforma/conteudos?categoria=${entry.category}&cadastur=${encodeURIComponent(entry.id)}`}
+                    >
+                      Completar perfil com informações e imagens
+                    </Link>
+                  </p>
+                )}
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();

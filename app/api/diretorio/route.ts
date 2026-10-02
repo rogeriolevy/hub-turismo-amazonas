@@ -1,7 +1,7 @@
 import { getDatabase } from "@/db";
 import {
   directoryCategories,
-  publicProviders,
+  publicCadasturProviders,
   providerSource,
   type DirectoryCategory,
 } from "@/server/cadastur/public-directory";
@@ -14,7 +14,7 @@ export function GET(request: Request) {
     {
       source: providerSource(category),
       license: "https://opendatacommons.org/licenses/odbl/1-0/",
-      data: publicProviders(getDatabase(), category),
+      data: publicCadasturProviders(getDatabase(), category),
     },
     {
       headers: {

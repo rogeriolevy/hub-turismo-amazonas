@@ -14,7 +14,7 @@ export default function Privacy() {
         <h1>Seu contato, com cuidado.</h1>
         <p>
           Este aviso explica como os dados enviados no site da Hub Turismo Amazonas são utilizados.
-          Atualizado em 1º de outubro de 2026.
+          Atualizado em 2 de outubro de 2026.
         </p>
         <h2>O que você compartilha</h2>
         <p>
@@ -35,6 +35,11 @@ export default function Privacy() {
           pessoas, observações e situação do pedido. Esses dados são acessíveis a você e à equipe
           autorizada da empresa responsável. A administração da plataforma gerencia empresas,
           permissões e registros de operação.
+        </p>
+        <p>
+          O resumo diário do painel hoteleiro é calculado localmente a partir das reservas e da
+          situação dos quartos. Esta função não envia dados de hóspedes a serviços externos de
+          inteligência artificial.
         </p>
         <p>
           O registro local de estadia também guarda país e cidade de origem e horários de entrada e
@@ -69,6 +74,31 @@ export default function Privacy() {
           utilizam cookies de sessão para manter o acesso, além de registrar o IP e o navegador das
           sessões para segurança. A senha é armazenada em formato protegido e não é compartilhada
           com os visitantes. O formulário público não exige login.
+        </p>
+        <h2>Sugestões de proximidade</h2>
+        <p>
+          Ao abrir os detalhes de uma hospedagem, o servidor consulta os serviços públicos Nominatim
+          e Overpass do OpenStreetMap para localizar o estabelecimento e buscar pontos de interesse
+          em até 2 km. A consulta usa o nome, o endereço comercial e a cidade da hospedagem quando
+          esses dados estão disponíveis; não envia a localização nem outros dados pessoais do
+          visitante. Os resultados ficam em cache para reduzir consultas externas. A distância
+          exibida é aproximada, em linha reta, e o mapa colaborativo pode não conter todos os
+          locais. Os dados do OpenStreetMap são atribuídos aos seus colaboradores sob a licença
+          ODbL. O uso do serviço Nominatim segue sua{" "}
+          <a
+            href="https://operations.osmfoundation.org/policies/nominatim/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            política de utilização
+          </a>
+          . Ao clicar em uma categoria ou em um estabelecimento, o Google Maps abre em outra aba com
+          a busca e as coordenadas públicas da hospedagem ou do local selecionado. A navegação passa
+          a seguir a{" "}
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">
+            política de privacidade do Google
+          </a>
+          .
         </p>
         <h2>Sobre esta versão</h2>
         <p>

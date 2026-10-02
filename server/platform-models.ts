@@ -18,6 +18,11 @@ export type Room = {
   capacity: number;
   price_cents: number;
   active: number;
+  operational_status: "ready" | "cleaning" | "maintenance";
+};
+export type OperationalRoom = Room & {
+  current_guest: string | null;
+  current_departure: string | null;
 };
 export type Guide = {
   id: string;

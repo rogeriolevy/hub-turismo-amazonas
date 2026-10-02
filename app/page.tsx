@@ -17,19 +17,19 @@ const solutions = [
     icon: CalendarCheck2,
     number: "01",
     title: "Uma recepção mais simples",
-    text: "Reservas, hóspedes, check-in e check-out em um fluxo conectado. Mais clareza para quem recebe, mais cuidado com quem chega.",
+    text: "Reservas, hóspedes e registros de check-in e check-out conectados à rotina da recepção. Mais clareza para quem recebe, mais cuidado com quem chega.",
   },
   {
     icon: BedDouble,
     number: "02",
     title: "Cada quarto, no seu tempo",
-    text: "Uma visão do que está pronto, ocupado, em limpeza ou manutenção para apoiar a rotina de hotéis e pousadas.",
+    text: "Acompanhe o que está pronto, ocupado, em limpeza ou manutenção e atualize a situação dos quartos durante a operação.",
   },
   {
     icon: Network,
     number: "03",
     title: "Informação que aproxima",
-    text: "Um resumo da operação para ajudar equipes a organizar o dia. A inteligência artificial e a preparação para FNRH fazem parte da evolução do projeto.",
+    text: "Um resumo local de chegadas, saídas, solicitações e quartos que precisam de atenção. O registro de estadias apoia a operação; IA e integração oficial da FNRH seguem como evoluções futuras.",
   },
 ];
 export default function Home() {

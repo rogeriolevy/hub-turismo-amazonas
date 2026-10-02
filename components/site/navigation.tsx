@@ -8,9 +8,13 @@ import {
   Sparkles,
   UtensilsCrossed,
   UserRound,
+  Waves,
 } from "lucide-react";
 import Link from "next/link";
 import { PlatformBrand } from "@/components/platform/brand";
+import { AccountMenu } from "@/components/site/account-menu";
+import { avatarKeyFromImage, defaultAvatarForUser } from "@/lib/profile-avatars";
+import { getSession } from "@/server/admin";
 import "./navigation.css";
 
 const destinations = [
@@ -23,23 +27,23 @@ const destinations = [
   { href: "/navegacao", label: "Navegação", icon: Ship },
 ];
 
-const accountLinks = [
-  { href: "/minha-conta", label: "Minha conta" },
-  { href: "/entrar", label: "Entrar" },
-  { href: "/cadastro", label: "Criar conta" },
-];
+const primaryLinks = [...destinations, { href: "/sobre", label: "Sobre a Hub", icon: Waves }];
 
 const hubLinks = [
-  { href: "/", label: "Início" },
-  { href: "/#sobre", label: "Sobre a Hub" },
+  { href: "/sobre", label: "Sobre a Hub" },
   { href: "/privacidade", label: "Privacidade" },
-  { href: "/admin", label: "Área administrativa" },
+  { href: "/painel/contato", label: "Área administrativa" },
 ];
 
 export function Brand() {
   return <PlatformBrand />;
 }
-export function Header() {
+export async function Header() {
+  const session = await getSession().catch(() => null);
+  const avatar = session
+    ? (avatarKeyFromImage(session.user.image) ?? defaultAvatarForUser(session.user.id))
+    : null;
+
   return (
     <>
       <a className="skip-link" href="#conteudo">
@@ -48,15 +52,27 @@ export function Header() {
       <header className="site-header site-header--compact">
         <div className="container header-inner">
           <Brand />
-          <Link
-            className="header-account"
-            href="/minha-conta"
-            aria-label="Minha conta"
-            title="Minha conta"
-          >
-            <UserRound size={18} aria-hidden="true" />
-            <span>Minha conta</span>
-          </Link>
+          <nav className="header-primary-nav" aria-label="Navegação principal">
+            {primaryLinks.map(({ href, label, icon: Icon }) => (
+              <Link className="header-primary-link" href={href} key={href}>
+                <Icon size={17} strokeWidth={1.8} aria-hidden="true" />
+                <span>{label}</span>
+              </Link>
+            ))}
+          </nav>
+          {session && avatar ? (
+            <AccountMenu name={session.user.name} email={session.user.email} avatar={avatar} />
+          ) : (
+            <Link
+              className="header-account"
+              href="/minha-conta"
+              aria-label="Acessar minha conta"
+              title="Acessar minha conta"
+            >
+              <UserRound size={18} aria-hidden="true" />
+              <span>Acessar minha conta</span>
+            </Link>
+          )}
         </div>
       </header>
     </>
@@ -85,29 +101,17 @@ export function Footer({ photoCredit = true }: { photoCredit?: boolean }) {
               ))}
             </div>
           </nav>
-          <nav className="footer-links" aria-label="Conta">
-            <h2>Sua conta</h2>
-            <div className="footer-link-list">
-              {accountLinks.map((item) => (
-                <Link className="footer-link" href={item.href} key={item.href}>
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          </nav>
-          <nav className="footer-links" aria-label="Informações">
-            <h2>Informações</h2>
-            <div className="footer-link-list">
-              {hubLinks.map((item) => (
-                <Link className="footer-link" href={item.href} key={item.href}>
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          </nav>
         </div>
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} Hub Turismo Amazonas</span>
+          <nav className="footer-meta-links" aria-label="Informações do site">
+            <Link href="/minha-conta">Minha conta</Link>
+            {hubLinks.map((item) => (
+              <Link href={item.href} key={item.href}>
+                {item.label}
+              </Link>
+            ))}
+          </nav>
           {photoCredit && (
             <span>
               Foto:{" "}

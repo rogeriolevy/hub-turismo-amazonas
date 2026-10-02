@@ -16,7 +16,7 @@ npm run admin:create
 npm run dev
 ```
 
-Abra http://127.0.0.1:3005 e /admin. O comando admin:create solicita a senha duas vezes com asteriscos; use entre 12 e 128 caracteres. Maiúsculas, minúsculas e espaços contam. Backspace apaga o último caractere e Ctrl+U limpa a digitação. Não envie senhas pelo chat nem pela linha de comando. O e-mail autorizado inicialmente é rogerio1kg@gmail.com. O login é próprio desta instalação, independente da senha do ChatGPT. O cadastro público em /cadastro cria apenas contas básicas. Perfis empresariais dependem de autorização do administrador.
+Abra http://127.0.0.1:3005 e `/painel/contato` (`/admin` redireciona para essa página). O comando admin:create solicita a senha duas vezes com asteriscos; use entre 12 e 128 caracteres. Maiúsculas, minúsculas e espaços contam. Backspace apaga o último caractere e Ctrl+U limpa a digitação. Não envie senhas pelo chat nem pela linha de comando. O e-mail autorizado inicialmente é rogerio1kg@gmail.com. O login é próprio desta instalação, independente da senha do ChatGPT. O cadastro público em /cadastro cria apenas contas básicas. Perfis empresariais dependem de autorização do administrador.
 
 A configuração local fica em .env.local, ignorada pelo Git. setup gera um segredo aleatório sem exibi-lo e preserva uma configuração existente. O banco fica em data/hub.sqlite. O primeiro acesso administrativo exige executar admin:create em um terminal interativo.
 
@@ -36,7 +36,7 @@ A configuração local fica em .env.local, ignorada pelo Git. setup gera um segr
 
 ### Navegação pública
 
-O cabeçalho mantém a marca e o acesso à área **Minha conta**. O footer funciona como um mapa abrangente do site, com blocos para a marca e contato, **Explore o Amazonas** (Hospedagens, Gastronomia, Passeios, Guias, Agências, Serviços turísticos e Navegação), **Sua conta** e **Informações**. A disposição dos blocos se adapta a telas menores.
+O cabeçalho reúne a marca, atalhos para **Hospedagens**, **Passeios**, **Gastronomia**, **Guias** e **Navegação**, além do botão **Acessar minha conta**. O footer funciona como um mapa abrangente do site, com blocos para a marca e contato, **Explore o Amazonas** (incluindo Agências e Serviços turísticos), **Sua conta** e **Informações**. A disposição se adapta a telas menores.
 
 Veja [Módulos e operação](docs/PLATAFORMA.md) para o mapa completo de rotas, regras, permissões e primeiro cadastro de empresas.
 
@@ -69,6 +69,8 @@ Tecnologias: React 19, Next.js 16, TypeScript, Zod, Better Auth e better-sqlite3
 
 contacts armazena mensagem, identidade do contato, consentimento, versão do aviso e chave de idempotência. rate_limits guarda contadores temporários derivados do IP/e-mail. schema_migrations controla migrações SQL com checksum. As tabelas user, account, session, verification e rateLimit pertencem ao Better Auth. A migração 002 acrescenta companies, company_members, rooms, guides, tours, departures, bookings, stay_records e platform_audit, preservando os dados anteriores.
 
+A migração 007 acrescenta a situação operacional dos quartos. Antes de usar esta versão em um banco existente, faça backup e execute `npm run db:migrate`.
+
 As senhas são processadas pela biblioteca de autenticação; não há senha padrão. Sessões têm validade de oito horas, com renovação durante o uso, são revogadas no logout e não usam cache de autorização no navegador. O servidor verifica ADMIN_EMAILS a cada consulta. Conhecer o e-mail autorizado não concede acesso.
 
 ```sh
@@ -82,7 +84,7 @@ A recuperação de senha exige acesso ao terminal do servidor e encerra as sess�
 
 ### Quando o painel informar e-mail ou senha incorretos
 
-1. Abra o endereço de SITE_URL, que nesta instalação é http://127.0.0.1:3005/admin. Confira o e-mail e use “Mostrar senha” para conferir a digitação, se necessário. A tela também informa quando Caps Lock está ativado.
+1. Abra `http://127.0.0.1:3005/painel/contato` (ou `/admin`, que redireciona para ela). Confira o e-mail e use “Mostrar senha” para conferir a digitação, se necessário. A tela também informa quando Caps Lock está ativado.
 2. Para redefinir, execute `npm run admin:password -- rogerio1kg@gmail.com` em um terminal na pasta deste projeto. Digite a nova senha e repita a confirmação. O comando verifica a senha gravada antes de informar sucesso; senhas acima do limite são rejeitadas, nunca cortadas.
 3. Entre com a nova senha. A alteração vale imediatamente para este banco, sem reiniciar o servidor; sessões anteriores são encerradas. Se houver bloqueio por tentativas, aguarde um minuto sem tentar antes de entrar novamente.
 
@@ -130,5 +132,9 @@ A aplicação precisa de disco persistente, HTTPS e backup fora da máquina. Con
 ## Cadastur — v0.4.0
 
 O administrador encontra o importador em `/painel/plataforma/cadastur`: fontes oficiais do MTur, CSV/XLSX, prévia, filtros, contatos comerciais e revisão com publicação explícita e vínculos opcionais. A migração 005 preserva registros existentes e amplia as categorias. Veja [diretório público e importação](docs/DIRETORIO-PUBLICO.md) e [histórico da integração Cadastur](docs/INTEGRACAO-CADASTUR.md). O worker em `server/cadastur/file-worker.mjs` deve acompanhar o projeto na execução local; não copie somente a pasta `.next`.
+
+## Conteúdo editorial dos catálogos
+
+Em `/painel/plataforma/conteudos`, o administrador mantém apresentações e imagens dos sete módulos. Itens podem ficar como rascunho ou ser publicados. Registros do Cadastur recebem um complemento editorial ligado à fonte oficial, preservando a separação entre informações oficiais e conteúdo da Hub. A migração 008 cria a tabela dos conteúdos; faça backup antes de `npm run db:migrate`.
 
 Para atualizar os cinco conjuntos do Amazonas: `npm run cadastur:sync -- --apply --publish`. O comando cria e verifica um backup antes de migrar/importar e registra as contagens de cada aba. Omita `--publish` para manter as inclusões/alterações em revisão interna. A execução exige um administrador existente em `ADMIN_EMAILS`; não cria contas.

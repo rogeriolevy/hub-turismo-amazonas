@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import { betterAuth } from "better-auth";
 import { getDatabase } from "@/db";
 import { authOptions } from "@/server/auth-config";
@@ -6,6 +7,7 @@ import { getClientIp } from "@/server/client-ip";
 import { readJson, errorResponse, HttpError } from "@/server/http";
 import { parse } from "@/server/platform-store";
 import { registrationSchema } from "@/lib/platform-schema";
+import { profileAvatars, profileAvatarUrl } from "@/lib/profile-avatars";
 const createRegistrationAuth = () => betterAuth(authOptions(getDatabase(), true));
 let registrationAuth: ReturnType<typeof createRegistrationAuth> | undefined;
 export async function POST(request: Request) {
@@ -28,6 +30,20 @@ export async function POST(request: Request) {
         body: JSON.stringify({ name: input.name, email: input.email, password: input.password }),
       }),
     );
+    if (response.ok) {
+      const db = getDatabase();
+      const user = db
+        .prepare<[string], { id: string }>('SELECT id FROM "user" WHERE email = ?')
+        .get(input.email);
+      if (user) {
+        const avatar = profileAvatars[randomInt(profileAvatars.length)];
+        db.prepare('UPDATE "user" SET image = ?, updatedAt = ? WHERE id = ? AND image IS NULL').run(
+          profileAvatarUrl(avatar.key),
+          new Date().toISOString(),
+          user.id,
+        );
+      }
+    }
     response.headers.set("Cache-Control", "private, no-store");
     return response;
   } catch (error) {

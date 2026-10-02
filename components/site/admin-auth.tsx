@@ -1,6 +1,7 @@
 "use client";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
+import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 const credentials = z.object({
   email: z.string().trim().email(),
@@ -117,7 +118,7 @@ export function LoginForm({ destination }: { destination?: string } = {}) {
     </form>
   );
 }
-export function SignOutButton() {
+export function SignOutButton({ showIcon = false }: { showIcon?: boolean } = {}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -140,6 +141,7 @@ export function SignOutButton() {
   return (
     <div>
       <button className="text-link" onClick={signOut} disabled={busy}>
+        {showIcon && <LogOut size={16} aria-hidden="true" />}
         {busy ? "Saindo…" : "Sair"}
       </button>
       {error && <p role="alert">{error}</p>}

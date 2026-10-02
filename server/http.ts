@@ -1,3 +1,5 @@
+import { trustedSiteOrigins } from "../lib/trusted-origins.ts";
+
 export class HttpError extends Error {
   status: number;
   code: string;
@@ -41,7 +43,8 @@ export function errorResponse(error: unknown, requestId: string) {
   );
 }
 export function assertOrigin(request: Request) {
-  if (request.headers.get("origin") !== new URL(process.env.SITE_URL || request.url).origin)
+  const configuredSite = process.env.SITE_URL || request.url;
+  if (!trustedSiteOrigins(configuredSite).includes(request.headers.get("origin") || ""))
     throw new HttpError(403, "ORIGIN", "Origem do envio não autorizada.");
 }
 export async function readLimitedBody(request: Request | Response, max: number) {

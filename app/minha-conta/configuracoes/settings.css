@@ -1,0 +1,194 @@
+.account-settings-main {
+  min-height: 65vh;
+  background: radial-gradient(ellipse at 100% 0, #e9f0e6 0, transparent 34%), #f9fbf8;
+}
+.account-settings-back {
+  display: inline-flex;
+  margin: 0 0 20px;
+  color: #38614f;
+  font-size: 13px;
+  text-decoration: none;
+}
+.account-settings-back:hover {
+  color: #174d3c;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.account-settings-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 27px;
+  padding: 28px 30px;
+  border: 1px solid #d7e4d9;
+  border-radius: 14px;
+  background: linear-gradient(115deg, #edf5ed, #fff);
+}
+.account-settings-kicker {
+  margin: 0 0 7px;
+  color: #4a7661;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+}
+.account-settings-heading h1 {
+  margin: 0;
+  color: #173c32;
+  font-size: clamp(27px, 4vw, 36px);
+  font-weight: 500;
+  letter-spacing: -1px;
+}
+.account-settings-heading > div > p:last-child {
+  margin: 8px 0 0;
+  color: #536a5e;
+  font-size: 13px;
+}
+.account-settings-avatar {
+  flex: 0 0 auto;
+  border: 3px solid #d5e5d9;
+  border-radius: 50%;
+  background: #fff;
+}
+.account-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.account-settings-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 0;
+  min-height: 112px;
+  padding: 18px;
+  border: 1px solid #d7e3d8;
+  border-radius: 11px;
+  background: #fff;
+  color: #173c32;
+  text-decoration: none;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+.account-settings-card:hover {
+  transform: translateY(-2px);
+  border-color: #9bbca6;
+  box-shadow: 0 10px 24px #193c3010;
+}
+.account-settings-card:focus-visible,
+.account-settings-back:focus-visible {
+  outline: 3px solid #bd7c18;
+  outline-offset: 3px;
+}
+.account-settings-icon {
+  display: grid;
+  width: 45px;
+  height: 45px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 12px;
+  background: #eaf2eb;
+  color: #287258;
+}
+.account-settings-card-copy {
+  display: grid;
+  flex: 1;
+  gap: 5px;
+  min-width: 0;
+}
+.account-settings-card-copy strong {
+  color: #173c32;
+  font-size: 15px;
+}
+.account-settings-card-copy > span {
+  color: #5c7064;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.account-settings-card > svg {
+  flex: 0 0 auto;
+  color: #71877b;
+}
+.account-session-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+  padding: 19px;
+  border: 1px solid #d7e3d8;
+  border-radius: 11px;
+  background: #f3f7f2;
+}
+.account-session-card > div {
+  flex: 1;
+}
+.account-session-card h2 {
+  margin: 0;
+  color: #173c32;
+  font-size: 14px;
+}
+.account-session-card p {
+  margin: 5px 0 0;
+  color: #5c7064;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.account-session-signout {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  color: #38614f;
+}
+.account-session-signout .text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  color: #38614f;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+.account-session-signout .text-link:hover {
+  color: #174d3c;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 650px) {
+  .account-settings-heading {
+    padding: 21px;
+  }
+  .account-settings-avatar {
+    width: 60px;
+    height: 60px;
+  }
+  .account-settings-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .account-settings-card {
+    min-height: 96px;
+    padding: 14px;
+  }
+  .account-session-card {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .account-session-card > div {
+    min-width: calc(100% - 65px);
+  }
+  .account-session-signout {
+    margin-left: 59px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .account-settings-card {
+    transition: none;
+  }
+}
