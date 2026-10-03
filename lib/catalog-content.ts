@@ -13,8 +13,8 @@ export type CatalogCategory = (typeof catalogCategories)[number];
 export const catalogCategoryLabels: Record<CatalogCategory, string> = {
   hospedagens: "Hospedagens",
   gastronomia: "Gastronomia",
-  passeios: "Passeios",
-  guias: "Guias",
+  passeios: "Experiências · atividades",
+  guias: "Experiências · profissionais",
   agencias: "Agências",
   servicos: "Serviços turísticos",
   navegacao: "Navegação",

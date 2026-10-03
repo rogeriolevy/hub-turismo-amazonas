@@ -1,0 +1,54 @@
+.provider-experiencias {
+  --provider-accent: #246457;
+  --provider-soft: #e3efe7;
+}
+
+.experience-search {
+  grid-template-columns: minmax(0, 1.4fr) minmax(170px, 0.8fr) minmax(185px, 0.9fr) auto;
+}
+
+.experience-search label > select {
+  width: 100%;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #cad9d3;
+  border-radius: 5px;
+  background: white;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+}
+
+.experience-grid .catalog-card,
+.experience-grid .provider-card {
+  min-height: 100%;
+}
+
+.experience-grid .provider-card {
+  padding: 25px;
+}
+
+.experience-guide-card .provider-subtype {
+  margin: 20px 0 0;
+}
+
+.experience-guide-card h2 {
+  margin-top: 10px;
+}
+
+.experience-guide-card .provider-card-summary {
+  margin: 0 0 24px;
+  line-height: 1.65;
+}
+
+@media (max-width: 1050px) {
+  .experience-search {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .experience-search {
+    grid-template-columns: 1fr;
+  }
+}

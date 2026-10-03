@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
   ArrowUpRight,
-  ArrowLeftRight,
   Ship,
   Plane,
   Clock,
@@ -13,6 +12,8 @@ import {
   Phone,
   CalendarDays,
   MapPin,
+  Search,
+  UsersRound,
   Compass,
   MessageCircle,
 } from "lucide-react";
@@ -36,6 +37,7 @@ import {
   navigationMoney,
   navigationPhone,
 } from "@/lib/navigation";
+import { TravelSearchPanel } from "./travel-search";
 
 function SourceLink({ id }: { id: SourceId }) {
   const source = navigationSources[id];
@@ -71,19 +73,91 @@ function Price({ price, today }: { price: ReferencePrice | null; today: string }
   );
 }
 
-export function NavigationExplorer({ today }: { today: string }) {
-  const [origin, setOrigin] = useState("");
-  const [destination, setDestination] = useState("");
-  const [mode, setMode] = useState<TransportMode | "todos">("todos");
+type NavigationSearch = {
+  origem?: string | string[];
+  destino?: string | string[];
+  modo?: string | string[];
+  data?: string | string[];
+  pessoas?: string | string[];
+};
+
+function queryValue(value: string | string[] | undefined) {
+  return typeof value === "string" ? value : "";
+}
+
+function validTravelDate(value: string, today: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    value >= today &&
+    !Number.isNaN(Date.parse(`${value}T12:00:00Z`)) &&
+    new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value
+    ? value
+    : "";
+}
+
+export function NavigationExplorer({
+  today,
+  search = {},
+}: {
+  today: string;
+  search?: NavigationSearch;
+}) {
+  const initialOrigin = navigationCities.find((city) => city === queryValue(search.origem)) ?? "";
+  const initialDestination =
+    navigationCities.find((city) => city === queryValue(search.destino)) ?? "";
+  const initialMode =
+    queryValue(search.modo) === "fluvial" || queryValue(search.modo) === "aereo"
+      ? (queryValue(search.modo) as TransportMode)
+      : "todos";
+  const requestedPeople = Number(queryValue(search.pessoas));
+  const initialPeople =
+    Number.isInteger(requestedPeople) && requestedPeople >= 1 && requestedPeople <= 20
+      ? String(requestedPeople)
+      : "1";
+  const [origin, setOrigin] = useState(initialOrigin);
+  const [destination, setDestination] = useState(initialDestination);
+  const [mode, setMode] = useState<TransportMode | "todos">(initialMode);
+  const [travelDate, setTravelDate] = useState(validTravelDate(queryValue(search.data), today));
+  const [passengers, setPassengers] = useState(initialPeople);
   const [direction, setDirection] = useState<ScheduleDirection>("maues-manaus");
   const [day, setDay] = useState("");
   const routes = filterNavigationRoutes(navigationRoutes, { origin, destination, mode });
   const schedules = filterVesselSchedules(direction, day);
-  const filtered = Boolean(origin || destination || mode !== "todos");
+  const filtered = Boolean(
+    origin || destination || mode !== "todos" || travelDate || passengers !== "1",
+  );
   function clearFilters() {
     setOrigin("");
     setDestination("");
     setMode("todos");
+    setTravelDate("");
+    setPassengers("1");
+    setDay("");
+    setDirection("maues-manaus");
+  }
+  function searchRoutes(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (
+      travelDate &&
+      ((origin === "Maués" && destination === "Manaus") ||
+        (origin === "Manaus" && destination === "Maués"))
+    ) {
+      setDirection(origin === "Maués" ? "maues-manaus" : "manaus-maues");
+      setDay(String(new Date(`${travelDate}T12:00:00Z`).getUTCDay()));
+    }
+    document
+      .getElementById("nav-route-results")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function routeActionHref(route: (typeof navigationRoutes)[number]) {
+    if (!route.action.href.startsWith("https://navegam.com.br/busca")) return route.action.href;
+    const url = new URL(route.action.href);
+    url.searchParams.set("passageiros", passengers);
+    if (travelDate) {
+      url.searchParams.set("ida", travelDate);
+      url.searchParams.set("type", "ida");
+      url.searchParams.delete("volta");
+    }
+    return url.toString();
   }
 
   return (
@@ -96,68 +170,85 @@ export function NavigationExplorer({ today }: { today: string }) {
           </div>
           <p>Passagens, trechos pesquisados e canais para consultar.</p>
         </div>
-        <div className="nav-filters">
-          <fieldset className="nav-mode-picker">
-            <legend>Tipo de transporte</legend>
-            {(
-              [
-                { value: "todos", label: "Todos", Icon: Compass },
-                { value: "fluvial", label: "Fluvial", Icon: Ship },
-                { value: "aereo", label: "Aéreo", Icon: Plane },
-              ] as const
-            ).map(({ value, label, Icon }) => (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={mode === value}
-                onClick={() => setMode(value)}
-              >
-                <Icon size={17} aria-hidden="true" />
-                {label}
-              </button>
-            ))}
-          </fieldset>
-          <div className="nav-city-filters">
-            <label htmlFor="nav-origin">
-              Saindo de
-              <select
-                id="nav-origin"
-                value={origin}
-                onChange={(event) => setOrigin(event.target.value)}
-              >
-                <option value="">Todas as origens</option>
-                {navigationCities.map((city) => (
-                  <option key={city}>{city}</option>
-                ))}
-              </select>
-            </label>
-            <button
-              className="nav-swap"
-              type="button"
-              aria-label="Inverter origem e destino"
-              onClick={() => {
-                setOrigin(destination);
-                setDestination(origin);
-              }}
-            >
-              <ArrowLeftRight size={19} aria-hidden="true" />
-            </button>
-            <label htmlFor="nav-destination">
-              Indo para
-              <select
-                id="nav-destination"
-                value={destination}
-                onChange={(event) => setDestination(event.target.value)}
-              >
-                <option value="">Todos os destinos</option>
-                {navigationCities.map((city) => (
-                  <option key={city}>{city}</option>
-                ))}
-              </select>
-            </label>
+        <TravelSearchPanel active="navegacao">
+          <div className="nav-search-mode">
+            <fieldset className="nav-mode-picker">
+              <legend>Tipo de transporte</legend>
+              {(
+                [
+                  { value: "todos", label: "Todos", Icon: Compass },
+                  { value: "fluvial", label: "Fluvial", Icon: Ship },
+                  { value: "aereo", label: "Aéreo", Icon: Plane },
+                ] as const
+              ).map(({ value, label, Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={mode === value}
+                  onClick={() => setMode(value)}
+                >
+                  <Icon size={17} aria-hidden="true" />
+                  {label}
+                </button>
+              ))}
+            </fieldset>
           </div>
-        </div>
-        <div className="nav-result-bar">
+          <form
+            className="travel-search-form travel-search-form--navigation"
+            onSubmit={searchRoutes}
+          >
+            <label className="travel-search-field">
+              <MapPin size={21} aria-hidden="true" />
+              <span>Saindo de</span>
+              <select value={origin} onChange={(event) => setOrigin(event.target.value)}>
+                <option value="">Qualquer origem</option>
+                {navigationCities.map((city) => (
+                  <option key={city}>{city}</option>
+                ))}
+              </select>
+            </label>
+            <label className="travel-search-field">
+              <MapPin size={21} aria-hidden="true" />
+              <span>Indo para</span>
+              <select value={destination} onChange={(event) => setDestination(event.target.value)}>
+                <option value="">Qualquer destino</option>
+                {navigationCities.map((city) => (
+                  <option key={city}>{city}</option>
+                ))}
+              </select>
+            </label>
+            <label className="travel-search-field">
+              <CalendarDays size={21} aria-hidden="true" />
+              <span>Data de saída</span>
+              <input
+                type="date"
+                min={today}
+                value={travelDate}
+                onChange={(event) => setTravelDate(event.target.value)}
+                aria-label="Data de saída"
+              />
+            </label>
+            <label className="travel-search-field">
+              <UsersRound size={21} aria-hidden="true" />
+              <span>Passageiros</span>
+              <select value={passengers} onChange={(event) => setPassengers(event.target.value)}>
+                {Array.from({ length: 20 }, (_, index) => index + 1).map((count) => (
+                  <option key={count} value={count}>
+                    {count} {count === 1 ? "passageiro" : "passageiros"}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button className="travel-search-submit" type="submit">
+              Buscar <Search size={18} aria-hidden="true" />
+            </button>
+          </form>
+          <p className="travel-search-note">
+            A busca filtra os trechos publicados. Quando disponível, data e passageiros seguem para
+            a consulta do operador; tarifas e vagas precisam ser confirmadas.
+          </p>
+        </TravelSearchPanel>
+        <div className="nav-result-bar" id="nav-route-results">
           <p role="status">
             {routes.length} {routes.length === 1 ? "trecho encontrado" : "trechos encontrados"}
           </p>
@@ -166,7 +257,10 @@ export function NavigationExplorer({ today }: { today: string }) {
               Limpar filtros
             </button>
           )}
-          <span>Destinos no Amazonas</span>
+          <span>
+            {travelDate ? `${navigationDate(travelDate)} · ` : ""}
+            {passengers} {passengers === "1" ? "passageiro" : "passageiros"}
+          </span>
         </div>
         <div className="nav-route-grid">
           {routes.map((route) => {
@@ -200,7 +294,7 @@ export function NavigationExplorer({ today }: { today: string }) {
                   <Price price={route.price} today={today} />
                   <a
                     className="nav-action"
-                    href={route.action.href}
+                    href={routeActionHref(route)}
                     target={external ? "_blank" : undefined}
                     rel={external ? "noopener noreferrer" : undefined}
                   >
@@ -405,12 +499,12 @@ export function NavigationExplorer({ today }: { today: string }) {
           <aside className="nav-complete-trip">
             <p className="eyebrow">DO EMBARQUE À ESTADIA</p>
             <h3>Faça a viagem do seu jeito.</h3>
-            <p>Combine seu transporte com hospedagens e passeios cadastrados na Hub.</p>
+            <p>Combine seu transporte com hospedagens e experiências cadastradas na Hub.</p>
             <Link href="/hospedagens">
               Encontrar hospedagem <ArrowUpRight size={18} aria-hidden="true" />
             </Link>
-            <Link href="/passeios">
-              Explorar passeios e guias <ArrowUpRight size={18} aria-hidden="true" />
+            <Link href="/experiencias">
+              Explorar experiências <ArrowUpRight size={18} aria-hidden="true" />
             </Link>
             <small>Cada serviço tem sua própria disponibilidade e contratação.</small>
           </aside>

@@ -30,7 +30,8 @@ import {
   publicTour,
   publicGuide,
 } from "../server/catalog-service.ts";
-import { todayInManaus, companyDisplayName } from "../lib/platform-schema.ts";
+import { todayInManaus, companyDisplayName, registrationSchema } from "../lib/platform-schema.ts";
+import { normalizeBrazilianMobile } from "../lib/br-mobile.ts";
 import { HttpError } from "../server/http.ts";
 process.env.SITE_URL = "http://127.0.0.1:3100";
 process.env.BETTER_AUTH_SECRET = randomBytes(48).toString("base64url");
@@ -130,6 +131,80 @@ async function fixture() {
     hotelRequest,
   };
 }
+test("company activity classifies lodging, river navigation and air transport", async () => {
+  const f = await fixture();
+  try {
+    const navigation = saveCompany(f.db, f.root, {
+      kind: "operator",
+      activity_type: "navegacao_fluvial",
+      name: "Navegação de teste",
+      slug: "navegacao-classificada",
+      city: "Maués",
+      description: "Empresa fictícia de navegação fluvial para teste.",
+      status: "draft",
+    }).id;
+    const airTransport = saveCompany(f.db, f.root, {
+      kind: "operator",
+      activity_type: "transporte_aereo",
+      name: "Transporte aéreo de teste",
+      slug: "transporte-aereo-classificado",
+      city: "Manaus",
+      description: "Empresa fictícia de transporte aéreo para teste.",
+      status: "draft",
+    }).id;
+    assert.equal(
+      f.db
+        .prepare<[string], { activity_type: string }>(
+          "SELECT activity_type FROM companies WHERE id=?",
+        )
+        .get(navigation)?.activity_type,
+      "navegacao_fluvial",
+    );
+    assert.equal(
+      f.db
+        .prepare<[string], { activity_type: string }>(
+          "SELECT activity_type FROM companies WHERE id=?",
+        )
+        .get(airTransport)?.activity_type,
+      "transporte_aereo",
+    );
+    assert.equal(publicHotel(f.db, "hotel-teste")?.activity_type, "hotel");
+    assert.throws(
+      () =>
+        saveCompany(f.db, f.root, {
+          kind: "hotel",
+          activity_type: "transporte_aereo",
+          name: "Tipo incompatível",
+          slug: "atividade-incompativel",
+          city: "Manaus",
+          description: "Empresa fictícia para validar a compatibilidade do tipo.",
+          status: "draft",
+        }),
+      denied(422),
+    );
+  } finally {
+    f.db.close();
+  }
+});
+test("registration normalizes Brazilian mobiles and rejects malformed or obvious placeholders", () => {
+  assert.equal(normalizeBrazilianMobile("(92) 99123-4567"), "+5592991234567");
+  assert.equal(normalizeBrazilianMobile("+55 92 99123-4567"), "+5592991234567");
+  assert.equal(normalizeBrazilianMobile("(00) 99999-9999"), null);
+  assert.equal(normalizeBrazilianMobile("(92) 99999-9999"), null);
+  assert.equal(normalizeBrazilianMobile("(92) 12345-6789"), null);
+  const input = {
+    name: "Pessoa de teste",
+    email: "pessoa@example.test",
+    phoneNumber: "(92) 99123-4567",
+    password: "Senha-forte-2026!",
+    consent: true,
+  };
+  assert.equal(registrationSchema.parse(input).phoneNumber, "+5592991234567");
+  assert.equal(
+    registrationSchema.safeParse({ ...input, phoneNumber: "99999999999" }).success,
+    false,
+  );
+});
 test("companies use trade names in listings, searches and bookings without losing registered names", async () => {
   const f = await fixture();
   try {

@@ -5,6 +5,7 @@ import { getSession } from "@/server/admin";
 import { LoginForm, SignOutButton } from "@/components/site/admin-auth";
 import { isAdmin } from "@/server/authorization";
 import { ContactInbox } from "@/components/site/contact-inbox";
+import { captchaRequired, turnstileSiteKey } from "@/server/turnstile";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -25,7 +26,7 @@ export default async function ContactPanel() {
         {!user ? (
           <div className="admin-notice">
             <p>Entre com uma conta autorizada da equipe para consultar as mensagens.</p>
-            <LoginForm />
+            <LoginForm turnstileSiteKey={turnstileSiteKey()} captchaRequired={captchaRequired()} />
           </div>
         ) : !isAdmin(user.email, process.env.ADMIN_EMAILS) ? (
           <div className="admin-notice">

@@ -13,7 +13,13 @@ export async function verifyPlatformHttp(
   const post = (path: string, body: unknown, cookie = "", extra: Record<string, string> = {}) =>
     fetch(base + path, {
       method: "POST",
-      headers: { origin: base, "content-type": "application/json", cookie, ...extra },
+      headers: {
+        origin: base,
+        "content-type": "application/json",
+        cookie,
+        "x-captcha-response": "XXXX.DUMMY.TOKEN.XXXX",
+        ...extra,
+      },
       body: JSON.stringify(body),
     });
   const cookieFrom = (response: Response) =>
@@ -42,14 +48,41 @@ export async function verifyPlatformHttp(
   }
   assert.equal((await fetch(base + "/api/plataforma/empresas")).status, 401);
   const touristEmail = "visitor-platform@example.test";
-  const account = { name: "Turista de teste", email: touristEmail, password, consent: true };
+  const account = {
+    name: "Turista de teste",
+    email: touristEmail,
+    phoneNumber: "+5592991234567",
+    password,
+    consent: true,
+  };
   assert.equal(
     (await post("/api/conta/cadastro", account, "", { origin: "https://evil.example" })).status,
     403,
   );
   assert.equal((await post("/api/conta/cadastro", { ...account, role: "admin" })).status, 422);
   assert.equal((await post("/api/conta/cadastro", { ...account, email })).status, 403);
+  assert.equal(
+    (await post("/api/conta/cadastro", { ...account, phoneNumber: "99999999999" })).status,
+    422,
+  );
+  assert.equal(
+    (
+      await fetch(base + "/api/conta/cadastro", {
+        method: "POST",
+        headers: { origin: base, "content-type": "application/json" },
+        body: JSON.stringify(account),
+      })
+    ).status,
+    400,
+    "Cadastro deve exigir um token antirobô verificado no servidor",
+  );
   assert.equal((await post("/api/conta/cadastro", account)).status, 200);
+  assert.equal(
+    db
+      .prepare<[string], { phoneNumber: string }>('SELECT phoneNumber FROM "user" WHERE email=?')
+      .get(touristEmail)?.phoneNumber,
+    account.phoneNumber,
+  );
   db.prepare("DELETE FROM rateLimit").run(); // Isolated fixture only; the live database is never used here.
   const rootLogin = await post("/api/auth/sign-in/email", { email, password });
   assert.equal(rootLogin.status, 200);

@@ -1,6 +1,6 @@
 # Diretório público do Amazonas
 
-Atualização: 02/10/2026. Os conjuntos informados em `Dataset_Cadastur.txt` alimentam `/hospedagens`, `/gastronomia`, `/guias`, `/agencias` e `/servicos`. A prioridade de exibição é Maués, Parintins, Boa Vista do Ramos e demais municípios do Amazonas. A busca ignora acentos e maiúsculas, aceita nome, município e tipo, combina o filtro de cidade e pagina em grupos de 24. Em `/hospedagens`, o filtro estruturado **Tipo de hospedagem** usa o subtipo revisado do Cadastur.
+Atualização: 02/10/2026. Os conjuntos informados em `Dataset_Cadastur.txt` alimentam `/hospedagens`, `/gastronomia`, `/experiencias?tipo=guia`, `/agencias` e `/servicos`. Os guias do Cadastur aparecem no catálogo unificado de experiências junto a passeios e roteiros. A prioridade de exibição é Maués, Parintins, Boa Vista do Ramos e demais municípios do Amazonas. A busca ignora acentos e maiúsculas, aceita nome, município e tipo e combina o filtro de cidade. Em `/hospedagens`, o filtro estruturado **Tipo de hospedagem** usa o subtipo revisado do Cadastur.
 
 ## Dados e contatos
 

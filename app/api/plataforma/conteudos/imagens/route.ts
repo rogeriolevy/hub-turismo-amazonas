@@ -39,7 +39,7 @@ export async function POST(request: Request) {
   const saved: string[] = [];
   try {
     assertOrigin(request);
-    const actor = await requireActor();
+    const actor = await requireActor(request);
     requirePlatformAdmin(actor);
     const contentType = request.headers.get("content-type") || "";
     if (!contentType.toLowerCase().startsWith("multipart/form-data;"))

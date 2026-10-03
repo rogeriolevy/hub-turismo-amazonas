@@ -13,7 +13,13 @@ import {
   publicTour,
   publicGuide,
 } from "@/server/catalog-service";
-import { money, displayTime, companyDisplayName } from "@/lib/platform-schema";
+import {
+  companyActivityLabels,
+  money,
+  displayTime,
+  companyDisplayName,
+} from "@/lib/platform-schema";
+import { staySearchQuery, type StaySearchValues } from "@/lib/stay-search";
 import { CatalogCard, EmptyState, PageIntro, PortalNotice } from "./shared";
 import { BookingForm } from "./booking-form";
 import { NearbyRecommendations } from "./nearby-recommendations";
@@ -45,7 +51,7 @@ export function Directory({ kind, query }: { kind: "hotel" | "tour"; query: stri
             description={
               kind === "hotel"
                 ? "Encontre hospedagens e envie sua solicitação diretamente à equipe responsável."
-                : "Conheça passeios, guias e saídas disponíveis. Escolha sua experiência e aguarde a aprovação do operador."
+                : "Conheça experiências, guias e saídas disponíveis. Escolha uma atividade e aguarde a aprovação do operador."
             }
           />
           <form className="catalog-search" role="search">
@@ -61,7 +67,10 @@ export function Directory({ kind, query }: { kind: "hotel" | "tour"; query: stri
             />
             <button className="button button-dark">Buscar</button>
             {query && (
-              <Link href={kind === "hotel" ? "/hospedagens" : "/passeios"} className="text-link">
+              <Link
+                href={kind === "hotel" ? "/hospedagens" : "/experiencias"}
+                className="text-link"
+              >
                 Limpar
               </Link>
             )}
@@ -97,6 +106,7 @@ export function Directory({ kind, query }: { kind: "hotel" | "tour"; query: stri
                       href={"/hospedagens/" + hotel.slug}
                       title={companyDisplayName(hotel)}
                       city={hotel.city}
+                      subtype={companyActivityLabels[hotel.activity_type]}
                       description={hotel.description}
                       price={
                         hotel.from_price === null
@@ -129,10 +139,19 @@ export function Directory({ kind, query }: { kind: "hotel" | "tour"; query: stri
     </>
   );
 }
-export async function HotelDetail({ slug }: { slug: string }) {
+export async function HotelDetail({
+  slug,
+  search = { entrada: "", saida: "", pessoas: "1" },
+}: {
+  slug: string;
+  search?: StaySearchValues;
+}) {
   const hotel = publicHotel(getDatabase(), slug);
   if (!hotel) notFound();
   const session = await getSession();
+  const hasSearchIntent = Boolean(search.entrada || search.pessoas !== "1");
+  const returnTo =
+    "/hospedagens/" + hotel.slug + (hasSearchIntent ? "?" + staySearchQuery(search) : "");
   return (
     <>
       <Header />
@@ -142,7 +161,7 @@ export async function HotelDetail({ slug }: { slug: string }) {
             ← Todas as hospedagens
           </Link>
           <PageIntro
-            eyebrow="HOSPEDAGEM"
+            eyebrow={companyActivityLabels[hotel.activity_type].toLocaleUpperCase("pt-BR")}
             title={companyDisplayName(hotel)}
             description={hotel.city}
           />
@@ -178,8 +197,9 @@ export async function HotelDetail({ slug }: { slug: string }) {
             </div>
             <BookingForm
               kind="hotel"
-              returnTo={"/hospedagens/" + hotel.slug}
+              returnTo={returnTo}
               authenticated={!!session}
+              initialStay={search}
               options={hotel.rooms.map((room) => ({
                 value: room.id,
                 label: room.name + " · " + room.code + " · " + money(room.price_cents) + "/noite",
@@ -202,8 +222,8 @@ export async function TourDetail({ slug }: { slug: string }) {
       <Header />
       <main id="conteudo" tabIndex={-1} className="portal-main">
         <div className="container">
-          <Link className="text-link" href="/passeios">
-            ← Todos os passeios
+          <Link className="text-link" href="/experiencias">
+            ← Todas as experiências
           </Link>
           <PageIntro eyebrow="EXPERIÊNCIA AMAZÔNICA" title={tour.name} description={tour.city} />
           <div className="detail-layout">
@@ -266,8 +286,8 @@ export function GuideDetail({ slug }: { slug: string }) {
       <Header />
       <main id="conteudo" tabIndex={-1} className="portal-main">
         <div className="container">
-          <Link className="text-link" href="/passeios">
-            ← Passeios e guias
+          <Link className="text-link" href="/experiencias?tipo=guia">
+            ← Guias e experiências
           </Link>
           <PageIntro
             eyebrow="GUIA LOCAL"

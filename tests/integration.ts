@@ -38,6 +38,8 @@ await verifyStoredPassword(db, email, password);
 await provision.api.signUpEmail({
   body: { email: "other@example.test", password, name: "Sem permissão" },
 });
+process.env.TURNSTILE_SITE_KEY = "1x00000000000000000000AA";
+process.env.TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA";
 const server = spawn(
   process.execPath,
   process.argv.includes("--preview")
@@ -59,7 +61,12 @@ server.stderr.on("data", (chunk) => {
 const post = (path: string, body: unknown, extra: Record<string, string> = {}) =>
   fetch(base + path, {
     method: "POST",
-    headers: { origin: base, "content-type": "application/json", ...extra },
+    headers: {
+      origin: base,
+      "content-type": "application/json",
+      "x-captcha-response": "XXXX.DUMMY.TOKEN.XXXX",
+      ...extra,
+    },
     body: JSON.stringify(body),
   });
 const cookieFrom = (response: Response) =>
@@ -83,7 +90,11 @@ try {
   for (const path of [
     "/",
     "/privacidade",
+    "/entrar",
+    "/cadastro",
+    "/hospedagens?entrada=2026-11-10&saida=2026-11-13&pessoas=2",
     "/navegacao",
+    "/navegacao?origem=Mau%C3%A9s&destino=Manaus&modo=fluvial&data=2026-11-10&pessoas=2",
     "/admin",
     "/api/health",
     "/api/openapi",
@@ -91,6 +102,25 @@ try {
     "/sitemap.xml",
   ])
     assert.equal((await fetch(base + path)).status, 200, path);
+  const loginPage = await (await fetch(base + "/entrar")).text();
+  const registrationPage = await (await fetch(base + "/cadastro")).text();
+  const filteredNavigationPage = await (
+    await fetch(
+      base + "/navegacao?origem=Mau%C3%A9s&destino=Manaus&modo=fluvial&data=2026-11-10&pessoas=2",
+    )
+  ).text();
+  assert.match(loginPage, /Boas histórias começam aqui/);
+  assert.match(registrationPage, /Crie sua conta/);
+  assert.match(registrationPage, /Celular com DDD/);
+  assert.match(loginPage, /challenges\.cloudflare\.com\/turnstile/);
+  assert.match(registrationPage, /challenges\.cloudflare\.com\/turnstile/);
+  assert.match(loginPage, /data-sitekey="1x00000000000000000000AA"/);
+  assert.match(registrationPage, /data-sitekey="1x00000000000000000000AA"/);
+  const normalizedNavigationSearch = filteredNavigationPage
+    .replace(/<!-- -->/g, "")
+    .replace(/\s+/g, " ");
+  assert.match(normalizedNavigationSearch, /1 trecho encontrado/);
+  assert.match(normalizedNavigationSearch, /10\/11\/2026 · 2 passageiros/);
   const navigationPage = await (await fetch(base + "/navegacao")).text();
   assert.match(navigationPage, /Seu caminho/);
   assert.match(navigationPage, /Boa Vista do Ramos/);
@@ -111,6 +141,17 @@ try {
   }
   assert.equal((await fetch(base + "/pagina-inexistente")).status, 404);
   assert.equal((await fetch(base + "/api/admin/contatos")).status, 401);
+  assert.equal(
+    (
+      await fetch(base + "/api/auth/sign-in/email", {
+        method: "POST",
+        headers: { origin: base, "content-type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+    ).status,
+    400,
+    "Login deve exigir um token antirobô verificado no servidor",
+  );
   assert.equal(
     (
       await fetch(base + "/api/admin/contatos", {
@@ -157,10 +198,11 @@ try {
     ).status,
     409,
   );
-  assert.equal(
-    (await post("/api/auth/sign-in/email", { email, password: randomUUID() })).status,
-    401,
-  );
+  const rejectedPasswordLogin = await post("/api/auth/sign-in/email", {
+    email,
+    password: randomUUID(),
+  });
+  assert.equal(rejectedPasswordLogin.status, 401, await rejectedPasswordLogin.text());
   const otherLogin = await post("/api/auth/sign-in/email", {
     email: "other@example.test",
     password,
@@ -189,6 +231,7 @@ try {
   );
   const emptyPage = await fetch(base + "/api/admin/contatos?page=2", { headers: { cookie } });
   assert.equal((await emptyPage.json()).data.length, 0);
+  db.prepare("DELETE FROM rateLimit").run();
   const previousPassword = password;
   password = " Outra-Árvore-🌳-" + randomBytes(24).toString("base64url") + "! ";
   await resetAdminPassword(db, email, password);

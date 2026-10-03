@@ -30,8 +30,7 @@ export function PanelShell({
       : module === "passeios"
         ? [
             ["", "Visão geral"],
-            ["passeios", "Passeios"],
-            ["guias", "Guias"],
+            ["experiencias", "Experiências"],
             ["agenda", "Agenda"],
             ["vagas", "Vagas e reservas"],
           ]
@@ -54,7 +53,7 @@ export function PanelShell({
           {module === "hotel"
             ? "PAINEL HOTELEIRO"
             : module === "passeios"
-              ? "GUIAS E OPERADORES"
+              ? "EXPERIÊNCIAS TURÍSTICAS"
               : "ADMINISTRAÇÃO GERAL"}
         </p>
         <nav aria-label="Navegação do painel">

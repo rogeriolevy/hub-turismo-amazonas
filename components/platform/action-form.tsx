@@ -30,6 +30,7 @@ export type Field = {
   max?: number;
   maxLength?: number;
   hint?: string;
+  kindFromValue?: Record<string, "hotel" | "operator">;
 };
 type Values = Record<string, string | number | boolean | null>;
 const schemas = {
@@ -70,6 +71,8 @@ export function ActionForm({
       body: Values = { ...fixed };
     for (const field of fields) {
       const value = String(form.get(field.name) ?? "");
+      if (field.kindFromValue && value in field.kindFromValue)
+        body.kind = field.kindFromValue[value];
       if (field.type === "datetime-local" && value && Number.isNaN(Date.parse(value + "-04:00"))) {
         setSuccess(false);
         setFeedback(`${field.label}: informe uma data e um horário válidos.`);

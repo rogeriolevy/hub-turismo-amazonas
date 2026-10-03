@@ -8,8 +8,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     "",
     "/privacidade",
-    ...directoryCategories.map((category) => "/" + category),
-    "/passeios",
+    ...directoryCategories
+      .filter((category) => category !== "guias")
+      .map((category) => "/" + category),
+    "/experiencias",
     "/navegacao",
     ...publicCatalogPaths(getDatabase()),
     ...directoryCategories.flatMap((category) =>

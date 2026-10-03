@@ -1,0 +1,146 @@
+.auth-screen {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: center;
+  justify-items: center;
+  gap: 26px;
+  padding: 24px clamp(18px, 5vw, 64px);
+  background: radial-gradient(ellipse at 12% 12%, #e9f2e9 0, transparent 36%), #f7f8f5;
+}
+.auth-screen-top {
+  width: min(100%, 1040px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.auth-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #496357;
+  font-size: 13px;
+  font-weight: 600;
+}
+.auth-screen-card {
+  width: min(100%, 460px);
+  padding: clamp(24px, 5vw, 40px);
+  border: 1px solid #dce5dc;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 70px #173c3210;
+}
+.auth-screen-heading {
+  text-align: center;
+}
+.auth-screen-icon {
+  width: 46px;
+  height: 46px;
+  display: inline-grid;
+  place-items: center;
+  margin-bottom: 16px;
+  border-radius: 14px;
+  background: #eaf3eb;
+  color: #216347;
+}
+.auth-screen-heading .eyebrow {
+  margin: 0 0 9px;
+  color: #557565;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+}
+.auth-screen-heading h1 {
+  margin: 0;
+  color: #173c32;
+  font-size: clamp(26px, 6vw, 32px);
+  font-weight: 650;
+  letter-spacing: -1.1px;
+  line-height: 1.15;
+}
+.auth-screen-heading > p:last-child {
+  max-width: 330px;
+  margin: 12px auto 0;
+  color: #64736a;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.auth-screen-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin: 26px 0 22px;
+  padding: 4px;
+  border-radius: 9px;
+  background: #f0f4f0;
+}
+.auth-screen-switch button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #53665b;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.auth-screen-switch button[aria-pressed="true"] {
+  background: white;
+  color: #174d3c;
+  box-shadow: 0 1px 4px #173c3216;
+}
+.auth-screen-form .admin-login,
+.auth-screen-form .platform-form {
+  max-width: none;
+  gap: 15px;
+  margin-top: 0;
+}
+.auth-screen-form .platform-form > .field-help {
+  margin-top: -6px;
+}
+.auth-screen-form .button {
+  width: 100%;
+  min-height: 46px;
+}
+.auth-screen-privacy {
+  margin: 20px 0 0;
+  color: #68776e;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+}
+.auth-screen-privacy a {
+  color: #265f47;
+  text-decoration: underline;
+}
+.auth-success {
+  margin: 0 0 16px;
+  padding: 12px;
+  border: 1px solid #c8e2cf;
+  border-radius: 7px;
+  background: #f0f8f1;
+  color: #245c38;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.auth-screen-footer {
+  margin: 0;
+  color: #748178;
+  font-size: 11px;
+  text-align: center;
+}
+@media (max-width: 480px) {
+  .auth-screen {
+    align-content: start;
+    gap: 40px;
+    padding: 18px 14px 24px;
+  }
+  .auth-screen-card {
+    padding: 24px 18px;
+  }
+  .auth-screen-top .platform-brand .brand-context {
+    display: none;
+  }
+}

@@ -159,6 +159,9 @@ export type DirectorySearch = {
   cidade?: string | string[];
   tipo?: string | string[];
   pagina?: string | string[];
+  entrada?: string | string[];
+  saida?: string | string[];
+  pessoas?: string | string[];
 };
 export function searchProviders(
   db: Database.Database,

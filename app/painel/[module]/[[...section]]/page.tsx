@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -51,6 +51,7 @@ import {
   displayTime,
   displayDate,
   companyDisplayName,
+  companyActivityLabels,
   todayInManaus,
 } from "@/lib/platform-schema";
 import { avatarKeyFromImage, defaultAvatarForUser, profileAvatarUrl } from "@/lib/profile-avatars";
@@ -284,11 +285,17 @@ export default async function Page({
   if (!["hotel", "passeios", "plataforma"].includes(route.module)) notFound();
   const area = route.module as "hotel" | "passeios" | "plataforma",
     section = route.section?.join("/") || "";
+  const query = await searchParams;
+  if (area === "passeios" && (section === "guias" || section === "passeios")) {
+    const companyQuery =
+      typeof query.empresa === "string" ? `?empresa=${encodeURIComponent(query.empresa)}` : "";
+    redirect(`/painel/passeios/experiencias${companyQuery}`);
+  }
   const allowed =
     area === "hotel"
       ? ["", "quartos", "reservas", "fnrh"]
       : area === "passeios"
-        ? ["", "passeios", "guias", "agenda", "vagas", "reservas"]
+        ? ["", "experiencias", "agenda", "vagas", "reservas"]
         : ["", "empresas", "acessos", "cadastur", "conteudos"];
   if (!allowed.includes(section)) notFound();
   const actor = await pageActor("/painel/" + area),
@@ -300,7 +307,6 @@ export default async function Page({
   );
   if (area === "plataforma" && !admin) return <Denied />;
   if (area !== "plataforma" && !admin && !companies.length) return <Denied />;
-  const query = await searchParams;
   const requested = query.empresa;
   const companyId = typeof requested === "string" ? requested : companies[0]?.id;
   if (area !== "plataforma" && companyId && !companies.some((c) => c.id === companyId))
@@ -315,8 +321,8 @@ export default async function Page({
   if (admin || allCompanies.some((c) => c.kind === "operator"))
     modules.push({
       href: "/painel/passeios",
-      label: "Painel de passeios",
-      description: "Guias, agenda e vagas.",
+      label: "Painel de experiências",
+      description: "Passeios, guias, agenda e vagas.",
     });
   if (admin)
     modules.push({
@@ -378,7 +384,7 @@ export default async function Page({
           <PageIntro
             eyebrow="REDE HUB"
             title="Empresas"
-            description="Cadastre parceiros e controle quais informações aparecem nos catálogos."
+            description="Cadastre hospedagens, operadores de passeios, navegação fluvial e transporte aéreo."
           />
           <details className="editor-card" open={!allCompanies.length}>
             <summary>Cadastrar uma empresa</summary>
@@ -391,7 +397,7 @@ export default async function Page({
                   <span>
                     {companyDisplayName(company)}
                     <small>
-                      {company.kind === "hotel" ? "Hotel / pousada" : "Operador"} · {company.city}
+                      {companyActivityLabels[company.activity_type]} · {company.city}
                     </small>
                   </span>
                   <span className="status-pill">
@@ -649,42 +655,17 @@ export default async function Page({
           )}
         </>
       );
-    } else if (section === "guias")
+    } else if (section === "experiencias")
       content = (
         <>
           <PageIntro
             eyebrow={companyDisplayName(company)}
-            title="Guias"
-            description="Apresente os profissionais e vincule seus perfis aos passeios."
+            title="Experiências"
+            description="Cadastre passeios e roteiros, e apresente os profissionais que os conduzem."
           />
+          <h2 className="subheading">Passeios e roteiros</h2>
           <details className="editor-card">
-            <summary>Cadastrar guia</summary>
-            <GuideEditor companyId={companyId} />
-          </details>
-          {inventory.guides.map((guide) => (
-            <details className="editor-card" key={guide.id}>
-              <summary>
-                <span>
-                  {guide.name}
-                  <small>{guide.languages}</small>
-                </span>
-                <span>{guide.published ? "Publicado" : "Rascunho"}</span>
-              </summary>
-              <GuideEditor companyId={companyId} guide={guide} />
-            </details>
-          ))}
-        </>
-      );
-    else if (section === "passeios")
-      content = (
-        <>
-          <PageIntro
-            eyebrow={companyDisplayName(company)}
-            title="Passeios"
-            description="Descreva a experiência, o guia, a duração e o valor por pessoa."
-          />
-          <details className="editor-card">
-            <summary>Cadastrar passeio</summary>
+            <summary>Cadastrar passeio ou roteiro</summary>
             <TourEditor companyId={companyId} guides={inventory.guides} />
           </details>
           {inventory.tours.map((tour) => (
@@ -699,6 +680,23 @@ export default async function Page({
                 <span>{tour.published ? "Publicado" : "Rascunho"}</span>
               </summary>
               <TourEditor companyId={companyId} guides={inventory.guides} tour={tour} />
+            </details>
+          ))}
+          <h2 className="subheading">Guias de turismo</h2>
+          <details className="editor-card">
+            <summary>Cadastrar guia</summary>
+            <GuideEditor companyId={companyId} />
+          </details>
+          {inventory.guides.map((guide) => (
+            <details className="editor-card" key={guide.id}>
+              <summary>
+                <span>
+                  {guide.name}
+                  <small>{guide.languages}</small>
+                </span>
+                <span>{guide.published ? "Publicado" : "Rascunho"}</span>
+              </summary>
+              <GuideEditor companyId={companyId} guide={guide} />
             </details>
           ))}
         </>
@@ -828,7 +826,7 @@ export default async function Page({
       content = (
         <>
           <PageIntro
-            eyebrow="OPERAÇÃO DE PASSEIOS"
+            eyebrow="OPERAÇÃO DE EXPERIÊNCIAS"
             title={companyDisplayName(company)}
             description={
               company.city +
@@ -840,9 +838,14 @@ export default async function Page({
           />
           <div className="account-grid">
             <div className="metric-card">
-              <span>Passeios cadastrados</span>
+              <span>Passeios e roteiros</span>
               <strong>{inventory.tours.length}</strong>
-              <span>Seu inventário</span>
+              <span>Experiências publicáveis</span>
+            </div>
+            <div className="metric-card">
+              <span>Guias cadastrados</span>
+              <strong>{inventory.guides.length}</strong>
+              <span>Profissionais da equipe</span>
             </div>
             <div className="metric-card">
               <span>Solicitações pendentes</span>

@@ -85,3 +85,9 @@ export function publicGuide(db: Database.Database, slug: string) {
       }
     : null;
 }
+export function publicGuides(db: Database.Database) {
+  return many<Guide & { company_name: string; city: string }>(
+    db,
+    "SELECT g.*,COALESCE(NULLIF(TRIM(c.trade_name),''),c.name) company_name,c.city FROM guides g JOIN companies c ON c.id=g.company_id WHERE g.published=1 AND c.status='published' ORDER BY g.name,g.id",
+  );
+}

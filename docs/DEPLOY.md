@@ -1,6 +1,6 @@
 # Publicação da versão Node.js
 
-Esta versão não foi publicada. O site Sites existente permanece disponível. Escolher hospedagem e endereço antes da transição. Não é necessário usar Cloudflare, D1 ou Drizzle.
+Esta versão não foi publicada. O site Sites existente permanece disponível. Escolher hospedagem e endereço antes da transição. O banco usa SQLite local, sem D1 ou Drizzle; a verificação antirobô do login e cadastro usa Cloudflare Turnstile.
 
 Decisão atual do proprietário: seguir somente com uso local. Existe uma VPS Hostinger, mas domínio, sistema operacional e ocupação do servidor ainda não foram verificados. Este documento permanece como referência futura; nenhum acesso ou alteração na VPS foi realizado. Consulte docs/USO-LOCAL.md para a etapa atual.
 
@@ -10,14 +10,19 @@ Um servidor Linux ou serviço gerenciado com Node.js 22 LTS, disco local persist
 
 Um serviço gerenciado com volume persistente reduz manutenção de servidor. Em uma VPS, o operador administra atualizações, TLS, proxy, processo e backups. Os arquivos infra/ são modelos para a segunda opção.
 
+Para a situação específica da Vercel, incluindo a pré-checagem que bloqueia dados em filesystem efêmero, consulte [docs/VERCEL.md](VERCEL.md).
+
 ## Instalação
 
 1. Disponibilizar o código em /opt/hub-turismo, com usuário de serviço sem privilégios.
 2. Executar npm ci e npm run setup.
-3. Ajustar .env.local: SITE_URL=https://seu-dominio, DATABASE_PATH=/var/lib/hub-turismo/hub.sqlite, ADMIN_EMAILS=rogerio1kg@gmail.com. Manter o segredo gerado ou provisionar segredo aleatório com ao menos 32 caracteres.
+3. Ajustar .env.local: SITE_URL=https://seu-dominio, DATABASE_PATH=/var/lib/hub-turismo/hub.sqlite, ADMIN_EMAILS=rogerio1kg@gmail.com. Manter o segredo gerado ou provisionar segredo aleatório com ao menos 32 caracteres. Criar um widget Cloudflare Turnstile para o domínio e definir TURNSTILE_SITE_KEY e TURNSTILE_SECRET_KEY; login e cadastro ficam bloqueados em produção sem as duas chaves.
+
+Em desenvolvimento (`npm run dev`), quando as duas chaves estiverem vazias, a aplicação usa credenciais públicas de teste do Turnstile. Elas aprovam o desafio sem verificar se a pessoa é um robô. Para validação real, informe chaves próprias do domínio. O servidor verifica cada token com a chave secreta; não coloque essa chave no navegador.
+
 4. Criar o diretório de dados com acesso somente ao usuário do serviço.
 5. Se usar o Nginx fornecido, definir TRUST_PROXY_IP_HEADER=x-real-ip. O proxy deve sobrescrever o cabeçalho; não aceitar x-forwarded-for enviado diretamente pelo visitante. O Node permanece vinculado a 127.0.0.1.
-6. Executar npm run db:migrate e npm run admin:create. Definir senha forte no terminal.
+6. Executar npm run db:migrate e npm run admin:create. Definir senha forte no terminal. A migração cria a tabela JWKS usada para guardar as chaves do JWT; mantenha o banco em armazenamento persistente.
 7. Executar verificações e npm run build. SITE_URL deve estar correto durante o build, pois páginas públicas e metadados são pré-renderizados.
 8. Configurar serviço a partir de infra/hub-turismo.service e proxy TLS a partir de infra/nginx.conf, substituindo domínio e caminhos de certificado. Certificados não são fornecidos.
 9. Iniciar o serviço. Testar página pública, envio de contato, login, logout e bloqueio de /api/admin/contatos sem sessão. API anônima deve responder 401.

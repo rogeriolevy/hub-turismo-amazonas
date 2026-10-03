@@ -9,14 +9,17 @@ export const publicModules: ModuleLink[] = [
     label: "Gastronomia",
     description: "Restaurantes, bares e sabores locais.",
   },
-  { href: "/guias", label: "Guias de turismo", description: "Encontre quem conhece o Amazonas." },
+  {
+    href: "/experiencias",
+    label: "Experiências",
+    description: "Passeios, roteiros e profissionais locais.",
+  },
   { href: "/agencias", label: "Agências de turismo", description: "Planeje roteiros e pacotes." },
   {
     href: "/servicos",
     label: "Serviços turísticos",
     description: "Especialistas para sua viagem.",
   },
-  { href: "/passeios", label: "Passeios", description: "Descubra experiências locais." },
   {
     href: "/navegacao",
     label: "Navegação",
@@ -74,6 +77,7 @@ export function CatalogCard({
   description,
   price,
   kind,
+  subtype,
 }: {
   href: string;
   title: string;
@@ -81,6 +85,7 @@ export function CatalogCard({
   description: string;
   price: string;
   kind: "hotel" | "tour";
+  subtype?: string;
 }) {
   return (
     <article className="catalog-card">
@@ -93,6 +98,7 @@ export function CatalogCard({
           <MapPin size={14} />
           {city}
         </p>
+        {subtype && <p className="catalog-subtype">{subtype}</p>}
         <h2>
           <Link href={href}>{title}</Link>
         </h2>

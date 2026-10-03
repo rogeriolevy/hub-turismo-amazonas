@@ -8,11 +8,13 @@ export function BookingForm({
   options,
   authenticated,
   returnTo,
+  initialStay,
 }: {
   kind: "hotel" | "tour";
   options: { value: string; label: string }[];
   authenticated: boolean;
   returnTo: string;
+  initialStay?: { entrada: string; saida: string; pessoas: string };
 }) {
   const router = useRouter(),
     [busy, setBusy] = useState(false),
@@ -37,7 +39,7 @@ export function BookingForm({
         >
           Entrar para solicitar
         </Link>
-        <Link href="/cadastro" className="text-link">
+        <Link href={"/cadastro?voltar=" + encodeURIComponent(returnTo)} className="text-link">
           Criar uma conta
         </Link>
       </div>
@@ -123,6 +125,7 @@ export function BookingForm({
               type="date"
               name="check_in"
               min={todayInManaus()}
+              defaultValue={initialStay?.entrada || undefined}
               required
               disabled={busy}
             />
@@ -134,6 +137,7 @@ export function BookingForm({
               type="date"
               name="check_out"
               min={todayInManaus()}
+              defaultValue={initialStay?.saida || undefined}
               required
               disabled={busy}
             />
@@ -148,7 +152,7 @@ export function BookingForm({
           type="number"
           min={1}
           max={20}
-          defaultValue={1}
+          defaultValue={Number(initialStay?.pessoas) || 1}
           required
           disabled={busy}
         />

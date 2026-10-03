@@ -1,6 +1,7 @@
 import type Database from "better-sqlite3";
 import {
   companySchema,
+  companyActivityKinds,
   memberSchema,
   roomSchema,
   tourSchema,
@@ -33,12 +34,17 @@ export function saveCompany(db: Database.Database, actor: Actor, input: unknown)
     if (old.kind !== data.kind)
       throw new HttpError(409, "KIND", "O tipo da empresa não pode ser alterado.");
   }
+  const activityType =
+    data.activity_type ?? old?.activity_type ?? (data.kind === "hotel" ? "hotel" : "passeios");
+  if (companyActivityKinds[activityType] !== data.kind)
+    throw new HttpError(422, "ACTIVITY_TYPE", "O tipo de atividade não corresponde à empresa.");
   return write(db, () => {
     db.prepare(
-      "INSERT INTO companies (id,kind,name,slug,city,description,status,created_at,trade_name) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name,trade_name=excluded.trade_name,slug=excluded.slug,city=excluded.city,description=excluded.description,status=excluded.status",
+      "INSERT INTO companies (id,kind,activity_type,name,slug,city,description,status,created_at,trade_name) VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET activity_type=excluded.activity_type,name=excluded.name,trade_name=excluded.trade_name,slug=excluded.slug,city=excluded.city,description=excluded.description,status=excluded.status",
     ).run(
       id,
       data.kind,
+      activityType,
       data.name,
       data.slug,
       data.city,

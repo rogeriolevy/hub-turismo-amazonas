@@ -22,14 +22,14 @@ Mantenha esse terminal aberto durante o uso. `Ctrl+C` encerra o servidor. A apli
 - Administração da plataforma: http://127.0.0.1:3005/painel/plataforma
 - Minha conta: http://127.0.0.1:3005/minha-conta
 - Cadastro básico: http://127.0.0.1:3005/cadastro
-- Catálogos: http://127.0.0.1:3005/hospedagens e http://127.0.0.1:3005/passeios
+- Catálogos: http://127.0.0.1:3005/hospedagens e http://127.0.0.1:3005/experiencias
 - Verificação de disponibilidade: http://127.0.0.1:3005/api/health
 
 O painel utiliza `rogerio1kg@gmail.com` e a senha definida localmente. Não é a senha do site publicado ou de outro serviço. O formulário salva mensagens; a resposta continua manual pelo aplicativo de e-mail.
 
 ## Ativar empresas e reservas
 
-A migração 002 já foi aplicada nesta instalação, com backup anterior em `backups/hub-2026-09-29T15-54-33-812Z.sqlite`. A conta e os contatos existentes foram preservados. Comece por **Administração da plataforma → Empresas**; crie a empresa, vincule equipes se necessário, cadastre quartos/passeios/saídas e publique. Os catálogos ficam vazios até o cadastro real. O roteiro completo está em [PLATAFORMA.md](PLATAFORMA.md).
+A migração 002 já foi aplicada nesta instalação, com backup anterior em `backups/hub-2026-09-29T15-54-33-812Z.sqlite`. A conta e os contatos existentes foram preservados. Comece por **Administração da plataforma → Empresas**; crie a empresa, vincule equipes se necessário, cadastre quartos ou experiências (passeios, guias e saídas) e publique. Os catálogos ficam vazios até o cadastro real. O roteiro completo está em [PLATAFORMA.md](PLATAFORMA.md).
 
 As reservas aguardam aprovação pelo hotel ou operador. FNRH é apenas o registro local de chegada/saída nesta etapa. Não há cobrança online ou confirmação de e-mail automática.
 

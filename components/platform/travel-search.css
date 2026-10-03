@@ -1,0 +1,194 @@
+.travel-search-panel {
+  overflow: hidden;
+  border: 2px solid #dda91d;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 12px 30px #173c3212;
+}
+.travel-search-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: #124b3a;
+  color: white;
+}
+.travel-search-tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 7px 13px;
+  border: 1px solid transparent;
+  border-radius: 24px;
+  font-size: 13px;
+}
+.travel-search-tabs a:hover,
+.travel-search-tabs a[aria-current="page"] {
+  border-color: #ffffffb8;
+  background: #ffffff12;
+}
+.travel-search-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.15fr) minmax(280px, 1.5fr) minmax(155px, 0.8fr) auto;
+  align-items: stretch;
+  gap: 4px;
+  padding: 8px;
+}
+.travel-search-form.travel-search-form--navigation {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+}
+.travel-search-field {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  grid-template-rows: auto minmax(28px, auto);
+  align-content: center;
+  column-gap: 10px;
+  min-width: 0;
+  min-height: 64px;
+  padding: 9px 13px;
+  border-radius: 7px;
+  color: #183f34;
+}
+.travel-search-field > svg {
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: #64746a;
+}
+.travel-search-field > span {
+  overflow: hidden;
+  color: #627268;
+  font-size: 11px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.travel-search-field :is(input, select) {
+  width: 100%;
+  min-width: 0;
+  min-height: 30px;
+  padding: 2px 20px 0 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #173c32;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+.travel-search-field :is(input, select):focus-visible {
+  outline: 2px solid #a86f12;
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+.travel-search-field input[type="date"] {
+  padding-right: 0;
+  font-size: 12px;
+}
+.travel-search-dates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px;
+  min-width: 0;
+}
+.travel-search-dates .travel-search-field {
+  border-left: 1px solid #e4e9e4;
+  border-radius: 0;
+}
+.travel-search-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-width: 135px;
+  min-height: 64px;
+  padding: 12px 22px;
+  border: 0;
+  border-radius: 7px;
+  background: #1376e8;
+  color: white;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+}
+.travel-search-submit:hover {
+  background: #0d62c5;
+}
+.travel-search-note {
+  padding: 0 17px 12px;
+  color: #586b61;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.travel-search-advanced {
+  border-top: 1px solid #e5ebe5;
+  padding: 0 17px;
+}
+.travel-search-advanced summary {
+  width: fit-content;
+  padding: 8px 0;
+  color: #315b4b;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+}
+.travel-search-advanced-fields {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 12px;
+  padding: 2px 0 12px;
+}
+.travel-search-advanced-fields label {
+  display: grid;
+  gap: 5px;
+  color: #53685c;
+  font-size: 11px;
+  font-weight: 600;
+}
+.travel-search-advanced-fields :is(input, select) {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #cdd9d0;
+  border-radius: 5px;
+  background: white;
+  color: #173c32;
+  font: inherit;
+}
+@media (max-width: 900px) {
+  .travel-search-form {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  }
+  .travel-search-form.travel-search-form--navigation {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  }
+  .travel-search-submit {
+    min-height: 54px;
+  }
+}
+@media (max-width: 560px) {
+  .travel-search-tabs {
+    padding: 8px 10px;
+  }
+  .travel-search-form {
+    grid-template-columns: 1fr;
+    gap: 2px;
+    padding: 6px;
+  }
+  .travel-search-form.travel-search-form--navigation {
+    grid-template-columns: 1fr;
+  }
+  .travel-search-field {
+    min-height: 58px;
+  }
+  .travel-search-dates .travel-search-field:first-child {
+    border-left: 0;
+  }
+  .travel-search-submit {
+    min-height: 50px;
+    width: 100%;
+  }
+  .travel-search-advanced-fields {
+    grid-template-columns: 1fr;
+  }
+}

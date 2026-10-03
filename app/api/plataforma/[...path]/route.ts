@@ -30,7 +30,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 async function handle(request: Request, { params }: { params: Promise<{ path: string[] }> }) {
   try {
-    const actor = await requireActor(),
+    const actor = await requireActor(request),
       db = getDatabase(),
       path = (await params).path.join("/");
     if (request.method === "GET") {

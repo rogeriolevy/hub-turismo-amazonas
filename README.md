@@ -1,6 +1,6 @@
 # Hub Turismo Amazonas — versão Node.js + SQLite
 
-Site institucional, diretórios de hospedagens, gastronomia, guias, agências e serviços turísticos do Amazonas, navegação, passeios, contas de turistas, reservas por aprovação e painéis de empresas, em Next.js oficial com Node.js. Esta versão local é independente da publicação existente no Sites.
+Site institucional, diretórios de hospedagens, gastronomia, experiências, agências e serviços turísticos do Amazonas, navegação, contas de turistas, reservas por aprovação e painéis de empresas, em Next.js oficial com Node.js. Esta versão local é independente da publicação existente no Sites.
 
 Para usar diariamente no Windows, iniciar o servidor, fazer backup ou recuperar o acesso, consulte [Uso local](docs/USO-LOCAL.md). A prioridade atual é a operação local; a publicação na VPS foi adiada pelo proprietário.
 
@@ -32,7 +32,7 @@ A configuração local fica em .env.local, ignorada pelo Git. setup gera um segr
 - Respostas aos contatos continuam manuais, pelo aplicativo de e-mail do operador.
 - Catálogos públicos, perfis de guia, cadastro/login e acompanhamento das reservas do turista.
 - Módulo público de Navegação: filtros de transporte e destinos, roteiros Maués ↔ Manaus, contatos, tarifas de referência e pacotes com fontes. Consulte [Navegação e pesquisa](docs/NAVEGACAO.md).
-- Painéis de hotel (quartos, reservas e estadias locais), operador (guias, passeios, agenda e vagas) e administração (empresas e permissões).
+- Painéis de hotel (quartos, reservas e estadias locais), operador (experiências, guias, agenda e vagas) e administração (empresas e permissões).
 - Aprovação de solicitações com controle transacional de disponibilidade e isolamento por empresa.
 - Sem pagamentos, e-mails automáticos ou transmissão oficial de FNRH.
 

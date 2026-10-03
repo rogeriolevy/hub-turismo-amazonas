@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const actor = await requireActor();
+    const actor = await requireActor(request);
     const input = parse(profileSchema, await readJson(request));
     const image = profileAvatarUrl(input.avatar);
     const result = getDatabase()

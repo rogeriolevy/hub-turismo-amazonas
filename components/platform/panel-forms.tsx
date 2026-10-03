@@ -1,5 +1,10 @@
 import { ActionForm, type Field } from "./action-form";
 import type { Company, Room, Tour, Guide, Departure } from "@/server/platform-models";
+import {
+  companyActivityKinds,
+  companyActivityLabels,
+  companyActivityTypes,
+} from "@/lib/platform-schema";
 const name: Field = { name: "name", label: "Nome", maxLength: 100 };
 const slug: Field = {
   name: "slug",
@@ -16,26 +21,26 @@ const description: Field = {
 };
 const price: Field = { name: "price_cents", label: "Preço (R$)", type: "currency" };
 export function CompanyEditor({ company }: { company?: Company }) {
+  const activityOptions = companyActivityTypes
+    .filter((activity) => !company || companyActivityKinds[activity] === company.kind)
+    .map((activity) => ({ value: activity, label: companyActivityLabels[activity] }));
   return (
     <ActionForm
       action="empresas"
-      fixed={company ? { id: company.id, kind: company.kind } : {}}
-      initial={company ? { ...company } : { status: "draft" }}
+      fixed={company ? { id: company.id } : {}}
+      initial={company ? { ...company } : { status: "draft", activity_type: "hotel" }}
       reset={!company}
       fields={[
-        ...(!company
-          ? [
-              {
-                name: "kind",
-                label: "Tipo",
-                type: "select",
-                options: [
-                  { value: "hotel", label: "Hotel ou pousada" },
-                  { value: "operator", label: "Operador de passeios" },
-                ],
-              } as Field,
-            ]
-          : []),
+        {
+          name: "activity_type",
+          label: "Tipo de empresa ou serviço",
+          type: "select",
+          options: activityOptions,
+          kindFromValue: companyActivityKinds,
+          hint: company
+            ? "O tipo selecionado mantém o segmento operacional desta empresa."
+            : "A escolha define se a empresa será uma hospedagem ou um operador turístico.",
+        },
         { ...name, label: "Razão social ou nome cadastrado" },
         {
           name: "trade_name",

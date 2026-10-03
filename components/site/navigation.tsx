@@ -3,7 +3,6 @@ import {
   BedDouble,
   BriefcaseBusiness,
   Compass,
-  MapPinned,
   Ship,
   Sparkles,
   UtensilsCrossed,
@@ -20,8 +19,7 @@ import "./navigation.css";
 const destinations = [
   { href: "/hospedagens", label: "Hospedagens", icon: BedDouble },
   { href: "/gastronomia", label: "Gastronomia", icon: UtensilsCrossed },
-  { href: "/passeios", label: "Passeios", icon: Compass },
-  { href: "/guias", label: "Guias", icon: MapPinned },
+  { href: "/experiencias", label: "Experiências", icon: Compass },
   { href: "/agencias", label: "Agências", icon: BriefcaseBusiness },
   { href: "/servicos", label: "Serviços turísticos", icon: Sparkles },
   { href: "/navegacao", label: "Navegação", icon: Ship },

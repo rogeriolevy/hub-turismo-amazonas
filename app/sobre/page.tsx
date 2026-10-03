@@ -57,7 +57,7 @@ const steps = [
     number: "02",
     label: "CONEXÃO PRESENTE",
     title: "Facilitar a descoberta",
-    text: "Catálogos aproximam visitantes de hospedagens, guias, passeios, gastronomia e outros serviços turísticos.",
+    text: "Catálogos aproximam visitantes de hospedagens, experiências, gastronomia e outros serviços turísticos.",
   },
   {
     number: "03",

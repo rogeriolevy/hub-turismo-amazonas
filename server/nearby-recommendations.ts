@@ -1,6 +1,12 @@
 import { createHash } from "node:crypto";
 import type Database from "better-sqlite3";
 import { normalizeLabel } from "@/lib/cadastur-schema";
+import {
+  matchesNearbyProviderRegion,
+  nearbyGeocodeScore,
+  nearbyGeocodeFeatures,
+  type NearbyGeocodeCandidate,
+} from "@/lib/nearby-geocoder";
 import type {
   HotelLocationReference,
   NearbyCategory,
@@ -8,6 +14,7 @@ import type {
   NearbyRecommendations,
 } from "@/lib/nearby-recommendations";
 import { publicProviders } from "@/server/cadastur/public-directory";
+import geocoderModel from "./nearby-geocoder-model.json" with { type: "json" };
 
 type CacheRow = {
   provider_key: string;
@@ -27,12 +34,9 @@ type RawPlace = {
   longitude: number;
 };
 
-type GeocodeResult = {
+type GeocodeResult = NearbyGeocodeCandidate & {
   lat?: string;
   lon?: string;
-  name?: string;
-  display_name?: string;
-  address?: Record<string, string | undefined>;
 };
 
 type OverpassElement = {
@@ -205,81 +209,61 @@ async function reserveOverpassSlot(db: Database.Database) {
   if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
 }
 
-function matchesPlace(result: GeocodeResult, provider: HotelLocationReference) {
-  const address = result.address ?? {};
-  const city = normalizeLabel(provider.city);
-  const resolvedCity = normalizeLabel(
-    [address.city, address.town, address.village, address.municipality, address.county]
-      .filter(Boolean)
-      .join(" "),
-  );
-  const display = normalizeLabel(result.display_name ?? "");
-  const cityMatches = Boolean(city && (resolvedCity.includes(city) || display.includes(city)));
-  if (!cityMatches) return false;
-
-  const searchedName = normalizeLabel(provider.name);
-  const resolvedNames = [
-    result.name,
-    address.hotel,
-    address.hostel,
-    address.guest_house,
-    address.tourism,
-    address.commercial,
-  ]
-    .filter(Boolean)
-    .map((value) => normalizeLabel(value!));
-  const nameMatches = resolvedNames.some(
-    (name) =>
-      name === searchedName ||
-      (Math.min(name.length, searchedName.length) >= 8 &&
-        (name.includes(searchedName) || searchedName.includes(name))),
-  );
-
-  const sourceAddress = normalizeLabel(provider.address);
-  const addressParts = [address.road, address.pedestrian, address.residential, address.suburb]
-    .filter(Boolean)
-    .map((value) => normalizeLabel(value!));
-  const addressMatches = addressParts.some(
-    (part) => part.length >= 7 && sourceAddress.includes(part),
-  );
-  return nameMatches || (Boolean(provider.address) && addressMatches);
-}
-
 async function geocodeHotel(db: Database.Database, provider: HotelLocationReference) {
-  await reserveNominatimSlot(db);
   const baseUrl = (process.env.OSM_NOMINATIM_URL || "https://nominatim.openstreetmap.org").replace(
     /\/$/,
     "",
   );
-  const query = [provider.name, provider.address, provider.city, "Amazonas", "Brasil"]
-    .filter(Boolean)
-    .join(", ");
-  const url = new URL(`${baseUrl}/search`);
-  url.search = new URLSearchParams({
-    q: query,
-    format: "jsonv2",
-    addressdetails: "1",
-    countrycodes: "br",
-    limit: "5",
-    "accept-language": "pt-BR",
-  }).toString();
-  const response = await fetch(url, {
-    headers: endpointIdentity().headers,
-    signal: AbortSignal.timeout(8000),
-  });
-  if (!response.ok) throw new Error("O serviço de localização está indisponível.");
-  const results = (await response.json()) as GeocodeResult[];
-  for (const result of results) {
-    if (!matchesPlace(result, provider)) continue;
-    const latitude = Number(result.lat);
-    const longitude = Number(result.lon);
-    if (
-      Number.isFinite(latitude) &&
-      Number.isFinite(longitude) &&
-      Math.abs(latitude) <= 90 &&
-      Math.abs(longitude) <= 180
-    )
-      return { latitude, longitude };
+  const locality = [provider.city, "Amazonas", "Brasil"].filter(Boolean).join(", ");
+  const queries = [
+    [provider.name, provider.address, locality].filter(Boolean).join(", "),
+    [provider.address, locality].filter(Boolean).join(", "),
+    [provider.name, locality].filter(Boolean).join(", "),
+  ].filter((query, index, all) => query && all.indexOf(query) === index);
+
+  for (const query of queries) {
+    await reserveNominatimSlot(db);
+    const url = new URL(`${baseUrl}/search`);
+    url.search = new URLSearchParams({
+      q: query,
+      format: "jsonv2",
+      addressdetails: "1",
+      countrycodes: "br",
+      limit: "10",
+      "accept-language": "pt-BR",
+    }).toString();
+    const response = await fetch(url, {
+      headers: endpointIdentity().headers,
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) throw new Error("O serviço de localização está indisponível.");
+    const payload = (await response.json()) as unknown;
+    const results = Array.isArray(payload) ? (payload as GeocodeResult[]) : [];
+    const match = results
+      .filter((candidate) => matchesNearbyProviderRegion(provider, candidate))
+      .map((candidate) => ({
+        candidate,
+        features: nearbyGeocodeFeatures(provider, candidate),
+        score: nearbyGeocodeScore(provider, candidate, geocoderModel.weights, geocoderModel.bias),
+      }))
+      .filter(
+        ({ features, score }) =>
+          features.name_similarity >= 0.85 ||
+          (features.address_similarity >= 0.65 && score >= geocoderModel.threshold),
+      )
+      .sort((a, b) => b.score - a.score)[0]?.candidate;
+
+    if (match) {
+      const latitude = Number(match.lat);
+      const longitude = Number(match.lon);
+      if (
+        Number.isFinite(latitude) &&
+        Number.isFinite(longitude) &&
+        Math.abs(latitude) <= 90 &&
+        Math.abs(longitude) <= 180
+      )
+        return { latitude, longitude };
+    }
   }
   return null;
 }
@@ -469,7 +453,13 @@ export async function nearbyRecommendations(
 ): Promise<NearbyRecommendations> {
   ensureCache(db);
   const sourceHash = createHash("sha256")
-    .update([provider.name, provider.address, provider.city].join("\n"))
+    .update(
+      JSON.stringify({
+        strategy: 2,
+        provider: [provider.name, provider.address, provider.city],
+        model: geocoderModel,
+      }),
+    )
     .digest("hex");
   const now = Date.now();
   let cached = readCache(db, provider.key);

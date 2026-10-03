@@ -16,7 +16,21 @@ export const metadata = {
   alternates: { canonical: "/navegacao" },
 };
 
-export default function NavigationPage() {
+type NavigationSearchParams = {
+  origem?: string | string[];
+  destino?: string | string[];
+  modo?: string | string[];
+  data?: string | string[];
+  pessoas?: string | string[];
+};
+
+export default async function NavigationPage({
+  searchParams,
+}: {
+  searchParams: Promise<NavigationSearchParams>;
+}) {
+  const search = await searchParams;
+  const searchKey = JSON.stringify(search);
   return (
     <>
       <Header />
@@ -74,7 +88,7 @@ export default function NavigationPage() {
           </div>
         </nav>
         <div className="container">
-          <NavigationExplorer today={todayInManaus()} />
+          <NavigationExplorer key={searchKey} today={todayInManaus()} search={search} />
           <HubContentGrid
             items={publicCatalogItems(getDatabase(), "navegacao")}
             title="Operadores e serviços de navegação"

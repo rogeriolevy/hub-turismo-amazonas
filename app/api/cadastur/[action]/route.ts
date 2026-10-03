@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ action: string }> };
 export async function GET(request: Request, context: Context) {
   try {
-    const actor = await requireActor();
+    const actor = await requireActor(request);
     requirePlatformAdmin(actor);
     const { action } = await context.params;
     const query = Object.fromEntries(new URL(request.url).searchParams);
@@ -34,7 +34,7 @@ export async function GET(request: Request, context: Context) {
 }
 export async function POST(request: Request, context: Context) {
   try {
-    const actor = await requireActor();
+    const actor = await requireActor(request);
     requirePlatformAdmin(actor);
     const { action } = await context.params;
     if (action === "confirmar")

@@ -12,7 +12,6 @@ import {
   Clock3,
   Compass,
   Grid2X2,
-  MapPinned,
   Settings2,
   Ship,
   Sparkles,
@@ -37,13 +36,12 @@ const moduleIcons: Record<string, LucideIcon> = {
   "/": Compass,
   "/hospedagens": BedDouble,
   "/gastronomia": UtensilsCrossed,
-  "/guias": MapPinned,
+  "/experiencias": Compass,
   "/agencias": BriefcaseBusiness,
   "/servicos": Sparkles,
-  "/passeios": Compass,
   "/navegacao": Ship,
   "/painel/hotel": BedDouble,
-  "/painel/passeios": MapPinned,
+  "/painel/passeios": Compass,
   "/painel/plataforma": Settings2,
 };
 
@@ -72,8 +70,8 @@ export default async function Page({
   if (admin || companies.some((c) => c.kind === "operator"))
     modules.push({
       href: "/painel/passeios",
-      label: "Painel de passeios",
-      description: "Agenda, guias e vagas.",
+      label: "Painel de experiências",
+      description: "Passeios, guias, agenda e vagas.",
     });
   if (admin)
     modules.push({

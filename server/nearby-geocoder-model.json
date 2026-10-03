@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "featureNames": [
+    "name_similarity",
+    "address_similarity",
+    "road_similarity",
+    "house_number_match",
+    "house_number_missing",
+    "postcode_match"
+  ],
+  "weights": {
+    "name_similarity": 1.2164276416277042,
+    "address_similarity": 4.049019286491809,
+    "road_similarity": 4.303716181906131,
+    "house_number_match": 1.101417088483941,
+    "house_number_missing": -0.64650898614798,
+    "postcode_match": 1.6113603341046387
+  },
+  "bias": -6.645336,
+  "threshold": 0.64,
+  "trainingRecords": 397,
+  "trainingSamples": 2696,
+  "validation": {
+    "source": "Pares sintéticos derivados de endereços Cadastur; não substitui validação geográfica real.",
+    "samples": 556,
+    "accuracy": 0.9784,
+    "precision": 0.9602,
+    "recall": 0.9918
+  }
+}

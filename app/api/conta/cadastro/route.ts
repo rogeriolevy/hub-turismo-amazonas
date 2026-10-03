@@ -8,10 +8,17 @@ import { readJson, errorResponse, HttpError } from "@/server/http";
 import { parse } from "@/server/platform-store";
 import { registrationSchema } from "@/lib/platform-schema";
 import { profileAvatars, profileAvatarUrl } from "@/lib/profile-avatars";
-const createRegistrationAuth = () => betterAuth(authOptions(getDatabase(), true));
+import {
+  captchaRequired,
+  captchaUnavailableMessage,
+  isTurnstileConfigured,
+} from "@/server/turnstile";
+const createRegistrationAuth = () => betterAuth(authOptions(getDatabase(), true, true));
 let registrationAuth: ReturnType<typeof createRegistrationAuth> | undefined;
 export async function POST(request: Request) {
   try {
+    if (captchaRequired() && !isTurnstileConfigured())
+      throw new HttpError(503, "CAPTCHA_CONFIGURATION", captchaUnavailableMessage());
     const input = parse(registrationSchema, await readJson(request));
     if (isAdmin(input.email, process.env.ADMIN_EMAILS))
       throw new HttpError(
@@ -27,7 +34,12 @@ export async function POST(request: Request) {
       new Request(new URL("/api/auth/sign-up/email", request.url), {
         method: "POST",
         headers,
-        body: JSON.stringify({ name: input.name, email: input.email, password: input.password }),
+        body: JSON.stringify({
+          name: input.name,
+          email: input.email,
+          password: input.password,
+          phoneNumber: input.phoneNumber,
+        }),
       }),
     );
     if (response.ok) {
