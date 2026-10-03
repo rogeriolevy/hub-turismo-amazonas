@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   BedDouble,
   UtensilsCrossed,
@@ -137,10 +138,14 @@ function ProviderCard({ entry }: { entry: PublicProvider }) {
         </span>
       </div>
       {entry.images[0] && (
-        <img
+        <Image
+          unoptimized
           className="provider-card-photo"
           src={entry.images[0]}
           alt={`Imagem de ${entry.name}`}
+          width={1280}
+          height={720}
+          sizes="(max-width: 700px) 100vw, (max-width: 1200px) 50vw, 33vw"
           loading="lazy"
         />
       )}
@@ -507,7 +512,14 @@ export function ProviderDetail({ id }: { id: string }) {
             <section>
               <div className="provider-detail-art">
                 {entry.images[0] ? (
-                  <img src={entry.images[0]} alt={`Imagem de ${entry.name}`} />
+                  <Image
+                    unoptimized
+                    src={entry.images[0]}
+                    alt={`Imagem de ${entry.name}`}
+                    width={1600}
+                    height={1100}
+                    sizes="(max-width: 800px) 100vw, 66vw"
+                  />
                 ) : (
                   <Icon size={82} strokeWidth={1} aria-hidden="true" />
                 )}
@@ -529,10 +541,14 @@ export function ProviderDetail({ id }: { id: string }) {
               {entry.images.length > 1 && (
                 <div className="provider-detail-gallery" aria-label="Outras imagens">
                   {entry.images.slice(1).map((image, index) => (
-                    <img
+                    <Image
+                      unoptimized
                       key={image}
                       src={image}
                       alt={`Imagem ${index + 2} de ${entry.name}`}
+                      width={640}
+                      height={480}
+                      sizes="(max-width: 600px) 33vw, 20vw"
                       loading="lazy"
                     />
                   ))}

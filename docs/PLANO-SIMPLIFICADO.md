@@ -52,7 +52,9 @@ Serviços: validação, persistência, idempotência, limites e SQL parametrizad
 
 ## Situação da execução
 
-A implementação local das etapas 1 a 3 foi concluída. Na etapa 4, passaram instalação limpa, 22 testes, integração HTTP, compilação, tipagem, lint, formatação, auditoria de dependências de produção e revisão dos fluxos no navegador. A revisão inclui larguras simuladas de 320, 375, 768 e 1280 pixels, além de verificações de teclado, foco após validação/envio e atualização de contatos. Um backup do banco local foi restaurado e conferido em arquivo separado.
+As etapas 1 a 3 da entrega local estão concluídas. Na revalidação de 03/10/2026, passaram runtime Node/SQLite, instalação limpa no NTFS, migração temporária, 49 testes, integração HTTP, build de produção, TypeScript, ESLint e Prettier. O build em Windows detecta checkout FAT32 e usa uma cópia de preparação NTFS; o artefato foi copiado de volta e a integração passou a partir do checkout original. As contagens de 22 e 29 testes descritas em registros anteriores foram substituídas pela contagem atual de 49.
+
+A revisão anterior no navegador inclui larguras simuladas de 320, 375, 768 e 1280 pixels, além de verificações de teclado, foco após validação/envio e atualização de contatos. Um backup do banco local foi restaurado e conferido em arquivo separado. Esses testes manuais não foram repetidos nesta revalidação.
 
 A conta administrativa já foi criada. A documentação e o CI foram preparados. O proprietário informou possuir VPS Hostinger, mas decidiu manter esta etapa somente local, deixando domínio, sistema da VPS e publicação para depois. O uso diário e a recuperação estão descritos em docs/USO-LOCAL.md.
 

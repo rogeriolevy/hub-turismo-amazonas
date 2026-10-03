@@ -41,7 +41,9 @@ npm run build
 npm start
 ```
 
-Para desenvolvimento com atualização automática, use `npm run dev` em vez de `npm start`, mantendo apenas um servidor na porta 3005. O script usa Webpack porque o projeto está em uma unidade exFAT, que não oferece suporte às junctions usadas pelo Turbopack. Para atualizar dependências a partir do lockfile, use `npm ci` com o servidor parado. Migrações necessárias são executadas por `npm run db:migrate` depois de um backup.
+Para desenvolvimento com atualização automática, use `npm run dev` em vez de `npm start`, mantendo apenas um servidor na porta 3005. O script usa Webpack porque o projeto está em uma unidade FAT32, que não oferece suporte às junctions usadas pelo Turbopack. Para atualizar dependências a partir do lockfile, use `npm ci` com o servidor parado. Migrações necessárias são executadas por `npm run db:migrate` depois de um backup.
+
+O build também usa Webpack. Em unidades FAT32 ou exFAT, `npm run build` prepara o código e as dependências em uma pasta temporária NTFS, migra um banco descartável e copia o resultado para `.next` no projeto. `.env.local`, `data/` e `backups/` não são copiados; o banco temporário é criado do zero. A unidade temporária precisa ter espaço livre e ser NTFS.
 
 ## Banco e backup
 

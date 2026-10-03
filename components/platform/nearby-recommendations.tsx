@@ -19,7 +19,7 @@ import type {
 import "./nearby-recommendations.css";
 
 type Props = { providerId: string; source: "company" | "cadastur" };
-type State = NearbyData | "loading" | "error";
+type Result = { retry: number; state: NearbyData | "error" } | null;
 
 const categoryLabels: Record<NearbyCategory, string> = {
   restaurant: "Restaurante",
@@ -59,14 +59,24 @@ function distanceLabel(meters: number) {
 }
 
 export function NearbyRecommendations({ providerId, source }: Props) {
-  const [state, setState] = useState<State>("loading");
+  return (
+    <NearbyRecommendationsContent
+      key={`${source}:${providerId}`}
+      providerId={providerId}
+      source={source}
+    />
+  );
+}
+
+function NearbyRecommendationsContent({ providerId, source }: Props) {
+  const [result, setResult] = useState<Result>(null);
   const [retry, setRetry] = useState(0);
+  const state = result?.retry === retry ? result.state : "loading";
 
   useEffect(() => {
     let active = true;
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 45000);
-    setState("loading");
     const query = new URLSearchParams({ id: providerId, origem: source });
 
     void fetch(`/api/proximidades?${query}`, {
@@ -76,10 +86,10 @@ export function NearbyRecommendations({ providerId, source }: Props) {
       .then(async (response) => {
         const payload = await response.json();
         if (!response.ok || !payload.data) throw new Error("Não foi possível carregar.");
-        if (active) setState(payload.data as NearbyData);
+        if (active) setResult({ retry, state: payload.data as NearbyData });
       })
       .catch(() => {
-        if (active) setState("error");
+        if (active) setResult({ retry, state: "error" });
       })
       .finally(() => window.clearTimeout(timeout));
 

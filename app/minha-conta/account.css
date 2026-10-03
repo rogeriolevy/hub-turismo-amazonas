@@ -1,7 +1,5 @@
 .account-main {
-  background:
-    radial-gradient(ellipse at 100% 0, #e9f0e6 0, transparent 34%),
-    #f9fbf8;
+  background: radial-gradient(ellipse at 100% 0, #e9f0e6 0, transparent 34%), #f9fbf8;
 }
 .account-welcome {
   display: grid;

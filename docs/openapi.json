@@ -178,10 +178,7 @@
                   }
                 },
                 "type": "object",
-                "required": [
-                  "email",
-                  "password"
-                ]
+                "required": ["email", "password"]
               }
             }
           },
@@ -239,9 +236,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -379,9 +374,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -516,9 +509,7 @@
                       "$ref": "#/components/schemas/HotelDetail"
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -656,9 +647,7 @@
                       "$ref": "#/components/schemas/TourDetail"
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -796,9 +785,7 @@
                       "$ref": "#/components/schemas/GuideDetail"
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -939,9 +926,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1074,14 +1059,10 @@
                           "format": "uuid"
                         }
                       },
-                      "required": [
-                        "id"
-                      ]
+                      "required": ["id"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1235,9 +1216,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1370,14 +1349,10 @@
                           "format": "uuid"
                         }
                       },
-                      "required": [
-                        "id"
-                      ]
+                      "required": ["id"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1528,9 +1503,7 @@
                       "$ref": "#/components/schemas/Inventory"
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1674,9 +1647,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1809,9 +1780,7 @@
                       }
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -1955,14 +1924,10 @@
                           "format": "uuid"
                         }
                       },
-                      "required": [
-                        "id"
-                      ]
+                      "required": ["id"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2127,14 +2092,10 @@
                           "format": "uuid"
                         }
                       },
-                      "required": [
-                        "id"
-                      ]
+                      "required": ["id"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2290,14 +2251,10 @@
                           "format": "uuid"
                         }
                       },
-                      "required": [
-                        "id"
-                      ]
+                      "required": ["id"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2453,14 +2410,10 @@
                           "format": "uuid"
                         }
                       },
-                      "required": [
-                        "id"
-                      ]
+                      "required": ["id"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2616,14 +2569,10 @@
                           "format": "uuid"
                         }
                       },
-                      "required": [
-                        "id"
-                      ]
+                      "required": ["id"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2779,14 +2728,10 @@
                           "format": "uuid"
                         }
                       },
-                      "required": [
-                        "id"
-                      ]
+                      "required": ["id"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -2943,21 +2888,13 @@
                         },
                         "operational_status": {
                           "type": "string",
-                          "enum": [
-                            "ready",
-                            "cleaning",
-                            "maintenance"
-                          ]
+                          "enum": ["ready", "cleaning", "maintenance"]
                         }
                       },
-                      "required": [
-                        "id"
-                      ]
+                      "required": ["id"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3113,14 +3050,10 @@
                           "format": "uuid"
                         }
                       },
-                      "required": [
-                        "id"
-                      ]
+                      "required": ["id"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3276,14 +3209,10 @@
                           "format": "uuid"
                         }
                       },
-                      "required": [
-                        "id"
-                      ]
+                      "required": ["id"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3438,14 +3367,10 @@
                           "type": "boolean"
                         }
                       },
-                      "required": [
-                        "ok"
-                      ]
+                      "required": ["ok"]
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             }
@@ -3746,9 +3671,7 @@
       "get": {
         "summary": "Listar arquivos oficiais por categoria",
         "description": "Apenas administrador. Nenhuma publicação automática.",
-        "tags": [
-          "Cadastur"
-        ],
+        "tags": ["Cadastur"],
         "security": [
           {
             "AdminSession": []
@@ -3787,14 +3710,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": [
-                "hospedagens",
-                "guias",
-                "gastronomia",
-                "transportes",
-                "agencias",
-                "servicos"
-              ]
+              "enum": ["hospedagens", "guias", "gastronomia", "transportes", "agencias", "servicos"]
             }
           }
         ]
@@ -3804,9 +3720,7 @@
       "get": {
         "summary": "Consultar diretório interno e histórico",
         "description": "Apenas administrador. Nenhuma publicação automática.",
-        "tags": [
-          "Cadastur"
-        ],
+        "tags": ["Cadastur"],
         "security": [
           {
             "AdminSession": []
@@ -3845,14 +3759,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": [
-                "hospedagens",
-                "guias",
-                "gastronomia",
-                "transportes",
-                "agencias",
-                "servicos"
-              ]
+              "enum": ["hospedagens", "guias", "gastronomia", "transportes", "agencias", "servicos"]
             }
           },
           {
@@ -3879,9 +3786,7 @@
       "post": {
         "summary": "Identificar abas e colunas de CSV/XLSX",
         "description": "Origin obrigatório. JSON com resource_id consulta o CKAN e baixa apenas do domínio oficial, sem redirecionamentos. Alternativa: multipart com file e config (JSON em texto). Arquivo até 20 MB; request multipart até 20 MB + 24000 bytes; 100 mil linhas, 100 colunas; XLSX até 160 MB descompactados, 1000 entradas e 10 abas. A inspeção não retorna células brutas. Prévia substitui a anterior do mesmo administrador, mantém só campos selecionados e não altera o diretório. CPF e colunas pessoais adicionais bloqueados. Limite de 10 mil registros selecionados.",
-        "tags": [
-          "Cadastur"
-        ],
+        "tags": ["Cadastur"],
         "security": [
           {
             "AdminSession": []
@@ -3919,9 +3824,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "category"
-                ],
+                "required": ["category"],
                 "properties": {
                   "category": {
                     "type": "string",
@@ -3948,10 +3851,7 @@
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "file",
-                  "config"
-                ],
+                "required": ["file", "config"],
                 "properties": {
                   "file": {
                     "type": "string",
@@ -3982,9 +3882,7 @@
       "post": {
         "summary": "Criar prévia de importação, válida por 30 minutos",
         "description": "Origin obrigatório. JSON com resource_id consulta o CKAN e baixa apenas do domínio oficial, sem redirecionamentos. Alternativa: multipart com file e config (JSON em texto). Arquivo até 20 MB; request multipart até 20 MB + 24000 bytes; 100 mil linhas, 100 colunas; XLSX até 160 MB descompactados, 1000 entradas e 10 abas. A inspeção não retorna células brutas. Prévia substitui a anterior do mesmo administrador, mantém só campos selecionados e não altera o diretório. CPF e colunas pessoais adicionais bloqueados. Limite de 10 mil registros selecionados.",
-        "tags": [
-          "Cadastur"
-        ],
+        "tags": ["Cadastur"],
         "security": [
           {
             "AdminSession": []
@@ -4027,10 +3925,7 @@
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "file",
-                  "config"
-                ],
+                "required": ["file", "config"],
                 "properties": {
                   "file": {
                     "type": "string",
@@ -4061,9 +3956,7 @@
       "post": {
         "summary": "Confirmar importação idempotente",
         "description": "Origin obrigatório. Confirmar exige a prévia do mesmo administrador; confere versões em transação, rejeita fonte mais antiga e não cria contas nem ofertas. Revisar associa hospedagem a hotel existente ou guia a perfil existente; não concede permissões nem publica. Gastronomia e transporte ficam em revisão interna.",
-        "tags": [
-          "Cadastur"
-        ],
+        "tags": ["Cadastur"],
         "security": [
           {
             "AdminSession": []
@@ -4101,9 +3994,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "id"
-                ],
+                "required": ["id"],
                 "properties": {
                   "id": {
                     "type": "string",
@@ -4131,9 +4022,7 @@
       "post": {
         "summary": "Salvar revisão e vínculo opcional",
         "description": "Origin obrigatório. Confirmar exige a prévia do mesmo administrador; confere versões em transação, rejeita fonte mais antiga e não cria contas nem ofertas. Revisar associa hospedagem a hotel existente ou guia a perfil existente; não concede permissões nem publica. Gastronomia e transporte ficam em revisão interna.",
-        "tags": [
-          "Cadastur"
-        ],
+        "tags": ["Cadastur"],
         "security": [
           {
             "AdminSession": []
@@ -4171,26 +4060,18 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "id"
-                ],
+                "required": ["id"],
                 "properties": {
                   "id": {
                     "type": "string",
                     "format": "uuid"
                   },
                   "company_id": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "uuid"
                   },
                   "guide_id": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
+                    "type": ["string", "null"],
                     "format": "uuid"
                   },
                   "published": {
@@ -4218,9 +4099,7 @@
     "/api/diretorio": {
       "get": {
         "summary": "Exportar dados públicos do diretório do Amazonas",
-        "tags": [
-          "Diretório"
-        ],
+        "tags": ["Diretório"],
         "security": [],
         "parameters": [
           {
@@ -4229,13 +4108,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": [
-                "hospedagens",
-                "gastronomia",
-                "guias",
-                "agencias",
-                "servicos"
-              ]
+              "enum": ["hospedagens", "gastronomia", "guias", "agencias", "servicos"]
             }
           }
         ],
@@ -4255,13 +4128,7 @@
       "ContactInput": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "name",
-          "email",
-          "interest",
-          "message",
-          "consent"
-        ],
+        "required": ["name", "email", "interest", "message", "consent"],
         "properties": {
           "name": {
             "type": "string",
@@ -4314,10 +4181,7 @@
           },
           "kind": {
             "type": "string",
-            "enum": [
-              "hotel",
-              "operator"
-            ]
+            "enum": ["hotel", "operator"]
           },
           "name": {
             "type": "string",
@@ -4343,11 +4207,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "draft",
-              "published",
-              "suspended"
-            ]
+            "enum": ["draft", "published", "suspended"]
           },
           "trade_name": {
             "type": "string",
@@ -4355,14 +4215,7 @@
             "description": "Nome fantasia usado nas listagens quando preenchido (mínimo de 2 caracteres). Vazio usa name como alternativa. Na atualização, omitir preserva o valor existente."
           }
         },
-        "required": [
-          "kind",
-          "name",
-          "slug",
-          "city",
-          "description",
-          "status"
-        ]
+        "required": ["kind", "name", "slug", "city", "description", "status"]
       },
       "MemberInput": {
         "type": "object",
@@ -4379,19 +4232,10 @@
           },
           "role": {
             "type": "string",
-            "enum": [
-              "hotel_manager",
-              "hotel_staff",
-              "operator",
-              "guide"
-            ]
+            "enum": ["hotel_manager", "hotel_staff", "operator", "guide"]
           }
         },
-        "required": [
-          "company_id",
-          "email",
-          "role"
-        ]
+        "required": ["company_id", "email", "role"]
       },
       "RoomInput": {
         "type": "object",
@@ -4429,14 +4273,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "company_id",
-          "code",
-          "name",
-          "capacity",
-          "price_cents",
-          "active"
-        ]
+        "required": ["company_id", "code", "name", "capacity", "price_cents", "active"]
       },
       "GuideInput": {
         "type": "object",
@@ -4475,14 +4312,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "company_id",
-          "slug",
-          "name",
-          "bio",
-          "languages",
-          "published"
-        ]
+        "required": ["company_id", "slug", "name", "bio", "languages", "published"]
       },
       "TourInput": {
         "type": "object",
@@ -4583,13 +4413,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "company_id",
-          "tour_id",
-          "starts_at",
-          "capacity",
-          "active"
-        ]
+        "required": ["company_id", "tour_id", "starts_at", "capacity", "active"]
       },
       "HotelBookingInput": {
         "type": "object",
@@ -4621,13 +4445,7 @@
             "default": ""
           }
         },
-        "required": [
-          "kind",
-          "room_id",
-          "check_in",
-          "check_out",
-          "guests"
-        ]
+        "required": ["kind", "room_id", "check_in", "check_out", "guests"]
       },
       "TourBookingInput": {
         "type": "object",
@@ -4651,11 +4469,7 @@
             "default": ""
           }
         },
-        "required": [
-          "kind",
-          "departure_id",
-          "guests"
-        ]
+        "required": ["kind", "departure_id", "guests"]
       },
       "BookingInput": {
         "oneOf": [
@@ -4684,17 +4498,10 @@
           },
           "decision": {
             "type": "string",
-            "enum": [
-              "confirmed",
-              "declined"
-            ]
+            "enum": ["confirmed", "declined"]
           }
         },
-        "required": [
-          "company_id",
-          "booking_id",
-          "decision"
-        ]
+        "required": ["company_id", "booking_id", "decision"]
       },
       "StayInput": {
         "type": "object",
@@ -4710,10 +4517,7 @@
           },
           "action": {
             "type": "string",
-            "enum": [
-              "checkin",
-              "checkout"
-            ]
+            "enum": ["checkin", "checkout"]
           },
           "country": {
             "type": "string",
@@ -4728,11 +4532,7 @@
             "default": "Não informado"
           }
         },
-        "required": [
-          "company_id",
-          "booking_id",
-          "action"
-        ]
+        "required": ["company_id", "booking_id", "action"]
       },
       "CancelInput": {
         "type": "object",
@@ -4743,9 +4543,7 @@
             "format": "uuid"
           }
         },
-        "required": [
-          "booking_id"
-        ]
+        "required": ["booking_id"]
       },
       "RevokeInput": {
         "type": "object",
@@ -4761,10 +4559,7 @@
             "maxLength": 128
           }
         },
-        "required": [
-          "company_id",
-          "user_id"
-        ]
+        "required": ["company_id", "user_id"]
       },
       "RegistrationInput": {
         "type": "object",
@@ -4790,12 +4585,7 @@
             "const": true
           }
         },
-        "required": [
-          "name",
-          "email",
-          "password",
-          "consent"
-        ]
+        "required": ["name", "email", "password", "consent"]
       },
       "DomainError": {
         "type": "object",
@@ -4825,16 +4615,10 @@
                 }
               }
             },
-            "required": [
-              "code",
-              "message",
-              "requestId"
-            ]
+            "required": ["code", "message", "requestId"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "Company": {
         "type": "object",
@@ -4846,10 +4630,7 @@
           },
           "kind": {
             "type": "string",
-            "enum": [
-              "hotel",
-              "operator"
-            ]
+            "enum": ["hotel", "operator"]
           },
           "name": {
             "type": "string",
@@ -4875,21 +4656,14 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "draft",
-              "published",
-              "suspended"
-            ]
+            "enum": ["draft", "published", "suspended"]
           },
           "created_at": {
             "type": "string",
             "format": "date-time"
           },
           "from_price": {
-            "type": [
-              "integer",
-              "null"
-            ],
+            "type": ["integer", "null"],
             "minimum": 0
           },
           "trade_name": {
@@ -4898,15 +4672,7 @@
             "description": "Nome fantasia usado nas listagens quando preenchido (mínimo de 2 caracteres). Vazio usa name como alternativa. Na atualização, omitir preserva o valor existente."
           }
         },
-        "required": [
-          "id",
-          "kind",
-          "name",
-          "slug",
-          "city",
-          "description",
-          "status"
-        ]
+        "required": ["id", "kind", "name", "slug", "city", "description", "status"]
       },
       "Room": {
         "type": "object",
@@ -4942,30 +4708,17 @@
           },
           "active": {
             "type": "integer",
-            "enum": [
-              0,
-              1
-            ]
+            "enum": [0, 1]
           },
           "operational_status": {
             "type": "string",
-            "enum": [
-              "ready",
-              "cleaning",
-              "maintenance"
-            ]
+            "enum": ["ready", "cleaning", "maintenance"]
           },
           "current_guest": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "current_departure": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": ["string", "null"],
             "format": "date"
           }
         },
@@ -5017,21 +4770,10 @@
           },
           "published": {
             "type": "integer",
-            "enum": [
-              0,
-              1
-            ]
+            "enum": [0, 1]
           }
         },
-        "required": [
-          "id",
-          "company_id",
-          "slug",
-          "name",
-          "bio",
-          "languages",
-          "published"
-        ]
+        "required": ["id", "company_id", "slug", "name", "bio", "languages", "published"]
       },
       "Tour": {
         "type": "object",
@@ -5077,17 +4819,11 @@
             "maximum": 100000000
           },
           "guide_id": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "published": {
             "type": "integer",
-            "enum": [
-              0,
-              1
-            ]
+            "enum": [0, 1]
           }
         },
         "required": [
@@ -5126,23 +4862,14 @@
           },
           "active": {
             "type": "integer",
-            "enum": [
-              0,
-              1
-            ]
+            "enum": [0, 1]
           },
           "reserved": {
             "type": "integer",
             "minimum": 0
           }
         },
-        "required": [
-          "id",
-          "tour_id",
-          "starts_at",
-          "capacity",
-          "active"
-        ]
+        "required": ["id", "tour_id", "starts_at", "capacity", "active"]
       },
       "HotelDetail": {
         "allOf": [
@@ -5159,9 +4886,7 @@
                 }
               }
             },
-            "required": [
-              "rooms"
-            ]
+            "required": ["rooms"]
           }
         ]
       },
@@ -5193,10 +4918,7 @@
                 }
               }
             },
-            "required": [
-              "company_name",
-              "departures"
-            ]
+            "required": ["company_name", "departures"]
           }
         ]
       },
@@ -5221,11 +4943,7 @@
                 }
               }
             },
-            "required": [
-              "company_name",
-              "city",
-              "tours"
-            ]
+            "required": ["company_name", "city", "tours"]
           }
         ]
       },
@@ -5242,12 +4960,7 @@
           },
           "role": {
             "type": "string",
-            "enum": [
-              "hotel_manager",
-              "hotel_staff",
-              "operator",
-              "guide"
-            ]
+            "enum": ["hotel_manager", "hotel_staff", "operator", "guide"]
           },
           "name": {
             "type": "string"
@@ -5261,14 +4974,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "company_id",
-          "user_id",
-          "role",
-          "name",
-          "email",
-          "company_name"
-        ]
+        "required": ["company_id", "user_id", "role", "name", "email", "company_name"]
       },
       "Booking": {
         "type": "object",
@@ -5286,34 +4992,19 @@
           },
           "kind": {
             "type": "string",
-            "enum": [
-              "hotel",
-              "tour"
-            ]
+            "enum": ["hotel", "tour"]
           },
           "room_id": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "departure_id": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "check_in": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "check_out": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "guests": {
             "type": "integer",
@@ -5337,12 +5028,7 @@
           },
           "status": {
             "type": "string",
-            "enum": [
-              "pending",
-              "confirmed",
-              "declined",
-              "cancelled"
-            ]
+            "enum": ["pending", "confirmed", "declined", "cancelled"]
           },
           "created_at": {
             "type": "string",
@@ -5359,44 +5045,22 @@
             "type": "string"
           },
           "starts_at": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "country": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "origin_city": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "checked_in_at": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "checked_out_at": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           }
         },
-        "required": [
-          "id",
-          "kind",
-          "status",
-          "total_cents",
-          "guests",
-          "company_id"
-        ]
+        "required": ["id", "kind", "status", "total_cents", "guests", "company_id"]
       },
       "Inventory": {
         "type": "object",
@@ -5430,22 +5094,11 @@
             }
           }
         },
-        "required": [
-          "company",
-          "rooms",
-          "guides",
-          "tours",
-          "departures"
-        ]
+        "required": ["company", "rooms", "guides", "tours", "departures"]
       },
       "CadasturMapping": {
         "type": "object",
-        "required": [
-          "external_id",
-          "name",
-          "uf",
-          "city"
-        ],
+        "required": ["external_id", "name", "uf", "city"],
         "properties": {
           "external_id": {
             "type": "integer",
@@ -5536,25 +5189,11 @@
       },
       "CadasturPreviewInput": {
         "type": "object",
-        "required": [
-          "category",
-          "period",
-          "uf",
-          "sheet",
-          "mapping",
-          "checksum"
-        ],
+        "required": ["category", "period", "uf", "sheet", "mapping", "checksum"],
         "properties": {
           "category": {
             "type": "string",
-            "enum": [
-              "hospedagens",
-              "guias",
-              "gastronomia",
-              "transportes",
-              "agencias",
-              "servicos"
-            ]
+            "enum": ["hospedagens", "guias", "gastronomia", "transportes", "agencias", "servicos"]
           },
           "period": {
             "type": "string",
@@ -5603,18 +5242,10 @@
           },
           "operational_status": {
             "type": "string",
-            "enum": [
-              "ready",
-              "cleaning",
-              "maintenance"
-            ]
+            "enum": ["ready", "cleaning", "maintenance"]
           }
         },
-        "required": [
-          "company_id",
-          "room_id",
-          "operational_status"
-        ]
+        "required": ["company_id", "room_id", "operational_status"]
       }
     },
     "securitySchemes": {

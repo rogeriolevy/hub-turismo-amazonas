@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { ImagePlus, LoaderCircle, Trash2, Upload, X } from "lucide-react";
 import { catalogItemSchema } from "@/lib/platform-schema";
 import {
@@ -337,7 +338,14 @@ export function CatalogContentForm({
           <div className="catalog-content-image-preview" aria-label="Prévia das imagens">
             {images.map((image, index) => (
               <div key={image}>
-                <img src={image} alt={`Prévia ${index + 1}`} />
+                <Image
+                  unoptimized
+                  src={image}
+                  alt={`Prévia ${index + 1}`}
+                  width={208}
+                  height={152}
+                  sizes="104px"
+                />
                 <button
                   type="button"
                   aria-label={`Remover imagem ${index + 1}`}

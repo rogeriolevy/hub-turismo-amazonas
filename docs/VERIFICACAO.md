@@ -1,24 +1,27 @@
 # Verificação — versão Node.js + SQLite
 
-Data: 29/09/2026. Checkout: hub-turismo-amazonas-node. Publicação Sites preservada; esta versão está disponível apenas localmente.
+Última atualização: 03/10/2026. Checkout: hub-turismo-amazonas-node. Publicação Sites preservada; esta versão está disponível apenas localmente.
 
 ## Resultados confirmados
 
-| Verificação                                     | Resultado                                                       |
-| ----------------------------------------------- | --------------------------------------------------------------- |
-| Instalação limpa pelo lockfile (npm ci)         | Aprovada no Windows, Node 22.23.2                               |
-| Migração de contatos e autenticação             | Aprovada; repetição sem perda de dados                          |
-| TypeScript                                      | Sem erros                                                       |
-| ESLint                                          | Sem erros ou avisos na execução final                           |
-| Prettier                                        | Formatação aprovada                                             |
-| Testes de serviços e operação                   | 29 testes aprovados (incluindo os novos serviços da plataforma) |
-| Build Next.js de produção                       | Aprovado; institucional estático e catálogos dinâmicos          |
-| Integração HTTP em servidor de produção isolado | Aprovada                                                        |
-| Auditoria npm das dependências de produção      | Zero vulnerabilidades conhecidas reportadas nesta data          |
-| Saúde da prévia local                           | HTTP 200                                                        |
-| Consulta administrativa anônima                 | HTTP 401                                                        |
+| Verificação                                          | Resultado                                                                                  |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Runtime Node.js e SQLite                             | Aprovado: Node 22.23.2, ABI 127                                                            |
+| Instalação limpa pelo lockfile (npm ci)              | Aprovada em NTFS, Windows; 568 pacotes                                                     |
+| Migração temporária                                  | Aprovada em banco descartável, sem acessar o banco local                                   |
+| TypeScript                                           | Sem erros                                                                                  |
+| ESLint                                               | Sem erros ou avisos                                                                        |
+| Prettier                                             | Formatação aprovada                                                                        |
+| Testes de serviços e operação                        | 49 aprovados, 0 falhas                                                                     |
+| Build Next.js 16.3.4                                 | Aprovado com Webpack; preparação em NTFS e artefato copiado para `.next` no checkout FAT32 |
+| Integração HTTP em servidor de produção isolado      | Aprovada; contatos, autenticação, Cadastur, reservas e isolamento entre empresas           |
+| Saúde da aplicação e consulta administrativa anônima | HTTP 200 e HTTP 401, respectivamente                                                       |
+| CI no GitHub Actions                                 | Não reexecutado nesta revisão                                                              |
+| Auditoria npm de produção                            | Último resultado registrado: zero vulnerabilidades em 29/09/2026; não reexecutada          |
 
-Os testes incluem validação, consentimento, SQL parametrizado, armazenamento, idempotência, limites de envio, erro consistente, autorização por correspondência exata, reabertura do banco, backup pelo comando operacional, restauração e recusa de sobrescrita de arquivo existente.
+Os 49 testes atuais incluem validação, consentimento, SQL parametrizado, armazenamento, idempotência, limites de envio, erro consistente, autorização por correspondência exata, reabertura do banco, backup pelo comando operacional, restauração, Cadastur e operações da plataforma. O número substitui as contagens de 22 e 29 registradas em etapas anteriores do desenvolvimento.
+
+O checkout está em uma unidade FAT32. O Turbopack falha ao criar junctions, e o Webpack também não consegue resolver os arquivos nativos nesse volume. `npm run build` agora detecta FAT32, prepara código e dependências em uma pasta NTFS temporária, migra um banco descartável e copia o artefato `.next` de volta. A integração foi executada a partir do checkout original usando esse artefato.
 
 A integração HTTP valida páginas, formulário, conflito de idempotência, origem de requisição, cadastro genérico do provedor bloqueado, tentativa de falsificar identidade por cabeçalhos, login válido/inválido, usuário autenticado sem permissão (403), sessão administrativa, cookies HttpOnly/SameSite, paginação, logout com revogação e limite de tentativas.
 
