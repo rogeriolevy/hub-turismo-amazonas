@@ -3,11 +3,15 @@
   "version": "0.4.0",
   "private": true,
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=22.13.0 <23"
   },
   "scripts": {
+    "check:runtime": "node scripts/check-runtime.mjs",
+    "predev": "npm run check:runtime",
     "dev": "next dev --webpack --hostname 127.0.0.1 --port 3005",
+    "prebuild": "npm run check:runtime",
     "build": "node scripts/build.mjs",
+    "prestart": "npm run check:runtime",
     "start": "next start --hostname 127.0.0.1 --port 3005",
     "setup": "node scripts/setup.mjs",
     "db:migrate": "node --env-file=.env.local --experimental-strip-types scripts/migrate.ts",

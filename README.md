@@ -6,7 +6,7 @@ Para usar diariamente no Windows, iniciar o servidor, fazer backup ou recuperar 
 
 ## Começar
 
-Requer Node.js 22.13+ da linha 22 LTS e npm. Desenvolvimento verificado com Node 22.23.2. Use terminal na pasta deste projeto.
+Requer Node.js da linha 22, versão 22.13.0 ou superior, e npm. A versão verificada nesta revisão é 22.23.2. O arquivo `.nvmrc` seleciona a linha 22 para gerenciadores compatíveis, e o npm recusa versões fora do intervalo definido em `engines`. Use terminal na pasta deste projeto.
 
 ```sh
 npm ci
@@ -15,6 +15,8 @@ npm run db:migrate
 npm run admin:create
 npm run dev
 ```
+
+Os comandos `dev`, `build` e `start` verificam a versão do Node e a compatibilidade do módulo SQLite antes de iniciar. Ao voltar de outra linha do Node para a 22, pare o servidor e execute `npm rebuild better-sqlite3` e `npm run check:runtime`. Veja [a solução para erros de versão do Node](docs/USO-LOCAL.md#erro-node_module_version-ou-err_dlopen_failed).
 
 Abra http://127.0.0.1:3005 e `/painel/contato` (`/admin` redireciona para essa página). O comando admin:create solicita a senha duas vezes com asteriscos; use entre 12 e 128 caracteres. Maiúsculas, minúsculas e espaços contam. Backspace apaga o último caractere e Ctrl+U limpa a digitação. Não envie senhas pelo chat nem pela linha de comando. O e-mail autorizado inicialmente é rogerio1kg@gmail.com. O login é próprio desta instalação, independente da senha do ChatGPT. O cadastro público em /cadastro cria apenas contas básicas. Perfis empresariais dependem de autorização do administrador.
 

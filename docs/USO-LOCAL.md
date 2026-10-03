@@ -6,10 +6,11 @@ Esta etapa funciona somente no computador Windows, em `http://127.0.0.1:3005`. H
 
 Se o site já abre, use normalmente; não inicie outro servidor na mesma porta.
 
-Para iniciar depois de reiniciar o computador, abra o PowerShell:
+Use Node.js 22.13.0 ou superior da linha 22 (versão verificada nesta revisão: 22.23.2). Confira com `node --version`. Após instalar ou selecionar o Node 22, reabra o PowerShell para atualizar o `PATH`.
+
+Para iniciar depois de reiniciar o computador, abra o PowerShell na pasta do projeto e execute:
 
 ```powershell
-cd "C:\Users\User\Documents\Projeto Hotel\hub-turismo-amazonas-node"
 npm start
 ```
 
@@ -95,6 +96,23 @@ Após os testes, abra http://127.0.0.1:3100/__qa/layout. A revisão oferece iní
 `Ctrl+C` encerra a prévia. As portas 3005 e 3100 podem coexistir, mas não execute duas prévias de QA ao mesmo tempo. Use `npm run build` antes se houver alterações de código. A ferramenta verifica o espaço disponível; não emula um telefone e não substitui testes em aparelhos e leitores de tela.
 
 ## Problemas comuns
+
+### Erro `NODE_MODULE_VERSION` ou `ERR_DLOPEN_FAILED`
+
+O `better-sqlite3` contém um módulo nativo que precisa corresponder à versão do Node.js usada pelo servidor. Um binário instalado com Node 24 (ABI 137) não carrega no Node 22 (ABI 127), e o inverso também não funciona. Este projeto utiliza exclusivamente a linha 22. A incompatibilidade pode acontecer ao atualizar o Node ou usar terminais com versões diferentes no `PATH`.
+
+Pare o servidor com `Ctrl+C`, ative o Node 22 e reabra o terminal. Na pasta do projeto, confira se `node --version` começa com `v22.` e execute:
+
+```powershell
+node --version
+npm rebuild better-sqlite3
+npm run check:runtime
+npm run dev
+```
+
+Se a reconstrução não resolver, execute `npm ci` e depois `npm run check:runtime`. Para o modo de produção, execute `npm run build` e `npm start` após a correção. Esses comandos de dependências preservam `.env.local` e o banco em `data/`; não é necessário restaurar ou recriar o banco.
+
+Os comandos `dev`, `build` e `start` verificam se o Node pertence à linha 22 e se o módulo SQLite carrega. A verificação usa apenas um banco em memória e encerra com instruções de reparo se houver incompatibilidade. Sempre use Node 22 para instalar, testar e executar a aplicação.
 
 | Situação                                  | Ação                                                                                                                                                          |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
