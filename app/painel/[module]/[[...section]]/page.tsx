@@ -828,7 +828,7 @@ export default async function Page({
       content = (
         <>
           <PageIntro
-            eyebrow={area === "hotel" ? "OPERAÇÃO HOTELEIRA" : "OPERAÇÃO DE PASSEIOS"}
+            eyebrow="OPERAÇÃO DE PASSEIOS"
             title={companyDisplayName(company)}
             description={
               company.city +
@@ -840,8 +840,8 @@ export default async function Page({
           />
           <div className="account-grid">
             <div className="metric-card">
-              <span>{area === "hotel" ? "Quartos cadastrados" : "Passeios cadastrados"}</span>
-              <strong>{area === "hotel" ? inventory.rooms.length : inventory.tours.length}</strong>
+              <span>Passeios cadastrados</span>
+              <strong>{inventory.tours.length}</strong>
               <span>Seu inventário</span>
             </div>
             <div className="metric-card">
