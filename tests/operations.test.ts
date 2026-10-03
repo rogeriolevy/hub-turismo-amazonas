@@ -36,7 +36,7 @@ test("migration can run twice and persistence survives reopening", async () => {
     assert.equal(db.prepare<[], { n: number }>("SELECT COUNT(*) n FROM contacts").get()?.n, 1);
     assert.equal(
       db.prepare<[], { n: number }>("SELECT COUNT(*) n FROM schema_migrations").get()?.n,
-      5,
+      8,
     );
     const backupPath = resolve(dir, "backup.sqlite");
     const backup = spawnSync(
@@ -116,7 +116,7 @@ test("trade name migration preserves existing company names and records", () => 
     assert.deepEqual(db.prepare("SELECT * FROM companies").get(), { ...before, trade_name: "" });
     assert.equal(
       db.prepare<[], { n: number }>("SELECT COUNT(*) n FROM schema_migrations").get()!.n,
-      5,
+      8,
     );
   } finally {
     db.close();
