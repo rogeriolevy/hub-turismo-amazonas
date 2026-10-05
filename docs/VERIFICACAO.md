@@ -1,27 +1,36 @@
 # Verificação — versão Node.js + SQLite
 
-Última atualização: 03/10/2026. Checkout: hub-turismo-amazonas-node. Publicação Sites preservada; esta versão está disponível apenas localmente.
+Última revisão: 05/10/2026. Checkout: hub-turismo-amazonas-node. Publicação Sites preservada; esta versão continua local. As evidências antigas abaixo permanecem como histórico; os resultados da revisão atual estão resumidos primeiro.
 
-## Resultados confirmados
+## Revisão atual
 
-| Verificação                                          | Resultado                                                                                  |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Runtime Node.js e SQLite                             | Aprovado: Node 22.23.2, ABI 127                                                            |
-| Instalação limpa pelo lockfile (npm ci)              | Aprovada em NTFS, Windows; 568 pacotes                                                     |
-| Migração temporária                                  | Aprovada em banco descartável, sem acessar o banco local                                   |
-| TypeScript                                           | Sem erros                                                                                  |
-| ESLint                                               | Sem erros ou avisos                                                                        |
-| Prettier                                             | Formatação aprovada                                                                        |
-| Testes de serviços e operação                        | 49 aprovados, 0 falhas                                                                     |
-| Build Next.js 16.3.4                                 | Aprovado com Webpack; preparação em NTFS e artefato copiado para `.next` no checkout FAT32 |
-| Integração HTTP em servidor de produção isolado      | Aprovada; contatos, autenticação, Cadastur, reservas e isolamento entre empresas           |
-| Saúde da aplicação e consulta administrativa anônima | HTTP 200 e HTTP 401, respectivamente                                                       |
-| CI no GitHub Actions                                 | Não reexecutado nesta revisão                                                              |
-| Auditoria npm de produção                            | Último resultado registrado: zero vulnerabilidades em 29/09/2026; não reexecutada          |
+| Verificação                                    | Resultado                                                                                              |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Runtime Node.js e SQLite                       | Aprovado: Node 22.23.2, ABI 127                                                                        |
+| Instalação limpa pelo lockfile (`npm ci`)      | Aprovada em cópia temporária NTFS; 568 pacotes, Next.js e ESLint 16.3.8                                |
+| Migração temporária                            | Aprovada em banco descartável na cópia temporária                                                      |
+| TypeScript                                     | Aprovado, sem erros                                                                                    |
+| ESLint                                         | Aprovado, sem erros ou avisos                                                                          |
+| Prettier                                       | Aprovado após corrigir a formatação dos registros e do contrato OpenAPI                                |
+| Testes unitários existentes                    | 51 aprovados, 0 falhas                                                                                 |
+| Build de produção                              | Next.js 16.3.8 com Webpack, concluído em cópia NTFS isolada; as rotas da aplicação foram geradas       |
+| Integração HTTP                                | Aprovada: contatos, autenticação, Cadastur, reservas e isolamento entre empresas                       |
+| Auditoria de produção (`npm audit --omit=dev`) | 0 vulnerabilidades                                                                                     |
+| Auditoria completa (`npm audit`)               | 5 avisos altos na cadeia de desenvolvimento do ESLint, via `braces`; não há versão corrigida publicada |
+| CI no GitHub Actions                           | Não executado nesta revisão                                                                            |
+| Deploy no Vercel                               | Continua bloqueado: SQLite e imagens dependem do disco local; nenhuma publicação foi realizada         |
 
-Os 49 testes atuais incluem validação, consentimento, SQL parametrizado, armazenamento, idempotência, limites de envio, erro consistente, autorização por correspondência exata, reabertura do banco, backup pelo comando operacional, restauração, Cadastur e operações da plataforma. O número substitui as contagens de 22 e 29 registradas em etapas anteriores do desenvolvimento.
+O `package.json` e o lockfile foram atualizados de Next.js/ESLint 16.3.4 para 16.3.8. A instalação limpa, o build e os testes foram feitos numa cópia temporária para preservar o servidor local ativo em `127.0.0.1:3005`, o artefato `.next`, os dados e a configuração. O `node_modules` do checkout original não foi substituído; antes de executar comandos locais nele, pare esse servidor e rode `npm ci` para sincronizar as dependências instaladas com o lockfile.
 
-O checkout está em uma unidade FAT32. O Turbopack falha ao criar junctions, e o Webpack também não consegue resolver os arquivos nativos nesse volume. `npm run build` agora detecta FAT32, prepara código e dependências em uma pasta NTFS temporária, migra um banco descartável e copia o artefato `.next` de volta. A integração foi executada a partir do checkout original usando esse artefato.
+Os 51 testes atuais incluem validação, consentimento, SQL parametrizado, armazenamento, idempotência, limites de envio, erro consistente, autorização por correspondência exata, reabertura do banco, backup pelo comando operacional, restauração, Cadastur e operações da plataforma. Este número substitui as contagens anteriores de 22, 29 e 49.
+
+O checkout está em uma unidade FAT32. O build com Next.js 16.3.8 foi concluído em NTFS isolado; o `.next` do servidor existente não foi substituído. A integração HTTP também foi executada nessa cópia com banco, contas e dados temporários.
+
+A auditoria completa encontra cinco avisos altos relacionados à vulnerabilidade de recursão profunda em `braces` (GHSA-vfj7-8cjw-p6xm), introduzida pela cadeia `eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch`. A base consultada não lista versão corrigida. O pacote é dependência de desenvolvimento e não aparece na auditoria de produção. `npm audit fix --force` propõe trocar o ESLint do Next 16 pelo 14; essa redução incompatível foi descartada. Reavaliar quando houver correção upstream.
+
+A revisão de código confirmou autorização no servidor, validação Zod, origem obrigatória para operações de escrita, limites de corpo, SQL parametrizado e cookies HttpOnly/SameSite. O contrato OpenAPI foi sincronizado com as rotas atuais: 41 caminhos, incluindo celular obrigatório, tipos de empresa, edição de perfil, conteúdo/imagens, proximidades e emissão/verificação JWT.
+
+As telas existentes do dashboard já apresentam métricas operacionais e grades adaptáveis; o CSS inclui redução de movimento e coluna única em telas estreitas. Esta revisão foi estática para a interface: não houve navegação visual automatizada, teste em aparelhos físicos ou leitores de tela. Listas de reservas e inventário continuam sem paginação e não houve teste de carga.
 
 A integração HTTP valida páginas, formulário, conflito de idempotência, origem de requisição, cadastro genérico do provedor bloqueado, tentativa de falsificar identidade por cabeçalhos, login válido/inválido, usuário autenticado sem permissão (403), sessão administrativa, cookies HttpOnly/SameSite, paginação, logout com revogação e limite de tentativas.
 

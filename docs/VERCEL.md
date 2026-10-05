@@ -29,7 +29,7 @@ Não envie .env.local, banco SQLite ou segredos no código. O JWT mantém chaves
 
 ## Executar o script
 
-O script exige a Vercel CLI (npm install --global vercel) e autenticação (vercel login). Se a pasta ainda não estiver vinculada, iniciará vercel link. Ele confirma as variáveis do ambiente, executa typecheck, ESLint e testes, então publica um Preview por padrão.
+O script exige a Vercel CLI (npm install --global vercel) e autenticação (vercel login). Se a pasta ainda não estiver vinculada, iniciará vercel link. Depois que a pré-checagem de armazenamento permitir a publicação, ele confirma as variáveis e executa formatação, TypeScript, ESLint, auditoria das dependências de produção, testes unitários, build de produção e integração HTTP. Qualquer falha cancela o deploy; Preview é o destino padrão.
 
 Comandos:
 

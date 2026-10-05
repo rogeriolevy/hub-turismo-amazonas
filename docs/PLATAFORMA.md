@@ -4,17 +4,17 @@ Versão 0.5.0, 02/10/2026. Escopo autorizado: ampliar a instalação Node.js/SQL
 
 ## Rotas e permissões
 
-| Área             | Rotas                                                                                                                                            | Quem acessa                                          |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
-| Institucional    | `/`, `/sobre`, `/privacidade`                                                                                                                    | Público                                              |
-| Hospedagens      | `/hospedagens`, `/hospedagens/[slug]`                                                                                                            | Público; solicitar exige login                       |
-| Experiências     | `/experiencias`, `/passeios/[slug]`, `/guias/[slug]`                                                                                            | Público; solicitar passeio exige login                |
-| Acesso           | `/entrar`, `/cadastro`                                                                                                                           | Visitantes; contas autenticadas seguem para sua área |
-| Turista          | `/minha-conta`, `/minha-conta/reservas`                                                                                                          | Conta autenticada; somente suas reservas             |
-| Hotel            | `/painel/hotel`, `/painel/hotel/quartos`, `/painel/hotel/reservas`, `/painel/hotel/fnrh`                                                         | Gestor/equipe vinculados ao hotel ou administrador   |
-| Operador         | `/painel/passeios`, `/painel/passeios/experiencias`, `/painel/passeios/agenda`, `/painel/passeios/vagas`                                         | Guia/operador vinculados à empresa ou administrador  |
-| Administração    | `/painel/plataforma`, `/painel/plataforma/empresas`, `/painel/plataforma/acessos`, `/painel/plataforma/cadastur`, `/painel/plataforma/conteudos` | Administrador definido em `ADMIN_EMAILS`             |
-| Contatos         | `/painel/contato` (`/admin` redireciona para esta rota)                                                                                          | Administrador definido em `ADMIN_EMAILS`             |
+| Área          | Rotas                                                                                                                                            | Quem acessa                                          |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| Institucional | `/`, `/sobre`, `/privacidade`                                                                                                                    | Público                                              |
+| Hospedagens   | `/hospedagens`, `/hospedagens/[slug]`                                                                                                            | Público; solicitar exige login                       |
+| Experiências  | `/experiencias`, `/passeios/[slug]`, `/guias/[slug]`                                                                                             | Público; solicitar passeio exige login               |
+| Acesso        | `/entrar`, `/cadastro`                                                                                                                           | Visitantes; contas autenticadas seguem para sua área |
+| Turista       | `/minha-conta`, `/minha-conta/reservas`                                                                                                          | Conta autenticada; somente suas reservas             |
+| Hotel         | `/painel/hotel`, `/painel/hotel/quartos`, `/painel/hotel/reservas`, `/painel/hotel/fnrh`                                                         | Gestor/equipe vinculados ao hotel ou administrador   |
+| Operador      | `/painel/passeios`, `/painel/passeios/experiencias`, `/painel/passeios/agenda`, `/painel/passeios/vagas`                                         | Guia/operador vinculados à empresa ou administrador  |
+| Administração | `/painel/plataforma`, `/painel/plataforma/empresas`, `/painel/plataforma/acessos`, `/painel/plataforma/cadastur`, `/painel/plataforma/conteudos` | Administrador definido em `ADMIN_EMAILS`             |
+| Contatos      | `/painel/contato` (`/admin` redireciona para esta rota)                                                                                          | Administrador definido em `ADMIN_EMAILS`             |
 
 O catálogo **Experiências** reúne passeios/roteiros, profissionais da Hub e perfis públicos do Cadastur. Use o filtro para consultar atividades ou guias. `/passeios` e `/guias` continuam redirecionando para o catálogo unificado. No painel, o menu **Experiências** reúne o cadastro de atividades e guias; os endereços antigos `/painel/passeios/passeios` e `/painel/passeios/guias` redirecionam para essa tela. `/painel/passeios/reservas` também abre a lista de solicitações. A empresa em atendimento é selecionada pelo campo do painel; o parâmetro `?empresa=UUID` nunca concede autorização por si só. Endereços não previstos exibem a página de recurso não encontrado.
 

@@ -126,9 +126,13 @@ try {
   await ensureEnvironment(target);
 
   for (const [command, args] of [
+    ["npm", ["run", "format:check"]],
     ["npm", ["run", "typecheck"]],
     ["npm", ["run", "lint"]],
+    ["npm", ["audit", "--omit=dev"]],
     ["npm", ["test"]],
+    ["npm", ["run", "build"]],
+    ["npm", ["run", "test:integration"]],
   ]) {
     result = await run(command, args);
     if (result.code !== 0)
