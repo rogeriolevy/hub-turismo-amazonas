@@ -279,7 +279,7 @@ function LodgingHighlights({ city, query, type }: { city: string; query: string;
     </section>
   );
 }
-export function ProviderDirectory({
+export async function ProviderDirectory({
   category,
   search = {},
 }: {
@@ -287,13 +287,15 @@ export function ProviderDirectory({
   search?: DirectorySearch;
 }) {
   const db = getDatabase();
-  const results = searchProviders(db, category, search);
+  const results = await searchProviders(db, category, search);
   const staySearch = normalizeStaySearch(search);
   const info = modules[category];
   const Icon = info.icon;
   const hotels =
     category === "hospedagens"
-      ? publicHotels(db, results.q).filter((hotel) => !results.city || hotel.city === results.city)
+      ? (await publicHotels(db, results.q)).filter(
+          (hotel) => !results.city || hotel.city === results.city,
+        )
       : [];
   const directoryUrl = (page?: number, city = results.city) => {
     const params = new URLSearchParams({
@@ -569,8 +571,8 @@ export function ProviderDirectory({
     </>
   );
 }
-export function ProviderDetail({ id }: { id: string }) {
-  const entry = publicProvider(getDatabase(), id);
+export async function ProviderDetail({ id }: { id: string }) {
+  const entry = await publicProvider(getDatabase(), id);
   if (!entry) notFound();
   const category = entry.category;
   const directoryHref =

@@ -57,11 +57,10 @@ export default async function Page({
   searchParams: Promise<{ editar?: string }>;
 }) {
   const { editar } = await searchParams;
-  const actor = await pageActor(),
-    db = getDatabase(),
-    companies = companiesFor(db, actor),
-    bookings = myBookings(db, actor),
-    admin = isPlatformAdmin(actor);
+  const actor = await pageActor();
+  const db = getDatabase();
+  const [companies, bookings] = await Promise.all([companiesFor(db, actor), myBookings(db, actor)]);
+  const admin = isPlatformAdmin(actor);
   const modules = [...publicModules];
   if (admin || companies.some((c) => c.kind === "hotel"))
     modules.push({

@@ -74,25 +74,25 @@ test("Cadastur: prévia filtra, confirma de forma idempotente e não cria contas
       line("00223456000199", "Hotel de Fora", "PA"),
       line("", "Sem registro"),
     ]);
-    const p = createPreview(db, admin, f, options(f), sourceInfo("hospedagens"));
+    const p = await createPreview(db, admin, f, options(f), sourceInfo("hospedagens"));
     assert.equal(p.counts.added, 1);
     assert.equal(p.counts.duplicates, 1);
     assert.equal(p.counts.filtered, 1);
     assert.equal(p.counts.invalid, 1);
-    assert.equal(listDirectory(db, admin, { category: "hospedagens" }).total, 0);
+    assert.equal((await listDirectory(db, admin, { category: "hospedagens" })).total, 0);
     assert.ok(!JSON.stringify(p).includes("private@example.test"));
     const payload = db
       .prepare<[], { payload: string }>("SELECT payload FROM cadastur_imports")
       .get()!.payload;
     assert.ok(!payload.includes("12345678909") && !payload.includes("private@example.test"));
-    const first = commitImport(db, admin, { id: p.id });
-    assert.deepEqual(commitImport(db, admin, { id: p.id }), first);
-    assert.equal(listDirectory(db, admin, { category: "hospedagens" }).total, 1);
+    const first = await commitImport(db, admin, { id: p.id });
+    assert.deepEqual(await commitImport(db, admin, { id: p.id }), first);
+    assert.equal((await listDirectory(db, admin, { category: "hospedagens" })).total, 1);
     assert.equal(db.prepare<[], { n: number }>("SELECT COUNT(*) n FROM companies").get()!.n, 0);
     assert.equal(db.prepare<[], { n: number }>('SELECT COUNT(*) n FROM "user"').get()!.n, 3);
-    const repeated = createPreview(db, admin, f, options(f), sourceInfo("hospedagens"));
+    const repeated = await createPreview(db, admin, f, options(f), sourceInfo("hospedagens"));
     assert.equal(repeated.counts.unchanged, 1);
-    assert.throws(() => commitImport(db, admin, { id: repeated.id }), denied(422));
+    await assert.rejects(commitImport(db, admin, { id: repeated.id }), denied(422));
   } finally {
     db.close();
   }
@@ -111,18 +111,18 @@ test("Cadastur: lista e busca por nome fantasia, com alternativa para nomes ause
       ),
       "csv",
     );
-    const p = createPreview(db, admin, f, options(f), sourceInfo("hospedagens"));
+    const p = await createPreview(db, admin, f, options(f), sourceInfo("hospedagens"));
     assert.equal(p.counts.added, 3);
     assert.deepEqual(
       p.records.map((r) => r.name),
       ["Pousada Rio Verde", "Hotel Sem Fantasia Ltda", "Outra Hospedagem Ltda"],
     );
-    commitImport(db, admin, { id: p.id });
+    await commitImport(db, admin, { id: p.id });
     assert.deepEqual(
-      listDirectory(db, admin, { category: "hospedagens" }).entries.map((r) => r.name),
+      (await listDirectory(db, admin, { category: "hospedagens" })).entries.map((r) => r.name),
       ["Hotel Sem Fantasia Ltda", "Outra Hospedagem Ltda", "Pousada Rio Verde"],
     );
-    const found = listDirectory(db, admin, { category: "hospedagens", q: "Rio Verde" });
+    const found = await listDirectory(db, admin, { category: "hospedagens", q: "Rio Verde" });
     assert.equal(found.total, 1);
     assert.equal(found.entries[0].name, "Pousada Rio Verde");
 
@@ -132,7 +132,7 @@ test("Cadastur: lista e busca por nome fantasia, com alternativa para nomes ause
       ),
       "csv",
     );
-    const alternate = createPreview(
+    const alternate = await createPreview(
       db,
       admin,
       withoutTradeName,
@@ -146,7 +146,7 @@ test("Cadastur: lista e busca por nome fantasia, com alternativa para nomes ause
       ),
       "csv",
     );
-    const guidePreview = createPreview(
+    const guidePreview = await createPreview(
       db,
       admin,
       guide,
@@ -163,30 +163,29 @@ test("Cadastur: rejeita usuário comum, mapeamento pessoal, categoria divergente
   const { db, admin, second, visitor } = await fixture();
   try {
     const f = await file([line("00123456000199")]);
-    assert.throws(
-      () => createPreview(db, visitor, f, options(f), sourceInfo("hospedagens")),
+    await assert.rejects(
+      createPreview(db, visitor, f, options(f), sourceInfo("hospedagens")),
       denied(403),
     );
-    assert.throws(
-      () =>
-        createPreview(
-          db,
-          admin,
-          f,
-          { ...options(f), mapping: { ...f.mapping, external_id: 5 } },
-          sourceInfo("hospedagens"),
-        ),
+    await assert.rejects(
+      createPreview(
+        db,
+        admin,
+        f,
+        { ...options(f), mapping: { ...f.mapping, external_id: 5 } },
+        sourceInfo("hospedagens"),
+      ),
       denied(422),
     );
-    assert.throws(
-      () => createPreview(db, admin, f, options(f, "guias"), sourceInfo("hospedagens")),
+    await assert.rejects(
+      createPreview(db, admin, f, options(f, "guias"), sourceInfo("hospedagens")),
       denied(409),
     );
-    const p = createPreview(db, admin, f, options(f), sourceInfo("hospedagens"));
-    assert.throws(() => commitImport(db, second, { id: p.id }), denied(404));
-    assert.throws(() => commitImport(db, visitor, { id: p.id }), denied(403));
-    assert.throws(() => reviewEntry(db, visitor, { id: randomUUID() }), denied(403));
-    assert.throws(() => listDirectory(db, visitor, { category: "hospedagens" }), denied(403));
+    const p = await createPreview(db, admin, f, options(f), sourceInfo("hospedagens"));
+    await assert.rejects(commitImport(db, second, { id: p.id }), denied(404));
+    await assert.rejects(commitImport(db, visitor, { id: p.id }), denied(403));
+    await assert.rejects(reviewEntry(db, visitor, { id: randomUUID() }), denied(403));
+    await assert.rejects(listDirectory(db, visitor, { category: "hospedagens" }), denied(403));
   } finally {
     db.close();
   }
@@ -198,14 +197,20 @@ test("Cadastur: conflito entre duplicatas exclui ambas; certificado de guia de 1
       line("00123456000199", "Amazônia Hotel"),
       line("00123456000199", "Outro nome"),
     ]);
-    const p = createPreview(db, admin, f, options(f), sourceInfo("hospedagens"));
+    const p = await createPreview(db, admin, f, options(f), sourceInfo("hospedagens"));
     assert.equal(p.counts.conflicts, 2);
     assert.equal(p.counts.added, 0);
     const guide = await file([
       line("11111111112", "Guia de Teste"),
       line("12345678909", "CPF não permitido"),
     ]);
-    const result = createPreview(db, admin, guide, options(guide, "guias"), sourceInfo("guias"));
+    const result = await createPreview(
+      db,
+      admin,
+      guide,
+      options(guide, "guias"),
+      sourceInfo("guias"),
+    );
     assert.equal(result.counts.added, 1);
     assert.equal(result.counts.invalid, 1);
   } finally {
@@ -216,11 +221,11 @@ test("Cadastur: concorrência não sobrescreve dados, período antigo não regri
   const { db, admin, second } = await fixture();
   try {
     const f = await file([line("00123456000199")]);
-    const first = createPreview(db, admin, f, options(f), sourceInfo("hospedagens"));
-    const secondPreview = createPreview(db, second, f, options(f), sourceInfo("hospedagens"));
-    commitImport(db, admin, { id: first.id });
-    assert.throws(() => commitImport(db, second, { id: secondPreview.id }), denied(409));
-    const old = createPreview(
+    const first = await createPreview(db, admin, f, options(f), sourceInfo("hospedagens"));
+    const secondPreview = await createPreview(db, second, f, options(f), sourceInfo("hospedagens"));
+    await commitImport(db, admin, { id: first.id });
+    await assert.rejects(commitImport(db, second, { id: secondPreview.id }), denied(409));
+    const old = await createPreview(
       db,
       admin,
       f,
@@ -229,8 +234,8 @@ test("Cadastur: concorrência não sobrescreve dados, período antigo não regri
     );
     assert.equal(old.counts.older, 1);
     db.prepare("UPDATE cadastur_imports SET expires_at='2000-01-01' WHERE status='preview'").run();
-    assert.throws(() => commitImport(db, admin, { id: old.id }), denied(409));
-    expirePreviews(db);
+    await assert.rejects(commitImport(db, admin, { id: old.id }), denied(409));
+    await expirePreviews(db);
     assert.equal(
       db
         .prepare<[], { n: number }>(
@@ -246,7 +251,7 @@ test("Cadastur: concorrência não sobrescreve dados, período antigo não regri
 test("Cadastur: atualização preserva vínculo e conteúdo operacional, revisão não publica", async () => {
   const { db, admin } = await fixture();
   try {
-    const hotel = saveCompany(db, admin, {
+    const hotel = await saveCompany(db, admin, {
       kind: "hotel",
       name: "Nome editado na Hub",
       slug: "teste",
@@ -255,13 +260,12 @@ test("Cadastur: atualização preserva vínculo e conteúdo operacional, revisã
       status: "draft",
     });
     const f = await file([line("00123456000199")]);
-    commitImport(db, admin, {
-      id: createPreview(db, admin, f, options(f), sourceInfo("hospedagens")).id,
-    });
-    const entry = listDirectory(db, admin, { category: "hospedagens" }).entries[0];
-    reviewEntry(db, admin, { id: entry.id, company_id: hotel.id });
+    const initial = await createPreview(db, admin, f, options(f), sourceInfo("hospedagens"));
+    await commitImport(db, admin, { id: initial.id });
+    const entry = (await listDirectory(db, admin, { category: "hospedagens" })).entries[0];
+    await reviewEntry(db, admin, { id: entry.id, company_id: hotel.id });
     const changed = await file([line("00123456000199", "Nome atualizado na fonte")]);
-    const preview = createPreview(
+    const preview = await createPreview(
       db,
       admin,
       changed,
@@ -269,8 +273,8 @@ test("Cadastur: atualização preserva vínculo e conteúdo operacional, revisã
       sourceInfo("hospedagens"),
     );
     assert.equal(preview.counts.updated, 1);
-    commitImport(db, admin, { id: preview.id });
-    const updated = listDirectory(db, admin, { category: "hospedagens" }).entries[0];
+    await commitImport(db, admin, { id: preview.id });
+    const updated = (await listDirectory(db, admin, { category: "hospedagens" })).entries[0];
     assert.equal(updated.company_id, hotel.id);
     assert.equal(updated.review_status, "pending");
     const existing = db
@@ -280,7 +284,7 @@ test("Cadastur: atualização preserva vínculo e conteúdo operacional, revisã
       .get(hotel.id)!;
     assert.equal(existing.name, "Nome editado na Hub");
     assert.equal(existing.status, "draft");
-    const operator = saveCompany(db, admin, {
+    const operator = await saveCompany(db, admin, {
       kind: "operator",
       name: "Operador de Teste",
       slug: "operador",
@@ -288,11 +292,11 @@ test("Cadastur: atualização preserva vínculo e conteúdo operacional, revisã
       description: "Operador para teste de vínculo.",
       status: "draft",
     });
-    assert.throws(
-      () => reviewEntry(db, admin, { id: updated.id, company_id: operator.id }),
+    await assert.rejects(
+      reviewEntry(db, admin, { id: updated.id, company_id: operator.id }),
       denied(422),
     );
-    const guide = saveGuide(db, admin, {
+    const guide = await saveGuide(db, admin, {
       company_id: operator.id,
       name: "Guia Teste",
       slug: "guia-teste",
@@ -301,12 +305,20 @@ test("Cadastur: atualização preserva vínculo e conteúdo operacional, revisã
       published: false,
     });
     const guideFile = await file([line("11111111112", "Guia Teste")]);
-    commitImport(db, admin, {
-      id: createPreview(db, admin, guideFile, options(guideFile, "guias"), sourceInfo("guias")).id,
-    });
-    const registered = listDirectory(db, admin, { category: "guias" }).entries[0];
-    reviewEntry(db, admin, { id: registered.id, guide_id: guide.id });
-    assert.equal(listDirectory(db, admin, { category: "guias" }).entries[0].guide_id, guide.id);
+    const guideImport = await createPreview(
+      db,
+      admin,
+      guideFile,
+      options(guideFile, "guias"),
+      sourceInfo("guias"),
+    );
+    await commitImport(db, admin, { id: guideImport.id });
+    const registered = (await listDirectory(db, admin, { category: "guias" })).entries[0];
+    await reviewEntry(db, admin, { id: registered.id, guide_id: guide.id });
+    assert.equal(
+      (await listDirectory(db, admin, { category: "guias" })).entries[0].guide_id,
+      guide.id,
+    );
   } finally {
     db.close();
   }
@@ -374,57 +386,55 @@ test("Cadastur: contatos comerciais só são publicados após revisão explícit
       "csv",
     );
     const opts = { ...options(f), include_contacts: true };
-    const preview = createPreview(db, admin, f, opts, sourceInfo("hospedagens"));
+    const preview = await createPreview(db, admin, f, opts, sourceInfo("hospedagens"));
     assert.equal(preview.records[0].name, "Empresa Teste");
     assert.equal(preview.records[0].phone, "+5592999991234");
     assert.equal(preview.records[0].website, "https://www.example.test/");
     assert.equal(preview.records[0].units, 12);
     assert.ok(!JSON.stringify(preview).includes("privado@example.test"));
     assert.ok(!JSON.stringify(preview).includes("123456789"));
-    assert.throws(
-      () =>
-        createPreview(
-          db,
-          admin,
-          f,
-          { ...opts, mapping: { ...f.mapping, email: 10 } },
-          sourceInfo("hospedagens"),
-        ),
+    await assert.rejects(
+      createPreview(
+        db,
+        admin,
+        f,
+        { ...opts, mapping: { ...f.mapping, email: 10 } },
+        sourceInfo("hospedagens"),
+      ),
       denied(422),
     );
-    assert.throws(
-      () =>
-        createPreview(
-          db,
-          admin,
-          f,
-          { ...opts, mapping: { ...f.mapping, name: 6 } },
-          sourceInfo("hospedagens"),
-        ),
+    await assert.rejects(
+      createPreview(
+        db,
+        admin,
+        f,
+        { ...opts, mapping: { ...f.mapping, name: 6 } },
+        sourceInfo("hospedagens"),
+      ),
       denied(422),
     );
-    commitImport(db, admin, { id: preview.id });
-    const entry = listDirectory(db, admin, { category: "hospedagens" }).entries[0];
-    assert.equal(publicProvider(db, entry.id), null);
-    reviewEntry(db, admin, { id: entry.id });
-    assert.equal(publicProviders(db, "hospedagens").length, 0);
-    reviewEntry(db, admin, { id: entry.id, published: true });
-    const published = publicProvider(db, entry.id)!;
+    await commitImport(db, admin, { id: preview.id });
+    const entry = (await listDirectory(db, admin, { category: "hospedagens" })).entries[0];
+    assert.equal(await publicProvider(db, entry.id), null);
+    await reviewEntry(db, admin, { id: entry.id });
+    assert.equal((await publicProviders(db, "hospedagens")).length, 0);
+    await reviewEntry(db, admin, { id: entry.id, published: true });
+    const published = (await publicProvider(db, entry.id))!;
     assert.equal(published.email, "contato@example.test");
     assert.equal(published.address, "Rua Teste 12");
     assert.ok(!("external_id" in published) && !("source_json" in published));
-    reviewEntry(db, admin, { id: entry.id, published: false });
-    assert.equal(publicProvider(db, entry.id), null);
-    reviewEntry(db, admin, { id: entry.id, published: true });
-    const update = createPreview(
+    await reviewEntry(db, admin, { id: entry.id, published: false });
+    assert.equal(await publicProvider(db, entry.id), null);
+    await reviewEntry(db, admin, { id: entry.id, published: true });
+    const update = await createPreview(
       db,
       admin,
       f,
       { ...opts, period: "2026-T3" },
       sourceInfo("hospedagens"),
     );
-    commitImport(db, admin, { id: update.id });
-    assert.equal(publicProvider(db, entry.id), null);
+    await commitImport(db, admin, { id: update.id });
+    assert.equal(await publicProvider(db, entry.id), null);
   } finally {
     db.close();
   }
@@ -443,24 +453,33 @@ test("Diretório: ordena Maués e região, filtra acentos, pagina e isola catego
       ),
     ];
     const f = await file(rows);
-    const preview = createPreview(db, admin, f, options(f, "agencias"), sourceInfo("agencias"));
-    commitImport(db, admin, { id: preview.id });
+    const preview = await createPreview(
+      db,
+      admin,
+      f,
+      options(f, "agencias"),
+      sourceInfo("agencias"),
+    );
+    await commitImport(db, admin, { id: preview.id });
     const entries = db.prepare<[], { id: string }>("SELECT id FROM cadastur_entries").all();
-    for (const entry of entries) reviewEntry(db, admin, { id: entry.id, published: true });
-    const result = searchProviders(db, "agencias");
+    for (const entry of entries) await reviewEntry(db, admin, { id: entry.id, published: true });
+    const result = await searchProviders(db, "agencias");
     assert.equal(result.total, 29);
     assert.equal(result.entries.length, 24);
     assert.deepEqual(
       result.entries.slice(0, 3).map((r) => r.city),
       ["Maués", "Parintins", "Boa Vista do Ramos"],
     );
-    assert.equal(searchProviders(db, "agencias", { cidade: "maues", q: "agencia" }).total, 1);
-    assert.equal(searchProviders(db, "agencias", { pagina: "2" }).entries.length, 5);
-    assert.equal(searchProviders(db, "agencias", { pagina: "NaN" }).page, 1);
-    assert.equal(searchProviders(db, "agencias", { pagina: "999" }).page, 2);
-    assert.equal(searchProviders(db, "hospedagens").total, 0);
+    assert.equal(
+      (await searchProviders(db, "agencias", { cidade: "maues", q: "agencia" })).total,
+      1,
+    );
+    assert.equal((await searchProviders(db, "agencias", { pagina: "2" })).entries.length, 5);
+    assert.equal((await searchProviders(db, "agencias", { pagina: "NaN" })).page, 1);
+    assert.equal((await searchProviders(db, "agencias", { pagina: "999" })).page, 2);
+    assert.equal((await searchProviders(db, "hospedagens")).total, 0);
     db.prepare("UPDATE cadastur_entries SET uf='PA'").run();
-    assert.equal(publicProviders(db, "agencias").length, 0);
+    assert.equal((await publicProviders(db, "agencias")).length, 0);
   } finally {
     db.close();
   }

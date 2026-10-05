@@ -1,43 +1,65 @@
 # Deploy na Vercel
 
-## Estado atual
+## Armazenamento por ambiente
 
-`vercel.json` fixa o Framework Preset como Next.js e o comando de build como `npm run build`. No painel Vercel, mantenha o Root Directory na raiz do repositório (`./`) e não configure um Output Directory personalizado.
+O projeto suporta dois ambientes sem exigir uma conta Vercel durante o desenvolvimento:
 
-O deploy completo está bloqueado até a camada de persistência ser adaptada. Hoje o site usa better-sqlite3 em arquivo local para contas, sessões, reservas, contatos, Cadastur e chaves JWT; o painel também grava e remove imagens em public/uploads. As funções Node.js da Vercel têm filesystem somente leitura, exceto /tmp, que é temporário e não é compartilhado entre instâncias. Um deploy direto poderia falhar ao iniciar ou perder dados entre reinicializações e manter cópias divergentes em instâncias diferentes.
+- **Local (`localhost:3005`)**: sem `DATABASE_URL` ou `POSTGRES_URL`, usa SQLite em `data/hub.sqlite`; sem `BLOB_READ_WRITE_TOKEN`, grava imagens em `public/uploads/catalog`.
+- **Vercel**: exige `DATABASE_URL` ou `POSTGRES_URL` para PostgreSQL e `BLOB_READ_WRITE_TOKEN` para imagens no Vercel Blob. Sem a conexão do banco, a aplicação falha com uma mensagem de configuração em vez de tentar gravar no disco efêmero.
 
-Por isso, o script encerra antes de enviar arquivos enquanto detectar SQLite local ou uploads no disco. Ele não troca o banco por /tmp nem publica uma versão que pareça guardar dados sem persistência. A própria Vercel recomenda banco/armazenamento externo para estado durável: [filesystem das funções](https://vercel.com/docs/functions/runtimes), [SQLite na Vercel](https://vercel.com/kb/guide/is-sqlite-supported-in-vercel) e [armazenamento Vercel](https://vercel.com/docs/storage).
+Se essas variáveis forem adicionadas manualmente ao ambiente local, o app também passa a usar PostgreSQL e/ou Blob localmente. Para manter o modo padrão local, não copie as variáveis de produção para `.env.local` (por exemplo, com `vercel env pull`). `DATABASE_PATH` pode apontar para outro arquivo SQLite local.
 
-## O que precisa ser adaptado
+As rotas públicas de hospedagens, gastronomia, experiências, agências, serviços e navegação estão implementadas. A escolha do armazenamento agora é feita pela configuração do processo; não são rotas exclusivas da Vercel.
 
-1. Migrar as chamadas síncronas atuais de SQLite para uma base de dados gerenciada compatível com funções serverless. Essa mudança inclui Better Auth, migrations e os serviços da plataforma.
-2. Mover uploads e exclusões de imagens do catálogo para um armazenamento de objetos, preservando as URLs e o controle de acesso.
-3. Atualizar esta pré-checagem para reconhecer os adaptadores duráveis e validar as variáveis próprias deles.
-4. Criar o projeto Vercel, configurar as variáveis por ambiente e publicar primeiro um Preview. Promover para produção após validar login, sessão, cadastro, contatos, imagens e reservas.
+## Preparar o projeto Vercel
 
-Como as consultas de dados são hoje síncronas e espalhadas pelos serviços, escolher a base gerenciada é uma decisão de arquitetura, não uma variável que um script consiga resolver sozinho. O provedor deve oferecer banco durável e conexão apropriada para funções. As imagens podem usar Vercel Blob ou outro armazenamento de objetos.
+1. Configure o Root Directory como raiz do repositório (`./`) e Framework Preset **Next.js**. Não informe Output Directory personalizado.
+2. Conecte ou crie um PostgreSQL compatível com `pg` e disponibilize `DATABASE_URL` ou `POSTGRES_URL` no ambiente Preview e Production.
+3. Crie um Vercel Blob Store e disponibilize `BLOB_READ_WRITE_TOKEN` nos mesmos ambientes.
+4. Configure as variáveis de autenticação e proteção listadas abaixo para Preview e Production.
+5. Publique primeiro um Preview e valide autenticação, cadastro, diretórios, contatos, imagens e reservas antes de promover para produção.
 
-## Preparar as variáveis
+O `vercel.json` define o build como `npm run db:migrate:postgres && npm run build`. A migração cria/atualiza as tabelas do Better Auth e aplica, em ordem, as migrações SQL próprias do projeto antes do Next.js. Não execute a migração ao mesmo tempo em múltiplos processos de build para o mesmo banco; o script usa advisory lock PostgreSQL.
 
-Depois da migração, configure no projeto Vercel, para Preview e Production:
+## Variáveis necessárias
 
-- SITE_URL: origem HTTPS exata do ambiente.
-- BETTER_AUTH_SECRET: segredo aleatório de pelo menos 32 caracteres; mantenha-o estável entre deployments.
-- ADMIN_EMAILS: lista das contas administradoras.
-- TURNSTILE_SITE_KEY e TURNSTILE_SECRET_KEY: chaves reais do widget Turnstile autorizado para o domínio.
-- As variáveis de conexão do banco e do armazenamento de imagens escolhidos.
+Configure em **Vercel → Settings → Environment Variables**:
 
-Não envie .env.local, banco SQLite ou segredos no código. O JWT mantém chaves privadas na tabela jwks, então essa tabela também deve estar no banco durável.
+- `DATABASE_URL` **ou** `POSTGRES_URL`: conexão PostgreSQL do ambiente.
+- `BLOB_READ_WRITE_TOKEN`: token do Blob Store usado para gravar e remover imagens.
+- `SITE_URL`: origem HTTPS exata do ambiente, sem caminho.
+- `BETTER_AUTH_SECRET`: segredo aleatório de pelo menos 32 caracteres, estável entre deployments.
+- `ADMIN_EMAILS`: lista de e-mails administradores.
+- `TURNSTILE_SITE_KEY` e `TURNSTILE_SECRET_KEY`: chaves Turnstile reais e autorizadas para os domínios publicados.
 
-As páginas de login, cadastro e conta são renderizadas por requisição para não inicializar Better Auth durante o prerender do build. Mesmo assim, `BETTER_AUTH_SECRET` (com pelo menos 32 caracteres) e `SITE_URL` precisam estar configurados nos ambientes Preview e Production para autenticação funcionar nas requisições.
+Não inclua `.env.local`, arquivos SQLite, backups nem segredos no Git. O JWT guarda as chaves em `jwks` no mesmo banco durável da autenticação.
 
-## Executar o script
+## Dados existentes
 
-O script exige a Vercel CLI (npm install --global vercel) e autenticação (vercel login). Se a pasta ainda não estiver vinculada, iniciará vercel link. Depois que a pré-checagem de armazenamento permitir a publicação, ele confirma as variáveis e executa formatação, TypeScript, ESLint, auditoria das dependências de produção, testes unitários, build de produção e integração HTTP. Qualquer falha cancela o deploy; Preview é o destino padrão.
+Aplicar as migrações cria as tabelas; não copia o conteúdo de `data/hub.sqlite` para o PostgreSQL. Portanto, contas, sessões, empresas, reservas, contatos, registros Cadastur e catálogo local não aparecem automaticamente no banco Vercel. A transferência de dados é uma etapa separada e deve ser planejada com backup e validação, especialmente por envolver credenciais e dados pessoais. O schema novo poderá iniciar vazio e os dados públicos do Cadastur deverão ser importados para esse banco antes de aparecerem nos diretórios.
 
-Comandos:
+Imagens salvas depois da configuração do Blob recebem URLs do Blob. Arquivos que já existem em `public/uploads/catalog` permanecem locais; não são transferidos automaticamente.
 
-- npm run deploy:vercel — publica um Preview.
-- npm run deploy:vercel -- production — publica em produção.
+Para iniciar um banco novo sem copiar contas e dados pessoais, `npm run admin:create` pode criar o administrador diretamente no PostgreSQL selecionado pela variável de conexão. Depois, `npm run cadastur:sync -- --apply` importa a base pública do Amazonas para o banco selecionado; ele usa SQLite quando não há URL PostgreSQL no ambiente. Os registros ficam para revisão; acrescente `--publish` somente se quiser publicar todos os registros importados sem revisão individual.
 
-Atualmente os dois comandos terminam na pré-checagem de persistência, antes do login ou do envio de qualquer arquivo à Vercel. Depois de adaptar banco e imagens, o primeiro comando publica Preview; o segundo publica em produção.
+## Script de deploy
+
+O script exige Node.js 22.13+ (linha 22), Vercel CLI e autenticação via `vercel login`. Se necessário, inicia `vercel link`, verifica as variáveis do ambiente selecionado e então executa format check, TypeScript, ESLint, auditoria de dependências de produção, testes, build e integração HTTP. Qualquer falha cancela o envio. O Preview é o destino padrão.
+
+```powershell
+npm run deploy:vercel
+npm run deploy:vercel -- production
+```
+
+O deploy direto pela Vercel também executa a migração declarada em `vercel.json`. A etapa não cria os recursos nem define segredos: PostgreSQL, Blob e as variáveis devem estar configurados no projeto antes do build.
+
+## Fontes oficiais
+
+- [Runtime e filesystem das funções Vercel](https://vercel.com/docs/functions/runtimes)
+- [Vercel Blob — armazenamento de arquivos](https://vercel.com/docs/storage/vercel-blob)
+- [Better Auth — PostgreSQL](https://better-auth.com/docs/adapters/postgresql)
+- [Better Auth — migrações programáticas](https://better-auth.com/docs/concepts/database#programmatic-migrations)
+
+## Limites ainda não verificados
+
+O checkout local não possui conexão com o PostgreSQL/Blob de Preview ou Production, e não foram realizadas credenciais nem publicação. Assim, a migração foi revisada no código, mas o schema precisa ser aplicado e exercitado num PostgreSQL real antes de considerar o deploy validado. Consulte os Function Logs da Vercel se uma função continuar retornando a página genérica de erro.

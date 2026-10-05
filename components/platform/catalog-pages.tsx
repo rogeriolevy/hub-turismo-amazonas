@@ -24,13 +24,16 @@ import { CatalogCard, EmptyState, PageIntro, PortalNotice } from "./shared";
 import { BookingForm } from "./booking-form";
 import { NearbyRecommendations } from "./nearby-recommendations";
 import { HubContentGrid } from "./provider-directory";
-export function Directory({ kind, query }: { kind: "hotel" | "tour"; query: string }) {
+export async function Directory({ kind, query }: { kind: "hotel" | "tour"; query: string }) {
   const db = getDatabase();
-  const hotels = kind === "hotel" ? publicHotels(db, query) : [];
-  const tours = kind === "tour" ? publicTours(db, query) : [];
+  const [hotels, tours, allExperiences] = await Promise.all([
+    kind === "hotel" ? publicHotels(db, query) : [],
+    kind === "tour" ? publicTours(db, query) : [],
+    kind === "tour" ? publicCatalogItems(db, "passeios") : [],
+  ]);
   const experiences =
     kind === "tour"
-      ? publicCatalogItems(db, "passeios").filter((item) =>
+      ? allExperiences.filter((item) =>
           normalizeLabel(`${item.name} ${item.city} ${item.subtype} ${item.summary}`).includes(
             normalizeLabel(query),
           ),
@@ -146,7 +149,7 @@ export async function HotelDetail({
   slug: string;
   search?: StaySearchValues;
 }) {
-  const hotel = publicHotel(getDatabase(), slug);
+  const hotel = await publicHotel(getDatabase(), slug);
   if (!hotel) notFound();
   const session = await getSession();
   const hasSearchIntent = Boolean(search.entrada || search.pessoas !== "1");
@@ -214,7 +217,7 @@ export async function HotelDetail({
   );
 }
 export async function TourDetail({ slug }: { slug: string }) {
-  const tour = publicTour(getDatabase(), slug);
+  const tour = await publicTour(getDatabase(), slug);
   if (!tour) notFound();
   const session = await getSession();
   return (
@@ -278,8 +281,8 @@ export async function TourDetail({ slug }: { slug: string }) {
     </>
   );
 }
-export function GuideDetail({ slug }: { slug: string }) {
-  const guide = publicGuide(getDatabase(), slug);
+export async function GuideDetail({ slug }: { slug: string }) {
+  const guide = await publicGuide(getDatabase(), slug);
   if (!guide) notFound();
   return (
     <>

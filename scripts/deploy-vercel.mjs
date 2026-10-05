@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { access, readFile } from "node:fs/promises";
+import { access } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -34,42 +34,6 @@ function run(command, args, { capture = false } = {}) {
   });
 }
 
-async function assertVercelStorageReady() {
-  const database = await readFile(resolve(root, "db/index.ts"), "utf8");
-  const imageRoute = await readFile(
-    resolve(root, "app/api/plataforma/conteudos/imagens/route.ts"),
-    "utf8",
-  );
-  const catalogService = await readFile(resolve(root, "server/catalog-content-service.ts"), "utf8");
-  const blockers = [];
-
-  if (/from\s+["']better-sqlite3["']/.test(database) && /new Database\(/.test(database))
-    blockers.push("O banco ainda usa SQLite em arquivo local (db/index.ts).");
-  if (
-    /writeFile\(/.test(imageRoute) &&
-    ['"public"', '"uploads"', '"catalog"'].every((part) => imageRoute.includes(part))
-  )
-    blockers.push("O envio de imagens ainda grava em public/uploads, no disco local.");
-  if (
-    /unlinkSync/.test(catalogService) &&
-    /uploads/.test(catalogService) &&
-    /catalog/.test(catalogService)
-  )
-    blockers.push("A remoção de imagens ainda depende do filesystem local.");
-
-  if (!blockers.length) return;
-
-  console.error(
-    "Deploy interrompido antes de chamar a Vercel. Este projeto ainda não está pronto para produção nela:",
-  );
-  for (const blocker of blockers) console.error("- " + blocker);
-  console.error(
-    "Migre os dados/sessões para um banco gerenciado e as imagens para armazenamento de objetos; depois atualize esta pré-checagem. Não use /tmp como banco: ele não é persistente nem compartilhado entre funções.",
-  );
-  console.error("Consulte docs/VERCEL.md para o roteiro e as referências oficiais.");
-  process.exit(2);
-}
-
 async function ensureProjectLinked() {
   try {
     await access(resolve(root, ".vercel/project.json"));
@@ -93,10 +57,15 @@ async function ensureEnvironment(targetEnvironment) {
     "ADMIN_EMAILS",
     "TURNSTILE_SITE_KEY",
     "TURNSTILE_SECRET_KEY",
+    "BLOB_READ_WRITE_TOKEN",
   ];
   const missing = required.filter(
     (name) => !new RegExp("(^|\\W)" + name + "(\\W|$)").test(listing),
   );
+  const hasPostgresUrl = ["DATABASE_URL", "POSTGRES_URL"].some((name) =>
+    new RegExp("(^|\\W)" + name + "(\\W|$)").test(listing),
+  );
+  if (!hasPostgresUrl) missing.push("DATABASE_URL ou POSTGRES_URL");
   if (missing.length)
     throw new Error(
       "Configure estas variáveis em Vercel → Settings → Environment Variables (" +
@@ -108,8 +77,6 @@ async function ensureEnvironment(targetEnvironment) {
 }
 
 try {
-  await assertVercelStorageReady();
-
   const [major, minor] = process.versions.node.split(".").map(Number);
   if (major !== 22 || minor < 13)
     throw new Error(

@@ -31,6 +31,7 @@ export default async function NavigationPage({
 }) {
   const search = await searchParams;
   const searchKey = JSON.stringify(search);
+  const navigationItems = await publicCatalogItems(getDatabase(), "navegacao");
   return (
     <>
       <Header />
@@ -89,10 +90,7 @@ export default async function NavigationPage({
         </nav>
         <div className="container">
           <NavigationExplorer key={searchKey} today={todayInManaus()} search={search} />
-          <HubContentGrid
-            items={publicCatalogItems(getDatabase(), "navegacao")}
-            title="Operadores e serviços de navegação"
-          />
+          <HubContentGrid items={navigationItems} title="Operadores e serviços de navegação" />
         </div>
       </main>
       <Footer photoCredit={false} />

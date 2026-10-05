@@ -1,4 +1,4 @@
-import type Database from "better-sqlite3";
+import type { DatabaseExecutor } from "../../db/index.ts";
 import {
   normalizeLabel,
   cadasturSources,
@@ -13,6 +13,7 @@ import {
   publicCatalogOverlays,
 } from "../catalog-content-service.ts";
 import { publicWebsite } from "../../lib/public-contacts.ts";
+import { many, one } from "../platform-store.ts";
 
 export type PublicProvider = Omit<
   RegistryData,
@@ -106,12 +107,14 @@ function withEditorialContent(entry: PublicProvider, item?: CatalogItem): Public
   };
 }
 
-export function publicCadasturProviders(db: Database.Database, category: DirectoryCategory) {
-  return db
-    .prepare<[string], CadasturPublicProvider>(
+export async function publicCadasturProviders(db: DatabaseExecutor, category: DirectoryCategory) {
+  return (
+    await many<CadasturPublicProvider>(
+      db,
       `SELECT ${projection} FROM cadastur_entries WHERE ${visible} AND category=?`,
+      category,
     )
-    .all(category)
+  )
     .map(fromCadastur)
     .sort(
       (a, b) =>
@@ -121,15 +124,16 @@ export function publicCadasturProviders(db: Database.Database, category: Directo
     );
 }
 
-export function publicProviders(db: Database.Database, category: DirectoryCategory) {
-  const overlays = new Map(
-    publicCatalogOverlays(db, category).map((item) => [item.source_entry_id!, item]),
-  );
+export async function publicProviders(db: DatabaseExecutor, category: DirectoryCategory) {
+  const [overlays, providers, items] = await Promise.all([
+    publicCatalogOverlays(db, category),
+    publicCadasturProviders(db, category),
+    publicCatalogItems(db, category),
+  ]);
+  const overlayMap = new Map(overlays.map((item) => [item.source_entry_id!, item]));
   return [
-    ...publicCadasturProviders(db, category).map((entry) =>
-      withEditorialContent(entry, overlays.get(entry.id)),
-    ),
-    ...publicCatalogItems(db, category).map(fromHub),
+    ...providers.map((entry) => withEditorialContent(entry, overlayMap.get(entry.id))),
+    ...items.map(fromHub),
   ].sort(
     (a, b) =>
       priority(a.city) - priority(b.city) ||
@@ -138,19 +142,19 @@ export function publicProviders(db: Database.Database, category: DirectoryCatego
   );
 }
 
-export function publicProvider(db: Database.Database, id: string) {
+export async function publicProvider(db: DatabaseExecutor, id: string) {
   if (!/^[a-f0-9-]{36}$/i.test(id)) return null;
-  const entry = db
-    .prepare<[string], CadasturPublicProvider>(
-      `SELECT ${projection} FROM cadastur_entries WHERE ${visible} AND id=?`,
-    )
-    .get(id);
+  const entry = await one<CadasturPublicProvider>(
+    db,
+    `SELECT ${projection} FROM cadastur_entries WHERE ${visible} AND id=?`,
+    id,
+  );
   if (entry && directoryCategories.includes(entry.category as DirectoryCategory))
     return withEditorialContent(
       fromCadastur(entry),
-      publicCatalogOverlay(db, entry.id) ?? undefined,
+      (await publicCatalogOverlay(db, entry.id)) ?? undefined,
     );
-  const item = publicCatalogItem(db, id);
+  const item = await publicCatalogItem(db, id);
   return item ? fromHub(item) : null;
 }
 
@@ -163,15 +167,15 @@ export type DirectorySearch = {
   saida?: string | string[];
   pessoas?: string | string[];
 };
-export function searchProviders(
-  db: Database.Database,
+export async function searchProviders(
+  db: DatabaseExecutor,
   category: DirectoryCategory,
   input: DirectorySearch = {},
 ) {
   const q = typeof input.q === "string" ? input.q.trim().slice(0, 100) : "";
   const city = typeof input.cidade === "string" ? input.cidade.trim().slice(0, 100) : "";
   const requestedType = typeof input.tipo === "string" ? input.tipo.trim().slice(0, 100) : "";
-  const all = publicProviders(db, category);
+  const all = await publicProviders(db, category);
   const cities = [...new Set(all.map((r) => r.city))].sort(
     (a, b) => priority(a) - priority(b) || a.localeCompare(b, "pt-BR"),
   );

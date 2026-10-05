@@ -14,11 +14,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ path
       db = getDatabase(),
       search = new URL(request.url).searchParams.get("q") || "";
     let data: unknown;
-    if (path.length === 1 && path[0] === "hospedagens") data = publicHotels(db, search);
-    else if (path.length === 1 && path[0] === "passeios") data = publicTours(db, search);
-    else if (path.length === 2 && path[0] === "hospedagens") data = publicHotel(db, path[1]);
-    else if (path.length === 2 && path[0] === "passeios") data = publicTour(db, path[1]);
-    else if (path.length === 2 && path[0] === "guias") data = publicGuide(db, path[1]);
+    if (path.length === 1 && path[0] === "hospedagens") data = await publicHotels(db, search);
+    else if (path.length === 1 && path[0] === "passeios") data = await publicTours(db, search);
+    else if (path.length === 2 && path[0] === "hospedagens") data = await publicHotel(db, path[1]);
+    else if (path.length === 2 && path[0] === "passeios") data = await publicTour(db, path[1]);
+    else if (path.length === 2 && path[0] === "guias") data = await publicGuide(db, path[1]);
     if (!data) throw new HttpError(404, "NOT_FOUND", "Não encontrado.");
     return json({ data });
   } catch (error) {

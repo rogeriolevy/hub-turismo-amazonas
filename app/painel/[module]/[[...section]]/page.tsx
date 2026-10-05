@@ -301,7 +301,7 @@ export default async function Page({
   const actor = await pageActor("/painel/" + area),
     db = getDatabase(),
     admin = isPlatformAdmin(actor),
-    allCompanies = companiesFor(db, actor);
+    allCompanies = await companiesFor(db, actor);
   const companies = allCompanies.filter((c) =>
     area === "hotel" ? c.kind === "hotel" : c.kind === "operator",
   );
@@ -332,26 +332,27 @@ export default async function Page({
     });
   let content: React.ReactNode;
   if (area === "plataforma") {
-    const members = listMembers(db, actor);
-    if (section === "cadastur")
+    const members = await listMembers(db, actor);
+    if (section === "cadastur") {
+      const [initial, guides] = await Promise.all([
+        listDirectory(db, actor, { category: "hospedagens" }),
+        many<{ id: string; name: string }>(db, "SELECT id,name FROM guides ORDER BY name"),
+      ]);
       content = (
         <CadasturPanel
-          initial={listDirectory(db, actor, { category: "hospedagens" })}
+          initial={initial}
           companies={allCompanies
             .filter((c) => c.kind === "hotel")
             .map((c) => ({ id: c.id, name: companyDisplayName(c) }))}
-          guides={many<{ id: string; name: string }>(
-            db,
-            "SELECT id,name FROM guides ORDER BY name",
-          )}
+          guides={guides}
         />
       );
-    else if (section === "conteudos") {
+    } else if (section === "conteudos") {
       const category = catalogCategories.includes(query.categoria as CatalogCategory)
         ? (query.categoria as CatalogCategory)
         : "hospedagens";
       const sourceRow = query.cadastur
-        ? one<CatalogSourceEntry & { category: string }>(
+        ? await one<CatalogSourceEntry & { category: string }>(
             db,
             "SELECT id,category,name,city,subtype,phone,email,address,website FROM cadastur_entries WHERE id=?",
             query.cadastur,
@@ -374,7 +375,7 @@ export default async function Page({
       content = (
         <CatalogContentPanel
           category={category}
-          items={listCatalogItems(db, actor)}
+          items={await listCatalogItems(db, actor)}
           sourceEntry={sourceEntry}
         />
       );
@@ -492,12 +493,15 @@ export default async function Page({
       const publishedCount = allCompanies.filter(
         (company) => company.status === "published",
       ).length;
-      const contactCount = one<{ n: number }>(db, "SELECT COUNT(*) n FROM contacts")?.n ?? 0;
-      const pendingCadastur =
+      const [contactCountRow, pendingCadasturRow] = await Promise.all([
+        one<{ n: number }>(db, "SELECT CAST(COUNT(*) AS INTEGER) n FROM contacts"),
         one<{ n: number }>(
           db,
-          "SELECT COUNT(*) n FROM cadastur_entries WHERE review_status='pending'",
-        )?.n ?? 0;
+          "SELECT CAST(COUNT(*) AS INTEGER) n FROM cadastur_entries WHERE review_status='pending'",
+        ),
+      ]);
+      const contactCount = contactCountRow?.n ?? 0;
+      const pendingCadastur = pendingCadasturRow?.n ?? 0;
       content = (
         <AdminDashboard
           actor={actor}
@@ -525,9 +529,11 @@ export default async function Page({
       </EmptyState>
     );
   } else {
-    const inventory = companyInventory(db, actor, companyId),
-      bookings = businessBookings(db, actor, companyId),
-      company = inventory.company;
+    const [inventory, bookings] = await Promise.all([
+      companyInventory(db, actor, companyId),
+      businessBookings(db, actor, companyId),
+    ]);
+    const company = inventory.company;
     if (section === "quartos")
       content = (
         <>

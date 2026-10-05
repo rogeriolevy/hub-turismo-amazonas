@@ -1,24 +1,31 @@
-# Verificação — versão Node.js + SQLite
+# Verificação — SQLite local e PostgreSQL/Blob na Vercel
 
 Última revisão: 05/10/2026. Checkout: hub-turismo-amazonas-node. Publicação Sites preservada; esta versão continua local. As evidências antigas abaixo permanecem como histórico; os resultados da revisão atual estão resumidos primeiro.
 
 ## Revisão atual
 
-| Verificação                                    | Resultado                                                                                              |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Runtime Node.js e SQLite                       | Aprovado: Node 22.23.2, ABI 127                                                                        |
-| Instalação limpa pelo lockfile (`npm ci`)      | Aprovada em cópia temporária NTFS; Next.js/eslint-config-next 16.3.8 e ESLint 9.39.4                   |
-| Migração temporária                            | Aprovada em banco descartável na cópia temporária                                                      |
-| TypeScript                                     | Aprovado, sem erros                                                                                    |
-| ESLint                                         | Aprovado, sem erros ou avisos                                                                          |
-| Prettier                                       | Aprovado após corrigir a formatação dos registros e do contrato OpenAPI                                |
-| Testes unitários existentes                    | 51 aprovados, 0 falhas                                                                                 |
-| Build de produção                              | Next.js 16.3.8 com Webpack, concluído sem `.env.local`/`BETTER_AUTH_SECRET` em cópia NTFS isolada      |
-| Integração HTTP                                | Aprovada: contatos, autenticação, Cadastur, reservas e isolamento entre empresas                       |
-| Auditoria de produção (`npm audit --omit=dev`) | 0 vulnerabilidades                                                                                     |
-| Auditoria completa (`npm audit`)               | 5 avisos altos na cadeia de desenvolvimento do ESLint, via `braces`; não há versão corrigida publicada |
-| CI no GitHub Actions                           | Não executado nesta revisão                                                                            |
-| Deploy no Vercel                               | Continua bloqueado: SQLite e imagens dependem do disco local; nenhuma publicação foi realizada         |
+| Verificação                                    | Resultado                                                                                               |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Runtime Node.js e SQLite                       | Aprovado: Node 22.23.2, ABI 127                                                                         |
+| Instalação limpa pelo lockfile (`npm ci`)      | Aprovada em cópia temporária NTFS; Next.js/eslint-config-next 16.3.8 e ESLint 9.39.4                    |
+| Migração temporária                            | Aprovada em banco descartável na cópia temporária                                                       |
+| TypeScript                                     | Aprovado, sem erros                                                                                     |
+| ESLint                                         | Aprovado, sem erros ou avisos                                                                           |
+| Prettier                                       | Aprovado após corrigir a formatação dos registros e do contrato OpenAPI                                 |
+| Testes unitários existentes                    | 51 aprovados, 0 falhas                                                                                  |
+| Build de produção                              | Next.js 16.3.8 com Webpack, concluído sem `.env.local`/`BETTER_AUTH_SECRET` em cópia NTFS isolada       |
+| Integração HTTP                                | Aprovada: contatos, autenticação, Cadastur, reservas e isolamento entre empresas                        |
+| Auditoria de produção (`npm audit --omit=dev`) | 0 vulnerabilidades                                                                                      |
+| Auditoria completa (`npm audit`)               | 5 avisos altos na cadeia de desenvolvimento do ESLint, via `braces`; não há versão corrigida publicada  |
+| CI no GitHub Actions                           | Não executado nesta revisão                                                                             |
+| Arquitetura Vercel                             | Implementada no código; migração e runtime ainda precisam de validação com PostgreSQL/Blob configurados |
+| Deploy no Vercel                               | Não executado; exige `DATABASE_URL`/`POSTGRES_URL`, `BLOB_READ_WRITE_TOKEN` e demais variáveis          |
+
+## Armazenamento por ambiente
+
+O modo local mantém SQLite em `data/hub.sqlite` e imagens em `public/uploads/catalog` quando não há `DATABASE_URL`, `POSTGRES_URL` ou `BLOB_READ_WRITE_TOKEN` no ambiente. No Vercel, PostgreSQL e Blob são necessários e o filesystem local não é usado como persistência. As mesmas rotas e serviços funcionam nos dois ambientes por meio de adaptadores compartilhados. As migrações SQL existentes foram mantidas com seu conteúdo original para preservar os checksums SQLite; a migração PostgreSQL adapta em execução o identificador reservado `window`.
+
+As alterações atuais de camada de dados e mídia passaram no `npm run typecheck`. Não foi possível executar build integrado ao PostgreSQL real ou confirmar rotas na Vercel porque este checkout não contém as credenciais desses serviços. O build configurado na Vercel aplica primeiro `db:migrate:postgres`; configurar o banco e Blob no painel, publicar Preview e validar o runtime continuam pendentes. As migrações criam o esquema, mas não copiam registros ou imagens do banco local. Consulte [VERCEL.md](VERCEL.md) antes de preparar dados e ambiente.
 
 O `package.json` e o lockfile foram atualizados de Next.js e `eslint-config-next` 16.3.4 para 16.3.8. O ESLint permanece em 9.39.4 porque a tentativa com 10.12.0 quebrou regras do `eslint-plugin-react` incluído na configuração atual. A instalação limpa, o build e os testes foram feitos numa cópia temporária para preservar o servidor local ativo em `127.0.0.1:3005`, o artefato `.next`, os dados e a configuração. O `node_modules` do checkout original não foi substituído; antes de executar comandos locais nele, pare esse servidor e rode `npm ci` para sincronizar as dependências instaladas com o lockfile.
 
@@ -28,7 +35,9 @@ O checkout está em uma unidade FAT32. O build com Next.js 16.3.8 foi concluído
 
 No teste do build no Vercel, páginas que consultam a sessão eram executadas durante o prerender e inicializavam Better Auth sem `BETTER_AUTH_SECRET`. As páginas de conta, configurações, reservas, login e cadastro agora são explicitamente dinâmicas. O build foi repetido sem `.env.local` e sem esse segredo e passou. `BETTER_AUTH_SECRET` e `SITE_URL` continuam obrigatórios no ambiente do Vercel para autenticação em tempo de execução.
 
-A tentativa seguinte acionou o builder Node genérico, que procurava `app.js` ou `server.js`. O repositório agora declara `framework: nextjs` e `buildCommand: npm run build` em `vercel.json`; o Root Directory do projeto Vercel deve continuar na raiz do repositório.
+A tentativa seguinte acionou o builder Node genérico, que procurava `app.js` ou `server.js`. O repositório declara `framework: nextjs` e configura a migração PostgreSQL antes de `npm run build` em `vercel.json`; o Root Directory do projeto Vercel deve continuar na raiz do repositório.
+
+As rotas públicas de hospedagens, gastronomia, experiências, agências, serviços e navegação existem no build. Se a página de erro genérica aparecer no Vercel depois de configurar PostgreSQL e Blob, consulte os Function Logs para identificar a exceção de runtime. O SQLite continua sendo a opção padrão no computador local; a Vercel usa as variáveis do banco e Blob configuradas para o projeto.
 
 A auditoria completa encontra cinco avisos altos relacionados à vulnerabilidade de recursão profunda em `braces` (GHSA-vfj7-8cjw-p6xm), introduzida pela cadeia `eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch`. A base consultada não lista versão corrigida. O pacote é dependência de desenvolvimento e não aparece na auditoria de produção. `npm audit fix --force` propõe trocar o ESLint do Next 16 pelo 14; essa redução incompatível foi descartada. Reavaliar quando houver correção upstream.
 

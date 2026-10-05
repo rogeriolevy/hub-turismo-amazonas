@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     await authorizeAdmin(request);
     const raw = new URL(request.url).searchParams.get("page") || "1";
     if (!/^[1-9]\d{0,5}$/.test(raw)) throw new HttpError(400, "PAGINATION", "Página inválida.");
-    return json(listContacts(getDatabase(), Number(raw)));
+    return json(await listContacts(getDatabase(), Number(raw)));
   } catch (error) {
     return errorResponse(error, crypto.randomUUID());
   }

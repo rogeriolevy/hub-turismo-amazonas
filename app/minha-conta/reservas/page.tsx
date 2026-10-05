@@ -26,7 +26,7 @@ export default async function Page() {
             title="Minhas reservas"
             description="Acompanhe a resposta da equipe. Não há pagamento online nesta versão."
           />
-          <BookingList bookings={myBookings(getDatabase(), actor)} />
+          <BookingList bookings={await myBookings(getDatabase(), actor)} />
         </div>
       </main>
       <Footer />

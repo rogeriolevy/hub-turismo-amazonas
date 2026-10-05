@@ -1,11 +1,13 @@
-import type Database from "better-sqlite3";
+import { lockKey, lockSuffix, type DatabaseExecutor } from "../db/index.ts";
 import { createHash, randomUUID } from "node:crypto";
 import { contactSchema, privacyVersion } from "../lib/contact-schema.ts";
+import { many, one, run, write } from "./platform-store.ts";
 import { HttpError } from "./http.ts";
 
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
+
 export async function createContact(
-  db: Database.Database,
+  db: DatabaseExecutor,
   raw: unknown,
   key: string | null,
   ip: string,
@@ -22,67 +24,73 @@ export async function createContact(
     throw new HttpError(400, "IDEMPOTENCY", "Identificador de envio inválido. Atualize a página.");
   const data = result.data;
   const fingerprint = digest(JSON.stringify(data));
-  // Keep the duplicate check, quota and write atomic across database connections.
-  return db
-    .transaction(() => {
-      const existing = db
-        .prepare("SELECT id, fingerprint FROM contacts WHERE idempotency_key = ?")
-        .get(key) as { id: string; fingerprint: string } | undefined;
-      if (existing) {
-        if (existing.fingerprint !== fingerprint)
-          throw new HttpError(
-            409,
-            "CONFLICT",
-            "Este envio já foi concluído com outra mensagem. Inicie um novo contato.",
-          );
-        return { id: existing.id, duplicate: true };
-      }
-      const window = Math.floor(Date.now() / 3600000);
-      db.prepare("DELETE FROM rate_limits WHERE window < ?").run(window - 1);
-      for (const [scope, value, limit] of [
-        ["email", data.email, 5],
-        ["ip", ip, 30],
-      ] as const) {
-        const allowed = db
-          .prepare(
-            "INSERT INTO rate_limits (key, window, attempts) VALUES (?, ?, 1) ON CONFLICT(key) DO UPDATE SET attempts = attempts + 1 WHERE attempts < ? RETURNING attempts",
-          )
-          .get(digest(scope + ":" + window + ":" + value), window, limit);
-        if (!allowed)
-          throw new HttpError(
-            429,
-            "RATE_LIMIT",
-            "Muitos envios em pouco tempo. Tente novamente em uma hora.",
-          );
-      }
-      const id = randomUUID();
-      const now = new Date().toISOString();
-      db.prepare(
-        "INSERT INTO contacts (id, idempotency_key, fingerprint, name, email, organization, interest, message, consent_at, privacy_version, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      ).run(
-        id,
-        key,
-        fingerprint,
-        data.name,
-        data.email,
-        data.organization,
-        data.interest,
-        data.message,
-        now,
-        privacyVersion,
-        now,
+  return write(db, async (tx) => {
+    await lockKey(tx, "contact:" + key);
+    const existing = await one<{ id: string; fingerprint: string }>(
+      tx,
+      "SELECT id,fingerprint FROM contacts WHERE idempotency_key=?" + lockSuffix(tx),
+      key,
+    );
+    if (existing) {
+      if (existing.fingerprint !== fingerprint)
+        throw new HttpError(
+          409,
+          "CONFLICT",
+          "Este envio já foi concluído com outra mensagem. Inicie um novo contato.",
+        );
+      return { id: existing.id, duplicate: true };
+    }
+    const window = Math.floor(Date.now() / 3600000);
+    await run(tx, 'DELETE FROM rate_limits WHERE "window" < ?', window - 1);
+    for (const [scope, value, limit] of [
+      ["email", data.email, 5],
+      ["ip", ip, 30],
+    ] as const) {
+      const allowed = await one<{ attempts: number }>(
+        tx,
+        'INSERT INTO rate_limits (key,"window",attempts) VALUES (?,?,1) ON CONFLICT(key) DO UPDATE SET attempts=rate_limits.attempts+1 WHERE rate_limits.attempts<? RETURNING attempts',
+        digest(scope + ":" + window + ":" + value),
+        window,
+        limit,
       );
-      return { id, duplicate: false };
-    })
-    .immediate();
+      if (!allowed)
+        throw new HttpError(
+          429,
+          "RATE_LIMIT",
+          "Muitos envios em pouco tempo. Tente novamente em uma hora.",
+        );
+    }
+    const id = randomUUID();
+    const now = new Date().toISOString();
+    await run(
+      tx,
+      "INSERT INTO contacts (id,idempotency_key,fingerprint,name,email,organization,interest,message,consent_at,privacy_version,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+      id,
+      key,
+      fingerprint,
+      data.name,
+      data.email,
+      data.organization,
+      data.interest,
+      data.message,
+      now,
+      privacyVersion,
+      now,
+    );
+    return { id, duplicate: false };
+  });
 }
-export function listContacts(db: Database.Database, page: number) {
+
+export async function listContacts(db: DatabaseExecutor, page: number) {
   const pageSize = 20;
-  const data = db
-    .prepare(
-      "SELECT id, name, email, organization, interest, message, created_at FROM contacts ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
-    )
-    .all(pageSize, (page - 1) * pageSize);
-  const { total } = db.prepare("SELECT COUNT(*) AS total FROM contacts").get() as { total: number };
-  return { data, page, pageSize, total };
+  const [data, total] = await Promise.all([
+    many(
+      db,
+      "SELECT id,name,email,organization,interest,message,created_at FROM contacts ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?",
+      pageSize,
+      (page - 1) * pageSize,
+    ),
+    one<{ total: number }>(db, "SELECT CAST(COUNT(*) AS INTEGER) total FROM contacts"),
+  ]);
+  return { data, page, pageSize, total: total!.total };
 }

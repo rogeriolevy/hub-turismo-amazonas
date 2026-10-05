@@ -13,6 +13,19 @@ if (major !== 22 || minor < 13) {
   process.exit(1);
 }
 
+if (process.env.VERCEL) {
+  if (!process.env.DATABASE_URL && !process.env.POSTGRES_URL) {
+    console.error("Configure DATABASE_URL ou POSTGRES_URL para usar PostgreSQL na Vercel.");
+    process.exit(1);
+  }
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    console.error("Configure BLOB_READ_WRITE_TOKEN para armazenar imagens na Vercel.");
+    process.exit(1);
+  }
+  console.log(`PostgreSQL configurado para funções Vercel com Node ${process.version}.`);
+  process.exit(0);
+}
+
 const require = createRequire(import.meta.url);
 let database;
 

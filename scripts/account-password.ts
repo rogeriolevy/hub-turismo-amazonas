@@ -1,13 +1,15 @@
-import { openDatabase } from "../db/index.ts";
+import { isPostgresDatabase, one, openManagementDatabase } from "../db/index.ts";
+import { migratePostgresDatabase } from "../db/migrate-postgres.ts";
 import { newPassword } from "./password-prompt.ts";
 import { resetLocalAccountPassword } from "./admin-credentials.ts";
 
 const email = (process.argv[2] || "").trim().toLowerCase();
 if (!email || !email.includes("@"))
   throw new Error("Informe o e-mail: npm run account:password -- EMAIL");
-const db = openDatabase();
+const db = openManagementDatabase();
 try {
-  if (!db.prepare('SELECT id FROM "user" WHERE email = ?').get(email))
+  if (isPostgresDatabase(db)) await migratePostgresDatabase(db);
+  if (!(await one<{ id: string }>(db, 'SELECT id FROM "user" WHERE email = ?', email)))
     throw new Error("Conta inexistente. A recuperação não cria novas contas.");
   console.log(
     `Manutenção local da conta ${email}. Confirme a identidade da pessoa antes de redefinir.`,
@@ -17,5 +19,6 @@ try {
     "Senha atualizada e verificada; sessões anteriores encerradas. Permissões preservadas.",
   );
 } finally {
-  db.close();
+  if (isPostgresDatabase(db)) await db.end();
+  else db.close();
 }

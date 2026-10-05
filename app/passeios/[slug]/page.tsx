@@ -4,7 +4,7 @@ import { publicTour } from "@/server/catalog-service";
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const item = publicTour(getDatabase(), slug);
+  const item = await publicTour(getDatabase(), slug);
   return {
     title: item?.name || "Passeio",
     description: item?.description.slice(0, 160),

@@ -48,7 +48,9 @@ O build também usa Webpack. Em unidades FAT32 ou exFAT, `npm run build` prepara
 
 ## Banco e backup
 
-O banco fica em `data/hub.sqlite`; a configuração está em `.env.local`. Esses arquivos não entram no Git. Preserve-os ao atualizar o código. A configuração contém o segredo de autenticação e também deve ser guardada com acesso restrito.
+`localhost:3005` não exige PostgreSQL nem Vercel Blob. Sem `DATABASE_URL`/`POSTGRES_URL` e `BLOB_READ_WRITE_TOKEN`, o app usa `data/hub.sqlite` e salva imagens em `public/uploads/catalog`. Se essas variáveis forem adicionadas ao ambiente local, os respectivos serviços passam a ser usados. Evite importar as variáveis de produção para `.env.local` se quiser preservar o modo local.
+
+O banco e a configuração local ficam em arquivos ignorados pelo Git. Preserve-os ao atualizar o código. A configuração contém o segredo de autenticação e também deve ser guardada com acesso restrito.
 
 Para criar uma cópia consistente do banco, mesmo com o site em execução:
 

@@ -4,7 +4,16 @@ import { getDatabase } from "@/db";
 import { publicCatalogPaths } from "@/server/catalog-service";
 import { directoryCategories, publicProviders } from "@/server/cadastur/public-directory";
 export const dynamic = "force-dynamic";
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const db = getDatabase();
+  const [catalogPaths, providerPaths] = await Promise.all([
+    publicCatalogPaths(db),
+    Promise.all(
+      directoryCategories.map(async (category) =>
+        (await publicProviders(db, category)).map((entry) => "/prestadores/" + entry.id),
+      ),
+    ),
+  ]);
   return [
     "",
     "/privacidade",
@@ -13,10 +22,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       .map((category) => "/" + category),
     "/experiencias",
     "/navegacao",
-    ...publicCatalogPaths(getDatabase()),
-    ...directoryCategories.flatMap((category) =>
-      publicProviders(getDatabase(), category).map((entry) => "/prestadores/" + entry.id),
-    ),
+    ...catalogPaths,
+    ...providerPaths.flat(),
   ].map((path) => ({
     url: `${siteUrl}${path}`,
     changeFrequency: "monthly",

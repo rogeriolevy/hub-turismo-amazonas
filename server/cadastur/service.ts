@@ -1,4 +1,4 @@
-import type Database from "better-sqlite3";
+import { lockSuffix, type DatabaseExecutor } from "../../db/index.ts";
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import {
@@ -23,7 +23,7 @@ import {
 } from "../../lib/public-contacts.ts";
 import { requirePlatformAdmin } from "../platform-access.ts";
 import type { Actor } from "../platform-models.ts";
-import { one, many, parse, write, audit } from "../platform-store.ts";
+import { one, many, run, parse, write, audit } from "../platform-store.ts";
 import { HttpError } from "../http.ts";
 import type { ParsedFile } from "./files.ts";
 
@@ -63,18 +63,20 @@ const date = (value: string) => {
     throw Error("Validade do certificado inválida.");
   return result;
 };
-export function expirePreviews(db: Database.Database) {
-  db.prepare(
+export async function expirePreviews(db: DatabaseExecutor) {
+  await run(
+    db,
     "UPDATE cadastur_imports SET status='expired',payload=NULL WHERE status='preview' AND expires_at < ?",
-  ).run(new Date().toISOString());
+    new Date().toISOString(),
+  );
 }
-export function createPreview(
-  db: Database.Database,
+export async function createPreview(
+  db: DatabaseExecutor,
   actor: Actor,
   file: ParsedFile,
   input: unknown,
   source: SourceInfo,
-): Preview {
+): Promise<Preview> {
   requirePlatformAdmin(actor);
   const options = parse(importOptionsSchema, input);
   if (
@@ -215,7 +217,7 @@ export function createPreview(
   });
   const staged: Staged[] = [];
   for (const { record, row } of candidates.values()) {
-    const existing = one<Existing>(
+    const existing = await one<Existing>(
       db,
       "SELECT * FROM cadastur_entries WHERE category=? AND external_id=?",
       options.category,
@@ -250,14 +252,16 @@ export function createPreview(
   const id = crypto.randomUUID(),
     now = new Date().toISOString(),
     expires_at = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-  write(db, () => {
-    expirePreviews(db);
-    db.prepare(
+  await write(db, async (tx) => {
+    await expirePreviews(tx);
+    await run(
+      tx,
       "UPDATE cadastur_imports SET status='expired',payload=NULL WHERE actor_id=? AND status='preview'",
-    ).run(actor.id);
-    db.prepare(
+      actor.id,
+    );
+    await run(
+      tx,
       "INSERT INTO cadastur_imports (id,actor_id,category,period,source_json,checksum,summary,payload,status,created_at,expires_at) VALUES (?,?,?,?,?,?,?,?, 'preview',?,?)",
-    ).run(
       id,
       actor.id,
       options.category,
@@ -291,13 +295,13 @@ type Batch = {
   period: string;
   source_json: string;
 };
-export function commitImport(db: Database.Database, actor: Actor, input: unknown) {
+export async function commitImport(db: DatabaseExecutor, actor: Actor, input: unknown) {
   requirePlatformAdmin(actor);
   const { id } = parse(z.object({ id: z.string().uuid() }).strict(), input);
-  return write(db, () => {
-    const batch = one<Batch>(
-      db,
-      "SELECT * FROM cadastur_imports WHERE id=? AND actor_id=?",
+  return write(db, async (tx) => {
+    const batch = await one<Batch>(
+      tx,
+      "SELECT * FROM cadastur_imports WHERE id=? AND actor_id=?" + lockSuffix(tx),
       id,
       actor.id,
     );
@@ -314,8 +318,8 @@ export function commitImport(db: Database.Database, actor: Actor, input: unknown
       throw new HttpError(422, "NO_CHANGES", "Não há inclusões ou alterações para confirmar.");
     const now = new Date().toISOString();
     for (const entry of rows) {
-      const current = one<Existing>(
-        db,
+      const current = await one<Existing>(
+        tx,
         "SELECT * FROM cadastur_entries WHERE category=? AND external_id=?",
         batch.category,
         entry.record.external_id,
@@ -331,10 +335,10 @@ export function commitImport(db: Database.Database, actor: Actor, input: unknown
         );
       if (entry.action === "unchanged") continue;
       const r = entry.record;
-      db.prepare(
+      await run(
+        tx,
         `INSERT INTO cadastur_entries (id,category,external_id,name,uf,city,subtype,registry_status,valid_until,period,data_hash,source_json,import_id,imported_at,phone,email,address,website,languages,units,beds)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(category,external_id) DO UPDATE SET name=excluded.name,uf=excluded.uf,city=excluded.city,subtype=excluded.subtype,registry_status=excluded.registry_status,valid_until=excluded.valid_until,period=excluded.period,data_hash=excluded.data_hash,source_json=excluded.source_json,import_id=excluded.import_id,imported_at=excluded.imported_at,phone=excluded.phone,email=excluded.email,address=excluded.address,website=excluded.website,languages=excluded.languages,units=excluded.units,beds=excluded.beds,review_status='pending',published=0`,
-      ).run(
         crypto.randomUUID(),
         batch.category,
         r.external_id,
@@ -358,14 +362,17 @@ export function commitImport(db: Database.Database, actor: Actor, input: unknown
         r.beds,
       );
     }
-    db.prepare(
+    await run(
+      tx,
       "UPDATE cadastur_imports SET status='committed',payload=NULL,committed_at=? WHERE id=?",
-    ).run(now, id);
-    audit(db, actor.id, null, "cadastur.import", id);
+      now,
+      id,
+    );
+    await audit(tx, actor.id, null, "cadastur.import", id);
     return { id, counts: JSON.parse(batch.summary) };
   });
 }
-export function reviewEntry(db: Database.Database, actor: Actor, input: unknown) {
+export async function reviewEntry(db: DatabaseExecutor, actor: Actor, input: unknown) {
   requirePlatformAdmin(actor);
   const data = parse(
     z
@@ -378,12 +385,16 @@ export function reviewEntry(db: Database.Database, actor: Actor, input: unknown)
       .strict(),
     input,
   );
-  return write(db, () => {
-    const entry = one<Existing>(db, "SELECT * FROM cadastur_entries WHERE id=?", data.id);
+  return write(db, async (tx) => {
+    const entry = await one<Existing>(
+      tx,
+      "SELECT * FROM cadastur_entries WHERE id=?" + lockSuffix(tx),
+      data.id,
+    );
     if (!entry) throw new HttpError(404, "NOT_FOUND", "Registro não encontrado.");
     if (data.company_id) {
-      const company = one<{ kind: string }>(
-        db,
+      const company = await one<{ kind: string }>(
+        tx,
         "SELECT kind FROM companies WHERE id=?",
         data.company_id,
       );
@@ -396,22 +407,23 @@ export function reviewEntry(db: Database.Database, actor: Actor, input: unknown)
     }
     if (
       data.guide_id &&
-      (entry.category !== "guias" || !one(db, "SELECT id FROM guides WHERE id=?", data.guide_id))
+      (entry.category !== "guias" ||
+        !(await one(tx, "SELECT id FROM guides WHERE id=?", data.guide_id)))
     )
       throw new HttpError(422, "LINK", "Selecione um perfil de guia existente.");
-    db.prepare(
+    await run(
+      tx,
       "UPDATE cadastur_entries SET review_status='reviewed',company_id=?,guide_id=?,published=? WHERE id=?",
-    ).run(
       data.company_id,
       data.guide_id,
       Number(data.published ?? Boolean(entry.published)),
       data.id,
     );
-    audit(db, actor.id, data.company_id, "cadastur.review", data.id);
+    await audit(tx, actor.id, data.company_id, "cadastur.review", data.id);
     return { id: data.id };
   });
 }
-export function listDirectory(db: Database.Database, actor: Actor, input: unknown) {
+export async function listDirectory(db: DatabaseExecutor, actor: Actor, input: unknown) {
   requirePlatformAdmin(actor);
   const { category, page, q } = parse(
     z.object({
@@ -423,8 +435,8 @@ export function listDirectory(db: Database.Database, actor: Actor, input: unknow
   );
   const filter = `%${q.replace(/[\\%_]/g, "\\$&")}%`;
   const where = "category=? AND (name LIKE ? ESCAPE '\\' OR city LIKE ? ESCAPE '\\')";
-  return {
-    entries: many<RegistryEntry>(
+  const [entries, total, history] = await Promise.all([
+    many<RegistryEntry>(
       db,
       "SELECT id,category,external_id,name,uf,city,subtype,registry_status,valid_until,period,company_id,guide_id,review_status,imported_at,phone,email,address,website,languages,units,beds,published FROM cadastur_entries WHERE " +
         where +
@@ -434,18 +446,23 @@ export function listDirectory(db: Database.Database, actor: Actor, input: unknow
       filter,
       (page - 1) * 20,
     ),
-    total: one<{ n: number }>(
+    one<{ n: number }>(
       db,
-      "SELECT COUNT(*) n FROM cadastur_entries WHERE " + where,
+      "SELECT CAST(COUNT(*) AS INTEGER) n FROM cadastur_entries WHERE " + where,
       category,
       filter,
       filter,
-    )!.n,
-    history: many<ImportHistory>(
+    ),
+    many<ImportHistory>(
       db,
       "SELECT id,category,period,created_at,status,summary FROM cadastur_imports WHERE category=? AND status='committed' ORDER BY created_at DESC LIMIT 10",
       category,
     ),
+  ]);
+  return {
+    entries,
+    total: total!.n,
+    history,
     page,
   };
 }

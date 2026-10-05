@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   return {
-    title: publicGuide(getDatabase(), slug)?.name || "Guia",
+    title: (await publicGuide(getDatabase(), slug))?.name || "Guia",
     alternates: { canonical: "/guias/" + slug },
   };
 }

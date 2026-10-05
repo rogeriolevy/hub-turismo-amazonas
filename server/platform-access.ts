@@ -1,4 +1,4 @@
-import type Database from "better-sqlite3";
+import type { DatabaseExecutor } from "../db/index.ts";
 import { isAdmin } from "./authorization.ts";
 import { HttpError } from "./http.ts";
 import { one, many } from "./platform-store.ts";
@@ -10,29 +10,29 @@ export function requirePlatformAdmin(actor: Actor) {
   if (!isPlatformAdmin(actor))
     throw new HttpError(403, "FORBIDDEN", "Acesso exclusivo da administração da plataforma.");
 }
-export function companiesFor(db: Database.Database, actor: Actor) {
+export async function companiesFor(db: DatabaseExecutor, actor: Actor) {
   return isPlatformAdmin(actor)
-    ? many<Company>(
+    ? await many<Company>(
         db,
         "SELECT * FROM companies ORDER BY COALESCE(NULLIF(TRIM(trade_name),''),name),id",
       )
-    : many<Company>(
+    : await many<Company>(
         db,
         "SELECT c.* FROM companies c JOIN company_members m ON m.company_id=c.id WHERE m.user_id=? AND c.status!='suspended' ORDER BY COALESCE(NULLIF(TRIM(c.trade_name),''),c.name),c.id",
         actor.id,
       );
 }
-export function companyAccess(
-  db: Database.Database,
+export async function companyAccess(
+  db: DatabaseExecutor,
   actor: Actor,
   companyId: string,
   kind?: Company["kind"],
 ) {
-  const company = one<Company>(db, "SELECT * FROM companies WHERE id=?", companyId);
+  const company = await one<Company>(db, "SELECT * FROM companies WHERE id=?", companyId);
   if (!company || (kind && company.kind !== kind))
     throw new HttpError(404, "NOT_FOUND", "Empresa não encontrada.");
   if (!isPlatformAdmin(actor)) {
-    const member = one<Member>(
+    const member = await one<Member>(
       db,
       "SELECT * FROM company_members WHERE company_id=? AND user_id=?",
       company.id,

@@ -5,7 +5,7 @@ import { normalizeStaySearch } from "@/lib/stay-search";
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const item = publicHotel(getDatabase(), slug);
+  const item = await publicHotel(getDatabase(), slug);
   return {
     title: item?.name || "Hospedagem",
     description: item?.description.slice(0, 160),

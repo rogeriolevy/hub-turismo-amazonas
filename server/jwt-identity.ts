@@ -1,6 +1,7 @@
 import { getDatabase } from "../db/index.ts";
 import { getAuth } from "./auth.ts";
 import { HttpError } from "./http.ts";
+import { one } from "./platform-store.ts";
 
 type JwtUser = {
   id: string;
@@ -25,9 +26,11 @@ export async function jwtUserFromRequest(request: Request): Promise<JwtUser | nu
   if (!payload?.sub)
     throw new HttpError(401, "INVALID_TOKEN", "O token de acesso expirou ou é inválido.");
 
-  const user = getDatabase()
-    .prepare<[string], JwtUser>('SELECT id, email, name, image FROM "user" WHERE id = ? LIMIT 1')
-    .get(payload.sub);
+  const user = await one<JwtUser>(
+    getDatabase(),
+    'SELECT id, email, name, image FROM "user" WHERE id = ? LIMIT 1',
+    payload.sub,
+  );
   if (!user) throw new HttpError(401, "INVALID_TOKEN", "A conta deste token não está ativa.");
   return user;
 }

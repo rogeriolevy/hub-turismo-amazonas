@@ -57,57 +57,69 @@ async function fixture() {
     manager = user("manager@example.test"),
     outsider = user("outsider@example.test"),
     tourist = user("tourist@example.test");
-  const hotel = saveCompany(db, root, {
-    kind: "hotel",
-    name: "Hotel de teste",
-    slug: "hotel-teste",
-    city: "Maués",
-    description: "Empresa fictícia para testes automatizados.",
-    status: "published",
-  }).id;
-  const otherHotel = saveCompany(db, root, {
-    kind: "hotel",
-    name: "Outro hotel de teste",
-    slug: "outro-hotel",
-    city: "Manaus",
-    description: "Outra empresa fictícia para testes automatizados.",
-    status: "published",
-  }).id;
-  const operator = saveCompany(db, root, {
-    kind: "operator",
-    name: "Operador de teste",
-    slug: "operador-teste",
-    city: "Maués",
-    description: "Operador fictício para testes automatizados.",
-    status: "published",
-  }).id;
-  saveMember(db, root, { company_id: hotel, email: manager.email, role: "hotel_manager" });
-  const room = saveRoom(db, manager, {
-    company_id: hotel,
-    code: "01",
-    name: "Quarto de teste",
-    capacity: 2,
-    price_cents: 25000,
-    active: true,
-  }).id;
-  const tour = saveTour(db, root, {
-    company_id: operator,
-    slug: "passeio-teste",
-    name: "Passeio de teste",
-    description: "Experiência fictícia para teste de capacidade.",
-    city: "Maués",
-    duration_minutes: 120,
-    price_cents: 10000,
-    guide_id: "",
-    published: true,
-  }).id;
-  const departure = saveDeparture(db, root, {
-    company_id: operator,
-    tour_id: tour,
-    starts_at: new Date(Date.now() + 7 * 86400000).toISOString(),
-    capacity: 2,
-    active: true,
-  }).id;
+  const hotel = (
+    await saveCompany(db, root, {
+      kind: "hotel",
+      name: "Hotel de teste",
+      slug: "hotel-teste",
+      city: "Maués",
+      description: "Empresa fictícia para testes automatizados.",
+      status: "published",
+    })
+  ).id;
+  const otherHotel = (
+    await saveCompany(db, root, {
+      kind: "hotel",
+      name: "Outro hotel de teste",
+      slug: "outro-hotel",
+      city: "Manaus",
+      description: "Outra empresa fictícia para testes automatizados.",
+      status: "published",
+    })
+  ).id;
+  const operator = (
+    await saveCompany(db, root, {
+      kind: "operator",
+      name: "Operador de teste",
+      slug: "operador-teste",
+      city: "Maués",
+      description: "Operador fictício para testes automatizados.",
+      status: "published",
+    })
+  ).id;
+  await saveMember(db, root, { company_id: hotel, email: manager.email, role: "hotel_manager" });
+  const room = (
+    await saveRoom(db, manager, {
+      company_id: hotel,
+      code: "01",
+      name: "Quarto de teste",
+      capacity: 2,
+      price_cents: 25000,
+      active: true,
+    })
+  ).id;
+  const tour = (
+    await saveTour(db, root, {
+      company_id: operator,
+      slug: "passeio-teste",
+      name: "Passeio de teste",
+      description: "Experiência fictícia para teste de capacidade.",
+      city: "Maués",
+      duration_minutes: 120,
+      price_cents: 10000,
+      guide_id: "",
+      published: true,
+    })
+  ).id;
+  const departure = (
+    await saveDeparture(db, root, {
+      company_id: operator,
+      tour_id: tour,
+      starts_at: new Date(Date.now() + 7 * 86400000).toISOString(),
+      capacity: 2,
+      active: true,
+    })
+  ).id;
   const hotelRequest = {
     kind: "hotel",
     room_id: room,
@@ -134,24 +146,28 @@ async function fixture() {
 test("company activity classifies lodging, river navigation and air transport", async () => {
   const f = await fixture();
   try {
-    const navigation = saveCompany(f.db, f.root, {
-      kind: "operator",
-      activity_type: "navegacao_fluvial",
-      name: "Navegação de teste",
-      slug: "navegacao-classificada",
-      city: "Maués",
-      description: "Empresa fictícia de navegação fluvial para teste.",
-      status: "draft",
-    }).id;
-    const airTransport = saveCompany(f.db, f.root, {
-      kind: "operator",
-      activity_type: "transporte_aereo",
-      name: "Transporte aéreo de teste",
-      slug: "transporte-aereo-classificado",
-      city: "Manaus",
-      description: "Empresa fictícia de transporte aéreo para teste.",
-      status: "draft",
-    }).id;
+    const navigation = (
+      await saveCompany(f.db, f.root, {
+        kind: "operator",
+        activity_type: "navegacao_fluvial",
+        name: "Navegação de teste",
+        slug: "navegacao-classificada",
+        city: "Maués",
+        description: "Empresa fictícia de navegação fluvial para teste.",
+        status: "draft",
+      })
+    ).id;
+    const airTransport = (
+      await saveCompany(f.db, f.root, {
+        kind: "operator",
+        activity_type: "transporte_aereo",
+        name: "Transporte aéreo de teste",
+        slug: "transporte-aereo-classificado",
+        city: "Manaus",
+        description: "Empresa fictícia de transporte aéreo para teste.",
+        status: "draft",
+      })
+    ).id;
     assert.equal(
       f.db
         .prepare<[string], { activity_type: string }>(
@@ -168,18 +184,17 @@ test("company activity classifies lodging, river navigation and air transport", 
         .get(airTransport)?.activity_type,
       "transporte_aereo",
     );
-    assert.equal(publicHotel(f.db, "hotel-teste")?.activity_type, "hotel");
-    assert.throws(
-      () =>
-        saveCompany(f.db, f.root, {
-          kind: "hotel",
-          activity_type: "transporte_aereo",
-          name: "Tipo incompatível",
-          slug: "atividade-incompativel",
-          city: "Manaus",
-          description: "Empresa fictícia para validar a compatibilidade do tipo.",
-          status: "draft",
-        }),
+    assert.equal((await publicHotel(f.db, "hotel-teste"))?.activity_type, "hotel");
+    await assert.rejects(
+      saveCompany(f.db, f.root, {
+        kind: "hotel",
+        activity_type: "transporte_aereo",
+        name: "Tipo incompatível",
+        slug: "atividade-incompativel",
+        city: "Manaus",
+        description: "Empresa fictícia para validar a compatibilidade do tipo.",
+        status: "draft",
+      }),
       denied(422),
     );
   } finally {
@@ -217,36 +232,39 @@ test("companies use trade names in listings, searches and bookings without losin
       description: "Empresa fictícia para testes automatizados.",
       status: "published",
     };
-    saveCompany(f.db, f.root, { ...input, trade_name: "  A Pousada do Rio  " });
-    const found = publicHotels(f.db, "Pousada do Rio");
+    await saveCompany(f.db, f.root, { ...input, trade_name: "  A Pousada do Rio  " });
+    const found = await publicHotels(f.db, "Pousada do Rio");
     assert.equal(found.length, 1);
     assert.equal(found[0].name, "Z Empresa Legal Ltda");
     assert.equal(found[0].trade_name, "A Pousada do Rio");
     assert.equal(companyDisplayName(found[0]), "A Pousada do Rio");
-    assert.equal(publicHotels(f.db, "Empresa Legal")[0].id, f.hotel);
-    assert.equal(publicHotels(f.db)[0].id, f.hotel);
-    assert.equal(companiesFor(f.db, f.root)[0].id, f.hotel);
-    assert.equal(companyDisplayName(companiesFor(f.db, f.manager)[0]), "A Pousada do Rio");
-    assert.equal(companyDisplayName(publicHotel(f.db, "hotel-teste")!), "A Pousada do Rio");
-    assert.equal(listMembers(f.db, f.root)[0].company_name, "A Pousada do Rio");
-    requestBooking(f.db, f.tourist, f.hotelRequest, randomUUID());
-    assert.equal(myBookings(f.db, f.tourist)[0].company_name, "A Pousada do Rio");
-    assert.equal(businessBookings(f.db, f.manager, f.hotel)[0].company_name, "A Pousada do Rio");
-    saveCompany(f.db, f.root, {
+    assert.equal((await publicHotels(f.db, "Empresa Legal"))[0].id, f.hotel);
+    assert.equal((await publicHotels(f.db))[0].id, f.hotel);
+    assert.equal((await companiesFor(f.db, f.root))[0].id, f.hotel);
+    assert.equal(companyDisplayName((await companiesFor(f.db, f.manager))[0]), "A Pousada do Rio");
+    assert.equal(companyDisplayName((await publicHotel(f.db, "hotel-teste"))!), "A Pousada do Rio");
+    assert.equal((await listMembers(f.db, f.root))[0].company_name, "A Pousada do Rio");
+    await requestBooking(f.db, f.tourist, f.hotelRequest, randomUUID());
+    assert.equal((await myBookings(f.db, f.tourist))[0].company_name, "A Pousada do Rio");
+    assert.equal(
+      (await businessBookings(f.db, f.manager, f.hotel))[0].company_name,
+      "A Pousada do Rio",
+    );
+    await saveCompany(f.db, f.root, {
       ...input,
       description: "Descrição alterada por cliente sem campo fantasia.",
     });
-    assert.equal(publicHotel(f.db, "hotel-teste")!.trade_name, "A Pousada do Rio");
-    assert.throws(() => saveCompany(f.db, f.root, { ...input, trade_name: "x" }), denied(422));
-    assert.throws(
-      () => saveCompany(f.db, f.root, { ...input, trade_name: "x".repeat(101) }),
+    assert.equal((await publicHotel(f.db, "hotel-teste"))!.trade_name, "A Pousada do Rio");
+    await assert.rejects(saveCompany(f.db, f.root, { ...input, trade_name: "x" }), denied(422));
+    await assert.rejects(
+      saveCompany(f.db, f.root, { ...input, trade_name: "x".repeat(101) }),
       denied(422),
     );
-    saveCompany(f.db, f.root, { ...input, trade_name: " " });
-    assert.equal(companyDisplayName(publicHotel(f.db, "hotel-teste")!), input.name);
-    assert.equal(myBookings(f.db, f.tourist)[0].company_name, input.name);
+    await saveCompany(f.db, f.root, { ...input, trade_name: " " });
+    assert.equal(companyDisplayName((await publicHotel(f.db, "hotel-teste"))!), input.name);
+    assert.equal((await myBookings(f.db, f.tourist))[0].company_name, input.name);
 
-    saveCompany(f.db, f.root, {
+    await saveCompany(f.db, f.root, {
       id: f.operator,
       kind: "operator",
       name: "Operador de teste",
@@ -256,9 +274,9 @@ test("companies use trade names in listings, searches and bookings without losin
       description: "Operador fictício para testar nome fantasia.",
       status: "published",
     });
-    assert.equal(publicTours(f.db)[0].company_name, "Rios da Amazônia");
-    assert.equal(publicTour(f.db, "passeio-teste")!.company_name, "Rios da Amazônia");
-    saveGuide(f.db, f.root, {
+    assert.equal((await publicTours(f.db))[0].company_name, "Rios da Amazônia");
+    assert.equal((await publicTour(f.db, "passeio-teste"))!.company_name, "Rios da Amazônia");
+    await saveGuide(f.db, f.root, {
       company_id: f.operator,
       slug: "guia-fantasia",
       name: "Guia de Teste",
@@ -266,7 +284,7 @@ test("companies use trade names in listings, searches and bookings without losin
       languages: "Português",
       published: true,
     });
-    assert.equal(publicGuide(f.db, "guia-fantasia")!.company_name, "Rios da Amazônia");
+    assert.equal((await publicGuide(f.db, "guia-fantasia"))!.company_name, "Rios da Amazônia");
   } finally {
     f.db.close();
   }
@@ -275,41 +293,38 @@ test("companies use trade names in listings, searches and bookings without losin
 test("tenant permissions are isolated, role grants are admin-only, and revocation is immediate", async () => {
   const f = await fixture();
   try {
-    assert.equal(companiesFor(f.db, f.tourist).length, 0);
-    assert.equal(companiesFor(f.db, f.manager).length, 1);
-    assert.throws(() => companyInventory(f.db, f.manager, f.otherHotel), denied(403));
-    assert.throws(
-      () =>
-        saveCompany(f.db, f.manager, {
-          kind: "hotel",
-          name: "Ataque",
-          slug: "ataque",
-          city: "Manaus",
-          description: "Empresa não autorizada para este teste.",
-          status: "published",
-        }),
+    assert.equal((await companiesFor(f.db, f.tourist)).length, 0);
+    assert.equal((await companiesFor(f.db, f.manager)).length, 1);
+    await assert.rejects(companyInventory(f.db, f.manager, f.otherHotel), denied(403));
+    await assert.rejects(
+      saveCompany(f.db, f.manager, {
+        kind: "hotel",
+        name: "Ataque",
+        slug: "ataque",
+        city: "Manaus",
+        description: "Empresa não autorizada para este teste.",
+        status: "published",
+      }),
       denied(403),
     );
-    assert.throws(
-      () =>
-        saveMember(f.db, f.manager, {
-          company_id: f.hotel,
-          email: f.outsider.email,
-          role: "hotel_manager",
-        }),
+    await assert.rejects(
+      saveMember(f.db, f.manager, {
+        company_id: f.hotel,
+        email: f.outsider.email,
+        role: "hotel_manager",
+      }),
       denied(403),
     );
-    assert.throws(
-      () =>
-        saveMember(f.db, f.root, {
-          company_id: f.hotel,
-          email: f.outsider.email,
-          role: "operator",
-        }),
+    await assert.rejects(
+      saveMember(f.db, f.root, {
+        company_id: f.hotel,
+        email: f.outsider.email,
+        role: "operator",
+      }),
       denied(422),
     );
-    removeMember(f.db, f.root, f.hotel, f.manager.id);
-    assert.throws(() => companyAccess(f.db, f.manager, f.hotel), denied(403));
+    await removeMember(f.db, f.root, f.hotel, f.manager.id);
+    await assert.rejects(companyAccess(f.db, f.manager, f.hotel), denied(403));
   } finally {
     f.db.close();
   }
@@ -317,56 +332,60 @@ test("tenant permissions are isolated, role grants are admin-only, and revocatio
 test("resource identifiers cannot move inventory between tenants", async () => {
   const f = await fixture();
   try {
-    const foreign = saveRoom(f.db, f.root, {
-      company_id: f.otherHotel,
-      code: "02",
-      name: "Quarto de outra empresa",
-      capacity: 2,
-      price_cents: 30000,
-      active: true,
-    }).id;
-    assert.throws(
-      () =>
-        saveRoom(f.db, f.manager, {
-          id: foreign,
-          company_id: f.hotel,
-          code: "02",
-          name: "Alteração proibida",
-          capacity: 2,
-          price_cents: 1,
-          active: true,
-        }),
+    const foreign = (
+      await saveRoom(f.db, f.root, {
+        company_id: f.otherHotel,
+        code: "02",
+        name: "Quarto de outra empresa",
+        capacity: 2,
+        price_cents: 30000,
+        active: true,
+      })
+    ).id;
+    await assert.rejects(
+      saveRoom(f.db, f.manager, {
+        id: foreign,
+        company_id: f.hotel,
+        code: "02",
+        name: "Alteração proibida",
+        capacity: 2,
+        price_cents: 1,
+        active: true,
+      }),
       denied(404),
     );
-    const guide = saveGuide(f.db, f.root, {
-      company_id: f.operator,
-      slug: "guia-teste",
-      name: "Guia fictício",
-      bio: "Perfil fictício para testes da plataforma.",
-      languages: "Português",
-      published: true,
-    }).id;
-    const other = saveCompany(f.db, f.root, {
-      kind: "operator",
-      name: "Outro operador",
-      slug: "outro-operador",
-      city: "Manaus",
-      description: "Empresa fictícia para isolar passeios e guias.",
-      status: "published",
-    }).id;
-    assert.throws(
-      () =>
-        saveTour(f.db, f.root, {
-          company_id: other,
-          slug: "teste-falho",
-          name: "Teste falho",
-          description: "Passeio para testar vínculo de guia entre empresas.",
-          city: "Manaus",
-          duration_minutes: 60,
-          price_cents: 5000,
-          guide_id: guide,
-          published: true,
-        }),
+    const guide = (
+      await saveGuide(f.db, f.root, {
+        company_id: f.operator,
+        slug: "guia-teste",
+        name: "Guia fictício",
+        bio: "Perfil fictício para testes da plataforma.",
+        languages: "Português",
+        published: true,
+      })
+    ).id;
+    const other = (
+      await saveCompany(f.db, f.root, {
+        kind: "operator",
+        name: "Outro operador",
+        slug: "outro-operador",
+        city: "Manaus",
+        description: "Empresa fictícia para isolar passeios e guias.",
+        status: "published",
+      })
+    ).id;
+    await assert.rejects(
+      saveTour(f.db, f.root, {
+        company_id: other,
+        slug: "teste-falho",
+        name: "Teste falho",
+        description: "Passeio para testar vínculo de guia entre empresas.",
+        city: "Manaus",
+        duration_minutes: 60,
+        price_cents: 5000,
+        guide_id: guide,
+        published: true,
+      }),
       denied(404),
     );
   } finally {
@@ -376,42 +395,46 @@ test("resource identifiers cannot move inventory between tenants", async () => {
 test("pending requests do not block rooms, but conflicting approvals are refused atomically", async () => {
   const f = await fixture();
   try {
-    const a = requestBooking(f.db, f.tourist, f.hotelRequest, randomUUID()).id,
-      b = requestBooking(f.db, f.outsider, f.hotelRequest, randomUUID()).id;
-    decideBooking(f.db, f.manager, { company_id: f.hotel, booking_id: a, decision: "confirmed" });
-    assert.throws(
-      () =>
-        decideBooking(f.db, f.manager, {
-          company_id: f.hotel,
-          booking_id: b,
-          decision: "confirmed",
-        }),
+    const a = (await requestBooking(f.db, f.tourist, f.hotelRequest, randomUUID())).id,
+      b = (await requestBooking(f.db, f.outsider, f.hotelRequest, randomUUID())).id;
+    await decideBooking(f.db, f.manager, {
+      company_id: f.hotel,
+      booking_id: a,
+      decision: "confirmed",
+    });
+    await assert.rejects(
+      decideBooking(f.db, f.manager, {
+        company_id: f.hotel,
+        booking_id: b,
+        decision: "confirmed",
+      }),
       denied(409),
     );
-    assert.equal(myBookings(f.db, f.outsider)[0].status, "pending");
-    assert.equal(myBookings(f.db, f.tourist)[0].total_cents, 50000);
-    const adjacent = requestBooking(
-      f.db,
-      f.tourist,
-      { ...f.hotelRequest, check_in: day(3), check_out: day(4) },
-      randomUUID(),
+    assert.equal((await myBookings(f.db, f.outsider))[0].status, "pending");
+    assert.equal((await myBookings(f.db, f.tourist))[0].total_cents, 50000);
+    const adjacent = (
+      await requestBooking(
+        f.db,
+        f.tourist,
+        { ...f.hotelRequest, check_in: day(3), check_out: day(4) },
+        randomUUID(),
+      )
     ).id;
-    decideBooking(f.db, f.manager, {
+    await decideBooking(f.db, f.manager, {
       company_id: f.hotel,
       booking_id: adjacent,
       decision: "confirmed",
     });
-    assert.throws(
-      () =>
-        saveRoom(f.db, f.manager, {
-          id: f.room,
-          company_id: f.hotel,
-          code: "01",
-          name: "Quarto de teste",
-          capacity: 1,
-          price_cents: 25000,
-          active: true,
-        }),
+    await assert.rejects(
+      saveRoom(f.db, f.manager, {
+        id: f.room,
+        company_id: f.hotel,
+        code: "01",
+        name: "Quarto de teste",
+        capacity: 1,
+        price_cents: 25000,
+        active: true,
+      }),
       denied(409),
     );
   } finally {
@@ -422,41 +445,39 @@ test("tour approvals enforce capacity and cancellation releases seats", async ()
   const f = await fixture();
   try {
     const input = { kind: "tour", departure_id: f.departure, guests: 2, notes: "" };
-    const first = requestBooking(f.db, f.tourist, input, randomUUID()).id,
-      second = requestBooking(f.db, f.outsider, { ...input, guests: 1 }, randomUUID()).id;
-    decideBooking(f.db, f.root, {
+    const first = (await requestBooking(f.db, f.tourist, input, randomUUID())).id,
+      second = (await requestBooking(f.db, f.outsider, { ...input, guests: 1 }, randomUUID())).id;
+    await decideBooking(f.db, f.root, {
       company_id: f.operator,
       booking_id: first,
       decision: "confirmed",
     });
-    assert.throws(
-      () =>
-        decideBooking(f.db, f.root, {
-          company_id: f.operator,
-          booking_id: second,
-          decision: "confirmed",
-        }),
+    await assert.rejects(
+      decideBooking(f.db, f.root, {
+        company_id: f.operator,
+        booking_id: second,
+        decision: "confirmed",
+      }),
       denied(409),
     );
-    assert.throws(() => cancelBooking(f.db, f.outsider, first), denied(404));
-    cancelBooking(f.db, f.tourist, first);
-    decideBooking(f.db, f.root, {
+    await assert.rejects(cancelBooking(f.db, f.outsider, first), denied(404));
+    await cancelBooking(f.db, f.tourist, first);
+    await decideBooking(f.db, f.root, {
       company_id: f.operator,
       booking_id: second,
       decision: "confirmed",
     });
-    assert.equal(myBookings(f.db, f.outsider)[0].status, "confirmed");
-    const old = companyInventory(f.db, f.root, f.operator).departures[0];
-    assert.throws(
-      () =>
-        saveDeparture(f.db, f.root, {
-          id: f.departure,
-          company_id: f.operator,
-          tour_id: f.tour,
-          starts_at: new Date(Date.parse(old.starts_at) + 86400000).toISOString(),
-          capacity: 2,
-          active: true,
-        }),
+    assert.equal((await myBookings(f.db, f.outsider))[0].status, "confirmed");
+    const old = (await companyInventory(f.db, f.root, f.operator)).departures[0];
+    await assert.rejects(
+      saveDeparture(f.db, f.root, {
+        id: f.departure,
+        company_id: f.operator,
+        tour_id: f.tour,
+        starts_at: new Date(Date.parse(old.starts_at) + 86400000).toISOString(),
+        capacity: 2,
+        active: true,
+      }),
       denied(409),
     );
   } finally {
@@ -467,10 +488,10 @@ test("requests validate dates, capacity, idempotency and personal data ownership
   const f = await fixture();
   try {
     const key = randomUUID(),
-      first = requestBooking(f.db, f.tourist, f.hotelRequest, key);
-    assert.equal(requestBooking(f.db, f.tourist, f.hotelRequest, key).id, first.id);
-    assert.throws(
-      () => requestBooking(f.db, f.tourist, { ...f.hotelRequest, guests: 1 }, key),
+      first = await requestBooking(f.db, f.tourist, f.hotelRequest, key);
+    assert.equal((await requestBooking(f.db, f.tourist, f.hotelRequest, key)).id, first.id);
+    await assert.rejects(
+      requestBooking(f.db, f.tourist, { ...f.hotelRequest, guests: 1 }, key),
       denied(409),
     );
     for (const patch of [
@@ -481,19 +502,18 @@ test("requests validate dates, capacity, idempotency and personal data ownership
       { status: "confirmed" },
       { user_id: f.root.id },
     ])
-      assert.throws(
-        () => requestBooking(f.db, f.tourist, { ...f.hotelRequest, ...patch }, randomUUID()),
+      await assert.rejects(
+        requestBooking(f.db, f.tourist, { ...f.hotelRequest, ...patch }, randomUUID()),
         denied(422),
       );
-    assert.equal(myBookings(f.db, f.outsider).length, 0);
-    assert.throws(() => businessBookings(f.db, f.outsider, f.hotel), denied(403));
-    assert.throws(
-      () =>
-        decideBooking(f.db, f.manager, {
-          company_id: f.otherHotel,
-          booking_id: first.id,
-          decision: "confirmed",
-        }),
+    assert.equal((await myBookings(f.db, f.outsider)).length, 0);
+    await assert.rejects(businessBookings(f.db, f.outsider, f.hotel), denied(403));
+    await assert.rejects(
+      decideBooking(f.db, f.manager, {
+        company_id: f.otherHotel,
+        booking_id: first.id,
+        decision: "confirmed",
+      }),
       denied(403),
     );
   } finally {
@@ -503,9 +523,9 @@ test("requests validate dates, capacity, idempotency and personal data ownership
 test("unpublished and suspended companies do not leak catalog entries or accept requests", async () => {
   const f = await fixture();
   try {
-    assert.equal(publicHotels(f.db).length, 2);
-    assert.equal(publicTours(f.db).length, 1);
-    saveCompany(f.db, f.root, {
+    assert.equal((await publicHotels(f.db)).length, 2);
+    assert.equal((await publicTours(f.db)).length, 1);
+    await saveCompany(f.db, f.root, {
       id: f.hotel,
       kind: "hotel",
       name: "Hotel de teste",
@@ -514,10 +534,13 @@ test("unpublished and suspended companies do not leak catalog entries or accept 
       description: "Empresa fictícia para testes automatizados.",
       status: "suspended",
     });
-    assert.equal(publicHotels(f.db).length, 1);
-    assert.throws(() => companyAccess(f.db, f.manager, f.hotel), denied(403));
-    assert.throws(() => requestBooking(f.db, f.tourist, f.hotelRequest, randomUUID()), denied(404));
-    assert.equal(publicGuide(f.db, "inexistente"), null);
+    assert.equal((await publicHotels(f.db)).length, 1);
+    await assert.rejects(companyAccess(f.db, f.manager, f.hotel), denied(403));
+    await assert.rejects(
+      requestBooking(f.db, f.tourist, f.hotelRequest, randomUUID()),
+      denied(404),
+    );
+    assert.equal(await publicGuide(f.db, "inexistente"), null);
   } finally {
     f.db.close();
   }
@@ -525,11 +548,13 @@ test("unpublished and suspended companies do not leak catalog entries or accept 
 test("local stay records require confirmed reservations and enforce check-in/out order", async () => {
   const f = await fixture();
   try {
-    const booking = requestBooking(
-      f.db,
-      f.tourist,
-      { ...f.hotelRequest, check_in: day(0), check_out: day(2) },
-      randomUUID(),
+    const booking = (
+      await requestBooking(
+        f.db,
+        f.tourist,
+        { ...f.hotelRequest, check_in: day(0), check_out: day(2) },
+        randomUUID(),
+      )
     ).id;
     const input = {
       company_id: f.hotel,
@@ -538,18 +563,21 @@ test("local stay records require confirmed reservations and enforce check-in/out
       country: "Brasil",
       origin_city: "Manaus",
     };
-    assert.throws(() => recordStay(f.db, f.manager, input), denied(409));
-    decideBooking(f.db, f.manager, {
+    await assert.rejects(recordStay(f.db, f.manager, input), denied(409));
+    await decideBooking(f.db, f.manager, {
       company_id: f.hotel,
       booking_id: booking,
       decision: "confirmed",
     });
-    assert.throws(() => recordStay(f.db, f.manager, { ...input, action: "checkout" }), denied(409));
-    recordStay(f.db, f.manager, input);
-    assert.throws(() => recordStay(f.db, f.manager, input), denied(409));
-    assert.throws(() => cancelBooking(f.db, f.tourist, booking), denied(409));
-    recordStay(f.db, f.manager, { ...input, action: "checkout" });
-    assert.ok(businessBookings(f.db, f.manager, f.hotel)[0].checked_out_at);
+    await assert.rejects(
+      recordStay(f.db, f.manager, { ...input, action: "checkout" }),
+      denied(409),
+    );
+    await recordStay(f.db, f.manager, input);
+    await assert.rejects(recordStay(f.db, f.manager, input), denied(409));
+    await assert.rejects(cancelBooking(f.db, f.tourist, booking), denied(409));
+    await recordStay(f.db, f.manager, { ...input, action: "checkout" });
+    assert.ok((await businessBookings(f.db, f.manager, f.hotel))[0].checked_out_at);
   } finally {
     f.db.close();
   }

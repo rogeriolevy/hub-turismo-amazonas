@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
-import { openDatabase } from "../db/index.ts";
+import { isPostgresDatabase, one, openManagementDatabase } from "../db/index.ts";
+import { migratePostgresDatabase } from "../db/migrate-postgres.ts";
 import { authOptions } from "../server/auth-config.ts";
 import { isAdmin } from "../server/authorization.ts";
 import { newPassword } from "./password-prompt.ts";
@@ -9,9 +10,10 @@ const email = (process.argv[2] || process.env.ADMIN_EMAILS?.split(",")[0] || "")
   .toLowerCase();
 if (!isAdmin(email, process.env.ADMIN_EMAILS))
   throw new Error("Este e-mail não consta em ADMIN_EMAILS.");
-const db = openDatabase();
+const db = openManagementDatabase();
 try {
-  if (db.prepare('SELECT id FROM "user" WHERE email = ?').get(email))
+  if (isPostgresDatabase(db)) await migratePostgresDatabase(db);
+  if (await one<{ id: string }>(db, 'SELECT id FROM "user" WHERE email = ?', email))
     throw new Error("Conta existente. Use npm run admin:password para recuperar o acesso.");
   console.log(`Criando acesso para ${email}.`);
   const password = await newPassword();
@@ -23,5 +25,6 @@ try {
     `Conta administrativa criada e senha verificada no banco. Entre em ${process.env.SITE_URL}/admin.`,
   );
 } finally {
-  db.close();
+  if (isPostgresDatabase(db)) await db.end();
+  else db.close();
 }

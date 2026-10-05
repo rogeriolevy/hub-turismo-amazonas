@@ -5,7 +5,7 @@ import { authOptions } from "@/server/auth-config";
 import { isAdmin } from "@/server/authorization";
 import { getClientIp } from "@/server/client-ip";
 import { readJson, errorResponse, HttpError } from "@/server/http";
-import { parse } from "@/server/platform-store";
+import { one, parse, run } from "@/server/platform-store";
 import { registrationSchema } from "@/lib/platform-schema";
 import { profileAvatars, profileAvatarUrl } from "@/lib/profile-avatars";
 import {
@@ -44,12 +44,16 @@ export async function POST(request: Request) {
     );
     if (response.ok) {
       const db = getDatabase();
-      const user = db
-        .prepare<[string], { id: string }>('SELECT id FROM "user" WHERE email = ?')
-        .get(input.email);
+      const user = await one<{ id: string }>(
+        db,
+        'SELECT id FROM "user" WHERE email = ?',
+        input.email,
+      );
       if (user) {
         const avatar = profileAvatars[randomInt(profileAvatars.length)];
-        db.prepare('UPDATE "user" SET image = ?, updatedAt = ? WHERE id = ? AND image IS NULL').run(
+        await run(
+          db,
+          'UPDATE "user" SET image = ?, updatedAt = ? WHERE id = ? AND image IS NULL',
           profileAvatarUrl(avatar.key),
           new Date().toISOString(),
           user.id,

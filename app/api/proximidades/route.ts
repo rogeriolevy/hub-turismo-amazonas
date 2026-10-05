@@ -5,6 +5,7 @@ import type { HotelLocationReference } from "@/lib/nearby-recommendations";
 import { HttpError, errorResponse, json } from "@/server/http";
 import { publicProvider } from "@/server/cadastur/public-directory";
 import { nearbyRecommendations } from "@/server/nearby-recommendations";
+import { one } from "@/server/platform-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
     const db = getDatabase();
     let provider: HotelLocationReference | null = null;
     if (source === "cadastur") {
-      const entry = publicProvider(db, id);
+      const entry = await publicProvider(db, id);
       if (entry?.category === "hospedagens") {
         provider = {
           key: `cadastur:${entry.id}`,
@@ -33,9 +34,9 @@ export async function GET(request: Request) {
       }
     } else {
       provider =
-        db
-          .prepare<[string], HotelLocationReference>(
-            `SELECT
+        (await one<HotelLocationReference>(
+          db,
+          `SELECT
              'company:' || c.id AS key,
              COALESCE(NULLIF(TRIM(c.trade_name),''),c.name) AS name,
              c.city,
@@ -48,8 +49,8 @@ export async function GET(request: Request) {
              ),'') AS address
            FROM companies c
            WHERE c.id=? AND c.kind='hotel' AND c.status='published'`,
-          )
-          .get(id) ?? null;
+          id,
+        )) ?? null;
       const companyProvider = provider;
       if (companyProvider && !companyProvider.address) {
         const highlight = lodgingHighlights.find(

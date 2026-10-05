@@ -18,8 +18,8 @@ import { ProviderCard } from "./provider-directory";
 import "./provider-directory.css";
 import "./experience-directory.css";
 
-type CompanyGuide = ReturnType<typeof publicGuides>[number];
-type PublicTour = ReturnType<typeof publicTours>[number];
+type CompanyGuide = Awaited<ReturnType<typeof publicGuides>>[number];
+type PublicTour = Awaited<ReturnType<typeof publicTours>>[number];
 type ExperienceResult =
   | {
       key: string;
@@ -103,14 +103,20 @@ function ExperienceResultCard({ result }: { result: ExperienceResult }) {
   return <ProviderCard entry={result.provider} />;
 }
 
-export function ExperienceDirectory({ search = {} }: { search?: DirectorySearch }) {
+export async function ExperienceDirectory({ search = {} }: { search?: DirectorySearch }) {
   const db = getDatabase();
   const q = firstValue(search.q);
   const city = firstValue(search.cidade);
   const requestedType = firstValue(search.tipo);
   const requestedPage = firstValue(search.pagina);
+  const [tours, activities, providers, guides] = await Promise.all([
+    publicTours(db),
+    publicCatalogItems(db, "passeios"),
+    publicProviders(db, "guias"),
+    publicGuides(db),
+  ]);
   const all: ExperienceResult[] = [
-    ...publicTours(db).map((tour) => ({
+    ...tours.map((tour) => ({
       key: `tour:${tour.id}`,
       kind: "tour" as const,
       name: tour.name,
@@ -118,7 +124,7 @@ export function ExperienceDirectory({ search = {} }: { search?: DirectorySearch 
       searchable: `${tour.name} ${tour.city} ${tour.description} ${tour.company_name}`,
       tour,
     })),
-    ...publicCatalogItems(db, "passeios").map((item) => {
+    ...activities.map((item) => {
       const provider = fromHub(item);
       return {
         key: `activity:${item.id}`,
@@ -129,7 +135,7 @@ export function ExperienceDirectory({ search = {} }: { search?: DirectorySearch 
         provider,
       };
     }),
-    ...publicProviders(db, "guias").map((provider) => ({
+    ...providers.map((provider) => ({
       key: `provider:${provider.id}`,
       kind: "provider" as const,
       name: provider.name,
@@ -137,7 +143,7 @@ export function ExperienceDirectory({ search = {} }: { search?: DirectorySearch 
       searchable: `${provider.name} ${provider.city} ${provider.subtype} ${provider.summary} ${provider.description} ${provider.details} ${provider.languages}`,
       provider,
     })),
-    ...publicGuides(db).map((guide) => ({
+    ...guides.map((guide) => ({
       key: `guide:${guide.id}`,
       kind: "guide" as const,
       name: guide.name,

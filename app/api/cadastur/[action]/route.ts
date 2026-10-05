@@ -26,7 +26,8 @@ export async function GET(request: Request, context: Context) {
     const query = Object.fromEntries(new URL(request.url).searchParams);
     if (action === "fontes")
       return json({ data: await listResources(parse(categorySchema, query.category)) });
-    if (action === "registros") return json({ data: listDirectory(getDatabase(), actor, query) });
+    if (action === "registros")
+      return json({ data: await listDirectory(getDatabase(), actor, query) });
     throw new HttpError(404, "NOT_FOUND", "Operação não encontrada.");
   } catch (error) {
     return errorResponse(error, crypto.randomUUID());
@@ -38,9 +39,9 @@ export async function POST(request: Request, context: Context) {
     requirePlatformAdmin(actor);
     const { action } = await context.params;
     if (action === "confirmar")
-      return json({ data: commitImport(getDatabase(), actor, await readJson(request)) });
+      return json({ data: await commitImport(getDatabase(), actor, await readJson(request)) });
     if (action === "revisar")
-      return json({ data: reviewEntry(getDatabase(), actor, await readJson(request)) });
+      return json({ data: await reviewEntry(getDatabase(), actor, await readJson(request)) });
     if (!["inspecionar", "prever"].includes(action))
       throw new HttpError(404, "NOT_FOUND", "Operação não encontrada.");
     assertOrigin(request);
@@ -100,7 +101,9 @@ export async function POST(request: Request, context: Context) {
     const options = parse(importOptionsSchema, optionsInput);
     if (sourceFile.period && options.period !== sourceFile.period)
       throw new HttpError(422, "PERIOD", "O período deve corresponder ao recurso oficial.");
-    return json({ data: createPreview(getDatabase(), actor, file, options, sourceFile.source) });
+    return json({
+      data: await createPreview(getDatabase(), actor, file, options, sourceFile.source),
+    });
   } catch (error) {
     return errorResponse(error, crypto.randomUUID());
   }

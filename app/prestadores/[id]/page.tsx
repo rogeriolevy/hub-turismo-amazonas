@@ -4,7 +4,7 @@ import { publicProvider } from "@/server/cadastur/public-directory";
 export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const entry = publicProvider(getDatabase(), id);
+  const entry = await publicProvider(getDatabase(), id);
   return {
     title: entry?.name || "Prestador não encontrado",
     alternates: { canonical: "/prestadores/" + id },

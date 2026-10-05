@@ -1,16 +1,19 @@
-import type Database from "better-sqlite3";
 import type { BetterAuthOptions } from "better-auth";
 import { captcha, jwt } from "better-auth/plugins";
+import type { DatabaseHandle } from "../db/index.ts";
 import { trustedSiteOrigins } from "../lib/trusted-origins.ts";
 import { isTurnstileConfigured, turnstileSecretKey } from "./turnstile.ts";
 
 export function authOptions(
-  database: Database.Database,
+  database: DatabaseHandle,
   provision = false,
   protectWithCaptcha = !provision,
+  migrationOnly = false,
 ) {
-  const secret = process.env.BETTER_AUTH_SECRET;
-  const baseURL = process.env.SITE_URL;
+  const secret =
+    process.env.BETTER_AUTH_SECRET ??
+    (migrationOnly ? "schema-migration-only-secret-unused" : undefined);
+  const baseURL = process.env.SITE_URL ?? (migrationOnly ? "http://localhost:3000" : undefined);
   if (!secret || secret.length < 32)
     throw new Error("Configure BETTER_AUTH_SECRET executando npm run setup.");
   if (!baseURL) throw new Error("Configure SITE_URL.");

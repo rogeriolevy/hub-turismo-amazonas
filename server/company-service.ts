@@ -1,4 +1,4 @@
-import type Database from "better-sqlite3";
+import type { DatabaseExecutor } from "../db/index.ts";
 import {
   companySchema,
   companyActivityKinds,
@@ -10,7 +10,7 @@ import {
   roomOperationalStatusSchema,
   todayInManaus,
 } from "../lib/platform-schema.ts";
-import { one, many, parse, audit, write } from "./platform-store.ts";
+import { one, many, run, parse, audit, write } from "./platform-store.ts";
 import { companyAccess, requirePlatformAdmin } from "./platform-access.ts";
 import { HttpError } from "./http.ts";
 import type {
@@ -24,11 +24,13 @@ import type {
   Member,
 } from "./platform-models.ts";
 
-export function saveCompany(db: Database.Database, actor: Actor, input: unknown) {
+export async function saveCompany(db: DatabaseExecutor, actor: Actor, input: unknown) {
   requirePlatformAdmin(actor);
   const data = parse(companySchema, input);
   const id = data.id || crypto.randomUUID();
-  const old = data.id ? one<Company>(db, "SELECT * FROM companies WHERE id=?", data.id) : undefined;
+  const old = data.id
+    ? await one<Company>(db, "SELECT * FROM companies WHERE id=?", data.id)
+    : undefined;
   if (data.id) {
     if (!old) throw new HttpError(404, "NOT_FOUND", "Empresa não encontrada.");
     if (old.kind !== data.kind)
@@ -38,10 +40,10 @@ export function saveCompany(db: Database.Database, actor: Actor, input: unknown)
     data.activity_type ?? old?.activity_type ?? (data.kind === "hotel" ? "hotel" : "passeios");
   if (companyActivityKinds[activityType] !== data.kind)
     throw new HttpError(422, "ACTIVITY_TYPE", "O tipo de atividade não corresponde à empresa.");
-  return write(db, () => {
-    db.prepare(
+  return write(db, async (tx) => {
+    await run(
+      tx,
       "INSERT INTO companies (id,kind,activity_type,name,slug,city,description,status,created_at,trade_name) VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET activity_type=excluded.activity_type,name=excluded.name,trade_name=excluded.trade_name,slug=excluded.slug,city=excluded.city,description=excluded.description,status=excluded.status",
-    ).run(
       id,
       data.kind,
       activityType,
@@ -53,69 +55,80 @@ export function saveCompany(db: Database.Database, actor: Actor, input: unknown)
       new Date().toISOString(),
       data.trade_name ?? old?.trade_name ?? "",
     );
-    audit(db, actor.id, id, "company.saved", id);
+    await audit(tx, actor.id, id, "company.saved", id);
     return { id };
   });
 }
-export function saveMember(db: Database.Database, actor: Actor, input: unknown) {
+
+export async function saveMember(db: DatabaseExecutor, actor: Actor, input: unknown) {
   requirePlatformAdmin(actor);
   const data = parse(memberSchema, input);
-  const company = companyAccess(db, actor, data.company_id);
+  const company = await companyAccess(db, actor, data.company_id);
   if ((company.kind === "hotel") !== data.role.startsWith("hotel_"))
     throw new HttpError(422, "ROLE", "O perfil não pertence ao tipo desta empresa.");
-  const user = one<Actor>(db, 'SELECT id,email,name FROM "user" WHERE email=?', data.email);
+  const user = await one<Actor>(db, 'SELECT id,email,name FROM "user" WHERE email=?', data.email);
   if (!user)
     throw new HttpError(404, "USER", "Essa pessoa deve criar uma conta antes de receber acesso.");
-  return write(db, () => {
-    db.prepare(
+  return write(db, async (tx) => {
+    await run(
+      tx,
       "INSERT INTO company_members VALUES (?,?,?) ON CONFLICT(company_id,user_id) DO UPDATE SET role=excluded.role",
-    ).run(company.id, user.id, data.role);
-    audit(db, actor.id, company.id, "member.granted", user.id);
+      company.id,
+      user.id,
+      data.role,
+    );
+    await audit(tx, actor.id, company.id, "member.granted", user.id);
     return { id: user.id };
   });
 }
-export function removeMember(
-  db: Database.Database,
+
+export async function removeMember(
+  db: DatabaseExecutor,
   actor: Actor,
   companyId: string,
   userId: string,
 ) {
   requirePlatformAdmin(actor);
-  companyAccess(db, actor, companyId);
-  return write(db, () => {
-    db.prepare("DELETE FROM company_members WHERE company_id=? AND user_id=?").run(
+  await companyAccess(db, actor, companyId);
+  return write(db, async (tx) => {
+    await run(
+      tx,
+      "DELETE FROM company_members WHERE company_id=? AND user_id=?",
       companyId,
       userId,
     );
-    audit(db, actor.id, companyId, "member.revoked", userId);
+    await audit(tx, actor.id, companyId, "member.revoked", userId);
     return { ok: true };
   });
 }
-export function listMembers(db: Database.Database, actor: Actor) {
+
+export async function listMembers(db: DatabaseExecutor, actor: Actor) {
   requirePlatformAdmin(actor);
   return many<Member & { company_name: string }>(
     db,
     `SELECT m.*,u.name,u.email,COALESCE(NULLIF(TRIM(c.trade_name),''),c.name) company_name FROM company_members m JOIN "user" u ON u.id=m.user_id JOIN companies c ON c.id=m.company_id ORDER BY company_name,u.name`,
   );
 }
-function own(
-  db: Database.Database,
+
+async function own(
+  db: DatabaseExecutor,
   table: "rooms" | "guides" | "tours",
   id: string | undefined,
   companyId: string,
 ) {
-  if (id && !one(db, `SELECT id FROM ${table} WHERE id=? AND company_id=?`, id, companyId))
+  if (id && !(await one(db, `SELECT id FROM ${table} WHERE id=? AND company_id=?`, id, companyId)))
     throw new HttpError(404, "NOT_FOUND", "Registro não encontrado nesta empresa.");
 }
-export function saveRoom(db: Database.Database, actor: Actor, input: unknown) {
+
+export async function saveRoom(db: DatabaseExecutor, actor: Actor, input: unknown) {
   const data = parse(roomSchema, input);
-  companyAccess(db, actor, data.company_id, "hotel");
-  own(db, "rooms", data.id, data.company_id);
+  await companyAccess(db, actor, data.company_id, "hotel");
+  await own(db, "rooms", data.id, data.company_id);
   const id = data.id || crypto.randomUUID();
-  return write(db, () => {
+  return write(db, async (tx) => {
     if (
-      one(
-        db,
+      await one(
+        tx,
         "SELECT id FROM bookings WHERE room_id=? AND status='confirmed' AND check_out>? AND guests>?",
         id,
         todayInManaus(),
@@ -127,9 +140,9 @@ export function saveRoom(db: Database.Database, actor: Actor, input: unknown) {
         "CAPACITY",
         "Há reservas confirmadas com mais hóspedes do que essa capacidade.",
       );
-    db.prepare(
+    await run(
+      tx,
       "INSERT INTO rooms (id,company_id,code,name,capacity,price_cents,active) VALUES (?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET code=excluded.code,name=excluded.name,capacity=excluded.capacity,price_cents=excluded.price_cents,active=excluded.active",
-    ).run(
       id,
       data.company_id,
       data.code,
@@ -138,23 +151,24 @@ export function saveRoom(db: Database.Database, actor: Actor, input: unknown) {
       data.price_cents,
       Number(data.active),
     );
-    audit(db, actor.id, data.company_id, "room.saved", id);
+    await audit(tx, actor.id, data.company_id, "room.saved", id);
     return { id };
   });
 }
-export function setRoomOperationalStatus(db: Database.Database, actor: Actor, input: unknown) {
+
+export async function setRoomOperationalStatus(db: DatabaseExecutor, actor: Actor, input: unknown) {
   const data = parse(roomOperationalStatusSchema, input);
-  companyAccess(db, actor, data.company_id, "hotel");
-  return write(db, () => {
-    const room = one<Room>(
-      db,
+  await companyAccess(db, actor, data.company_id, "hotel");
+  return write(db, async (tx) => {
+    const room = await one<Room>(
+      tx,
       "SELECT * FROM rooms WHERE id=? AND company_id=?",
       data.room_id,
       data.company_id,
     );
     if (!room) throw new HttpError(404, "NOT_FOUND", "Quarto não encontrado nesta hospedagem.");
-    const currentStay = one<{ id: string }>(
-      db,
+    const currentStay = await one<{ id: string }>(
+      tx,
       "SELECT b.id FROM bookings b JOIN stay_records s ON s.booking_id=b.id WHERE b.room_id=? AND b.status='confirmed' AND s.checked_in_at IS NOT NULL AND s.checked_out_at IS NULL LIMIT 1",
       room.id,
     );
@@ -165,24 +179,27 @@ export function setRoomOperationalStatus(db: Database.Database, actor: Actor, in
         "O quarto está ocupado. Registre o check-out para atualizar sua situação.",
       );
     if (room.operational_status === data.operational_status) return { id: room.id };
-    db.prepare("UPDATE rooms SET operational_status=? WHERE id=? AND company_id=?").run(
+    await run(
+      tx,
+      "UPDATE rooms SET operational_status=? WHERE id=? AND company_id=?",
       data.operational_status,
       room.id,
       data.company_id,
     );
-    audit(db, actor.id, data.company_id, "room.status_changed", room.id);
+    await audit(tx, actor.id, data.company_id, "room.status_changed", room.id);
     return { id: room.id, operational_status: data.operational_status };
   });
 }
-export function saveGuide(db: Database.Database, actor: Actor, input: unknown) {
+
+export async function saveGuide(db: DatabaseExecutor, actor: Actor, input: unknown) {
   const data = parse(guideSchema, input);
-  companyAccess(db, actor, data.company_id, "operator");
-  own(db, "guides", data.id, data.company_id);
+  await companyAccess(db, actor, data.company_id, "operator");
+  await own(db, "guides", data.id, data.company_id);
   const id = data.id || crypto.randomUUID();
-  return write(db, () => {
-    db.prepare(
+  return write(db, async (tx) => {
+    await run(
+      tx,
       "INSERT INTO guides VALUES (?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET slug=excluded.slug,name=excluded.name,bio=excluded.bio,languages=excluded.languages,published=excluded.published",
-    ).run(
       id,
       data.company_id,
       data.slug,
@@ -191,20 +208,21 @@ export function saveGuide(db: Database.Database, actor: Actor, input: unknown) {
       data.languages,
       Number(data.published),
     );
-    audit(db, actor.id, data.company_id, "guide.saved", id);
+    await audit(tx, actor.id, data.company_id, "guide.saved", id);
     return { id };
   });
 }
-export function saveTour(db: Database.Database, actor: Actor, input: unknown) {
+
+export async function saveTour(db: DatabaseExecutor, actor: Actor, input: unknown) {
   const data = parse(tourSchema, input);
-  companyAccess(db, actor, data.company_id, "operator");
-  own(db, "tours", data.id, data.company_id);
-  if (data.guide_id) own(db, "guides", data.guide_id, data.company_id);
+  await companyAccess(db, actor, data.company_id, "operator");
+  await own(db, "tours", data.id, data.company_id);
+  if (data.guide_id) await own(db, "guides", data.guide_id, data.company_id);
   const id = data.id || crypto.randomUUID();
-  return write(db, () => {
-    db.prepare(
+  return write(db, async (tx) => {
+    await run(
+      tx,
       "INSERT INTO tours VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET slug=excluded.slug,name=excluded.name,description=excluded.description,city=excluded.city,duration_minutes=excluded.duration_minutes,price_cents=excluded.price_cents,guide_id=excluded.guide_id,published=excluded.published",
-    ).run(
       id,
       data.company_id,
       data.slug,
@@ -216,18 +234,19 @@ export function saveTour(db: Database.Database, actor: Actor, input: unknown) {
       data.guide_id,
       Number(data.published),
     );
-    audit(db, actor.id, data.company_id, "tour.saved", id);
+    await audit(tx, actor.id, data.company_id, "tour.saved", id);
     return { id };
   });
 }
-export function saveDeparture(db: Database.Database, actor: Actor, input: unknown) {
+
+export async function saveDeparture(db: DatabaseExecutor, actor: Actor, input: unknown) {
   const data = parse(departureSchema, input);
-  companyAccess(db, actor, data.company_id, "operator");
-  own(db, "tours", data.tour_id, data.company_id);
+  await companyAccess(db, actor, data.company_id, "operator");
+  await own(db, "tours", data.tour_id, data.company_id);
   if (Date.parse(data.starts_at) <= Date.now())
     throw new HttpError(422, "DATE", "A saída deve estar no futuro.");
   const old = data.id
-    ? one<Departure>(
+    ? await one<Departure>(
         db,
         "SELECT d.* FROM departures d JOIN tours t ON t.id=d.tour_id WHERE d.id=? AND t.company_id=?",
         data.id,
@@ -237,12 +256,12 @@ export function saveDeparture(db: Database.Database, actor: Actor, input: unknow
   if (data.id && !old) throw new HttpError(404, "NOT_FOUND", "Saída não encontrada.");
   const id = data.id || crypto.randomUUID();
   const startsAt = new Date(data.starts_at).toISOString();
-  return write(db, () => {
-    const booked = one<{ count: number; reserved: number }>(
-      db,
-      "SELECT COUNT(*) count,COALESCE(SUM(CASE WHEN status='confirmed' THEN guests ELSE 0 END),0) reserved FROM bookings WHERE departure_id=? AND status IN ('pending','confirmed')",
+  return write(db, async (tx) => {
+    const booked = (await one<{ count: number; reserved: number }>(
+      tx,
+      "SELECT CAST(COUNT(*) AS INTEGER) count,CAST(COALESCE(SUM(CASE WHEN status='confirmed' THEN guests ELSE 0 END),0) AS INTEGER) reserved FROM bookings WHERE departure_id=? AND status IN ('pending','confirmed')",
       id,
-    )!;
+    ))!;
     if (booked.reserved > data.capacity)
       throw new HttpError(
         409,
@@ -255,18 +274,24 @@ export function saveDeparture(db: Database.Database, actor: Actor, input: unknow
         "DEPARTURE",
         "Uma saída com solicitações não pode mudar de passeio ou horário. Crie outra saída.",
       );
-    db.prepare(
+    await run(
+      tx,
       "INSERT INTO departures VALUES (?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET tour_id=excluded.tour_id,starts_at=excluded.starts_at,capacity=excluded.capacity,active=excluded.active",
-    ).run(id, data.tour_id, startsAt, data.capacity, Number(data.active));
-    audit(db, actor.id, data.company_id, "departure.saved", id);
+      id,
+      data.tour_id,
+      startsAt,
+      data.capacity,
+      Number(data.active),
+    );
+    await audit(tx, actor.id, data.company_id, "departure.saved", id);
     return { id };
   });
 }
-export function companyInventory(db: Database.Database, actor: Actor, companyId: string) {
-  const company = companyAccess(db, actor, companyId);
-  return {
-    company,
-    rooms: many<OperationalRoom>(
+
+export async function companyInventory(db: DatabaseExecutor, actor: Actor, companyId: string) {
+  const company = await companyAccess(db, actor, companyId);
+  const [rooms, guides, tours, departures] = await Promise.all([
+    many<OperationalRoom>(
       db,
       `SELECT r.*,
         (SELECT b.customer_name FROM bookings b JOIN stay_records s ON s.booking_id=b.id
@@ -278,12 +303,13 @@ export function companyInventory(db: Database.Database, actor: Actor, companyId:
        FROM rooms r WHERE r.company_id=? ORDER BY r.code`,
       companyId,
     ),
-    guides: many<Guide>(db, "SELECT * FROM guides WHERE company_id=? ORDER BY name", companyId),
-    tours: many<Tour>(db, "SELECT * FROM tours WHERE company_id=? ORDER BY name", companyId),
-    departures: many<Departure & { tour_name: string }>(
+    many<Guide>(db, "SELECT * FROM guides WHERE company_id=? ORDER BY name", companyId),
+    many<Tour>(db, "SELECT * FROM tours WHERE company_id=? ORDER BY name", companyId),
+    many<Departure & { tour_name: string }>(
       db,
-      "SELECT d.*,t.name tour_name,COALESCE((SELECT SUM(b.guests) FROM bookings b WHERE b.departure_id=d.id AND b.status='confirmed'),0) reserved FROM departures d JOIN tours t ON t.id=d.tour_id WHERE t.company_id=? ORDER BY d.starts_at DESC",
+      "SELECT d.*,t.name tour_name,CAST(COALESCE((SELECT SUM(b.guests) FROM bookings b WHERE b.departure_id=d.id AND b.status='confirmed'),0) AS INTEGER) reserved FROM departures d JOIN tours t ON t.id=d.tour_id WHERE t.company_id=? ORDER BY d.starts_at DESC",
       companyId,
     ),
-  };
+  ]);
+  return { company, rooms, guides, tours, departures };
 }

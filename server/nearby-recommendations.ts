@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type Database from "better-sqlite3";
+import type { DatabaseExecutor } from "../db/index.ts";
 import { normalizeLabel } from "@/lib/cadastur-schema";
 import {
   matchesNearbyProviderRegion,
@@ -14,6 +14,7 @@ import type {
   NearbyRecommendations,
 } from "@/lib/nearby-recommendations";
 import { publicProviders } from "@/server/cadastur/public-directory";
+import { one, run, write } from "@/server/platform-store";
 import geocoderModel from "./nearby-geocoder-model.json" with { type: "json" };
 
 type CacheRow = {
@@ -57,50 +58,25 @@ const registeredRestaurantEntries = new WeakMap<
   object,
   Map<string, { checkedAt: number; entries: { id: string; name: string }[] }>
 >();
-const cacheInitialized = new WeakSet<object>();
-
-function ensureCache(db: Database.Database) {
-  if (cacheInitialized.has(db)) return;
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS nearby_place_cache (
-      provider_key TEXT PRIMARY KEY,
-      source_hash TEXT NOT NULL,
-      latitude REAL,
-      longitude REAL,
-      geocoded_at TEXT,
-      places_json TEXT NOT NULL DEFAULT '[]',
-      places_updated_at TEXT
-    );
-    CREATE TABLE IF NOT EXISTS osm_request_limits (
-      service TEXT PRIMARY KEY,
-      next_allowed_at INTEGER NOT NULL,
-      request_date TEXT NOT NULL DEFAULT '',
-      request_count INTEGER NOT NULL DEFAULT 0
-    );
-  `);
-  cacheInitialized.add(db);
-}
-
 function cacheIsFresh(value: string | null, maxAgeMs: number, now = Date.now()) {
   const time = value ? Date.parse(value) : Number.NaN;
   return Number.isFinite(time) && now - time < maxAgeMs;
 }
 
-function readCache(db: Database.Database, key: string) {
-  return db
-    .prepare<[string], CacheRow>("SELECT * FROM nearby_place_cache WHERE provider_key=?")
-    .get(key);
+function readCache(db: DatabaseExecutor, key: string) {
+  return one<CacheRow>(db, "SELECT * FROM nearby_place_cache WHERE provider_key=?", key);
 }
 
-function writeLocation(
-  db: Database.Database,
+async function writeLocation(
+  db: DatabaseExecutor,
   provider: HotelLocationReference,
   sourceHash: string,
   latitude: number | null,
   longitude: number | null,
 ) {
   const now = new Date().toISOString();
-  db.prepare(
+  await run(
+    db,
     `INSERT INTO nearby_place_cache
       (provider_key,source_hash,latitude,longitude,geocoded_at,places_json,places_updated_at)
      VALUES (?,?,?,?,?,'[]',NULL)
@@ -111,11 +87,16 @@ function writeLocation(
        latitude=excluded.latitude,
        longitude=excluded.longitude,
        geocoded_at=excluded.geocoded_at`,
-  ).run(provider.key, sourceHash, latitude, longitude, now);
+    provider.key,
+    sourceHash,
+    latitude,
+    longitude,
+    now,
+  );
 }
 
-function writePlaces(
-  db: Database.Database,
+async function writePlaces(
+  db: DatabaseExecutor,
   provider: HotelLocationReference,
   sourceHash: string,
   latitude: number,
@@ -123,7 +104,8 @@ function writePlaces(
   places: RawPlace[],
 ) {
   const now = new Date().toISOString();
-  db.prepare(
+  await run(
+    db,
     `INSERT INTO nearby_place_cache
       (provider_key,source_hash,latitude,longitude,geocoded_at,places_json,places_updated_at)
      VALUES (?,?,?,?,?,?,?)
@@ -134,7 +116,14 @@ function writePlaces(
        geocoded_at=excluded.geocoded_at,
        places_json=excluded.places_json,
        places_updated_at=excluded.places_updated_at`,
-  ).run(provider.key, sourceHash, latitude, longitude, now, JSON.stringify(places), now);
+    provider.key,
+    sourceHash,
+    latitude,
+    longitude,
+    now,
+    JSON.stringify(places),
+    now,
+  );
 }
 
 function savedPlaces(row: CacheRow | undefined): RawPlace[] {
@@ -165,51 +154,63 @@ function endpointIdentity() {
   };
 }
 
-async function reserveNominatimSlot(db: Database.Database) {
-  const scheduledAt = db.transaction(() => {
+async function reserveNominatimSlot(db: DatabaseExecutor) {
+  const scheduledAt = await write(db, async (tx) => {
     const now = Date.now();
-    const current = db
-      .prepare<[string], { next_allowed_at: number }>(
-        "SELECT next_allowed_at FROM osm_request_limits WHERE service=?",
-      )
-      .get("nominatim");
+    const current = await one<{ next_allowed_at: number }>(
+      tx,
+      "SELECT next_allowed_at FROM osm_request_limits WHERE service=?",
+      "nominatim",
+    );
     const slot = Math.max(now, current?.next_allowed_at ?? now);
-    db.prepare(
+    await run(
+      tx,
       "INSERT INTO osm_request_limits (service,next_allowed_at) VALUES (?,?) ON CONFLICT(service) DO UPDATE SET next_allowed_at=excluded.next_allowed_at",
-    ).run("nominatim", slot + 1100);
+      "nominatim",
+      slot + 1100,
+    );
     return slot;
-  })();
+  });
   const delay = scheduledAt - Date.now();
   if (delay > 8000) throw new Error("Fila de geocodificação ocupada.");
   if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
 }
 
-async function reserveOverpassSlot(db: Database.Database) {
-  const scheduledAt = db.transaction(() => {
+async function reserveOverpassSlot(db: DatabaseExecutor) {
+  const scheduledAt = await write(db, async (tx) => {
     const now = Date.now();
     const day = new Date(now).toISOString().slice(0, 10);
-    const current = db
-      .prepare<[string], { next_allowed_at: number; request_date: string; request_count: number }>(
-        "SELECT next_allowed_at,request_date,request_count FROM osm_request_limits WHERE service=?",
-      )
-      .get("overpass");
+    const current = await one<{
+      next_allowed_at: number;
+      request_date: string;
+      request_count: number;
+    }>(
+      tx,
+      "SELECT next_allowed_at,request_date,request_count FROM osm_request_limits WHERE service=?",
+      "overpass",
+    );
     const count = current?.request_date === day ? current.request_count : 0;
     if (count >= 90) throw new Error("Limite diário de consultas ao mapa atingido.");
     const slot = Math.max(now, current?.next_allowed_at ?? now);
-    db.prepare(
+    await run(
+      tx,
       `INSERT INTO osm_request_limits (service,next_allowed_at,request_date,request_count)
        VALUES (?,?,?,?)
        ON CONFLICT(service) DO UPDATE SET next_allowed_at=excluded.next_allowed_at,
          request_date=excluded.request_date,request_count=excluded.request_count`,
-    ).run("overpass", slot + 1100, day, count + 1);
+      "overpass",
+      slot + 1100,
+      day,
+      count + 1,
+    );
     return slot;
-  })();
+  });
   const delay = scheduledAt - Date.now();
   if (delay > 8000) throw new Error("Fila de consultas ao mapa ocupada.");
   if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
 }
 
-async function geocodeHotel(db: Database.Database, provider: HotelLocationReference) {
+async function geocodeHotel(db: DatabaseExecutor, provider: HotelLocationReference) {
   const baseUrl = (process.env.OSM_NOMINATIM_URL || "https://nominatim.openstreetmap.org").replace(
     /\/$/,
     "",
@@ -286,7 +287,7 @@ function coordinatesOf(element: OverpassElement) {
 }
 
 async function nearbyFromOverpass(
-  db: Database.Database,
+  db: DatabaseExecutor,
   latitude: number,
   longitude: number,
 ): Promise<RawPlace[]> {
@@ -347,12 +348,12 @@ function distanceBetweenMeters(
   return Math.round(6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
-function restaurantCatalogFor(db: Database.Database, city: string) {
+async function restaurantCatalogFor(db: DatabaseExecutor, city: string) {
   const key = normalizeLabel(city);
   const byCity = registeredRestaurantEntries.get(db);
   const cached = byCity?.get(key);
   if (cached && Date.now() - cached.checkedAt < restaurantCacheMs) return cached.entries;
-  const entries = publicProviders(db, "gastronomia")
+  const entries = (await publicProviders(db, "gastronomia"))
     .filter((entry) => normalizeLabel(entry.city) === key)
     .map((entry) => ({ id: entry.id, name: normalizeLabel(entry.name) }));
   const next =
@@ -382,14 +383,14 @@ function googleMapsSearchUrl(query: string) {
   return `https://www.google.com/maps/search/?${params.toString()}`;
 }
 
-function recommendationsFrom(
-  db: Database.Database,
+async function recommendationsFrom(
+  db: DatabaseExecutor,
   provider: HotelLocationReference,
   rawPlaces: RawPlace[],
   latitude: number,
   longitude: number,
-): NearbyPlace[] {
-  const catalog = restaurantCatalogFor(db, provider.city);
+): Promise<NearbyPlace[]> {
+  const catalog = await restaurantCatalogFor(db, provider.city);
   const categoryGroup: Record<NearbyCategory, number> = {
     restaurant: 0,
     snack: 0,
@@ -448,10 +449,9 @@ function result(
 }
 
 export async function nearbyRecommendations(
-  db: Database.Database,
+  db: DatabaseExecutor,
   provider: HotelLocationReference,
 ): Promise<NearbyRecommendations> {
-  ensureCache(db);
   const sourceHash = createHash("sha256")
     .update(
       JSON.stringify({
@@ -462,7 +462,7 @@ export async function nearbyRecommendations(
     )
     .digest("hex");
   const now = Date.now();
-  let cached = readCache(db, provider.key);
+  let cached = await readCache(db, provider.key);
   if (cached?.source_hash !== sourceHash) cached = undefined;
   let rawPlaces = savedPlaces(cached);
 
@@ -474,7 +474,7 @@ export async function nearbyRecommendations(
   ) {
     return result(
       "ready",
-      recommendationsFrom(db, provider, rawPlaces, cached.latitude, cached.longitude),
+      await recommendationsFrom(db, provider, rawPlaces, cached.latitude, cached.longitude),
       cached.places_updated_at,
       false,
       { latitude: cached.latitude, longitude: cached.longitude },
@@ -498,8 +498,8 @@ export async function nearbyRecommendations(
         latitude = null;
         longitude = null;
       }
-      writeLocation(db, provider, sourceHash, latitude, longitude);
-      cached = readCache(db, provider.key);
+      await writeLocation(db, provider, sourceHash, latitude, longitude);
+      cached = await readCache(db, provider.key);
       rawPlaces = savedPlaces(cached);
     } catch {
       if (latitude === null || longitude === null) {
@@ -513,11 +513,11 @@ export async function nearbyRecommendations(
 
   try {
     rawPlaces = await nearbyFromOverpass(db, latitude, longitude);
-    writePlaces(db, provider, sourceHash, latitude, longitude, rawPlaces);
-    cached = readCache(db, provider.key);
+    await writePlaces(db, provider, sourceHash, latitude, longitude, rawPlaces);
+    cached = await readCache(db, provider.key);
     return result(
       "ready",
-      recommendationsFrom(db, provider, rawPlaces, latitude, longitude),
+      await recommendationsFrom(db, provider, rawPlaces, latitude, longitude),
       cached?.places_updated_at ?? new Date().toISOString(),
       false,
       { latitude, longitude },
@@ -526,7 +526,7 @@ export async function nearbyRecommendations(
     if (rawPlaces.length) {
       return result(
         "ready",
-        recommendationsFrom(db, provider, rawPlaces, latitude, longitude),
+        await recommendationsFrom(db, provider, rawPlaces, latitude, longitude),
         cached?.places_updated_at ?? null,
         true,
         { latitude, longitude },

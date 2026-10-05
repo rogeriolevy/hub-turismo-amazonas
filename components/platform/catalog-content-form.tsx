@@ -307,8 +307,8 @@ export function CatalogContentForm({
           <div>
             <strong>Imagens</strong>
             <p>
-              Envie JPEG, PNG ou WebP (até 5 MB por imagem) ou informe links HTTPS, um por linha.
-              Até 8 imagens.
+              Envie JPEG, PNG ou WebP (até 5 MB por imagem; limite total de 4 MB na Vercel e 16 MB
+              local) ou informe links HTTPS, um por linha. Até 8 imagens.
             </p>
           </div>
           <label className="button button-outline catalog-upload-button">
