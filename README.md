@@ -1,6 +1,6 @@
 # Hub Turismo Amazonas — versão Node.js + SQLite
 
-Site institucional, diretórios de hospedagens, gastronomia, experiências, agências e serviços turísticos do Amazonas, navegação, contas de turistas, reservas por aprovação e painéis de empresas, em Next.js oficial com Node.js. Esta versão local é independente da publicação existente no Sites.
+Site institucional, diretórios de hospedagens, gastronomia, experiências, agências e serviços turísticos do Amazonas, navegação, contas de turistas, reservas por aprovação e painéis de empresas, em Next.js oficial com Node.js. Esta versão local é independente da publicação existente no Sites. Para hospedar o servidor Next.js no Render, consulte [Publicar no Render](docs/RENDER.md).
 
 Para usar diariamente no Windows, iniciar o servidor, fazer backup ou recuperar o acesso, consulte [Uso local](docs/USO-LOCAL.md). A prioridade atual é a operação local; a publicação na VPS foi adiada pelo proprietário.
 

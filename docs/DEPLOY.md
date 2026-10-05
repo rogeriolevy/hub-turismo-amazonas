@@ -1,8 +1,8 @@
 # Publicação da versão Node.js
 
-Esta versão não foi publicada. O site Sites existente permanece disponível. Escolher hospedagem e endereço antes da transição. O banco usa SQLite local, sem D1 ou Drizzle; a verificação antirobô do login e cadastro usa Cloudflare Turnstile.
+Esta versão não foi publicada. O site Sites existente permanece disponível. O Render foi identificado como alternativa de hospedagem; consulte [docs/RENDER.md](RENDER.md) para configurar raiz do projeto, host/porta e armazenamento persistente. O banco usa SQLite local, sem D1 ou Drizzle; a verificação antirobô do login e cadastro usa Cloudflare Turnstile.
 
-Decisão atual do proprietário: seguir somente com uso local. Existe uma VPS Hostinger, mas domínio, sistema operacional e ocupação do servidor ainda não foram verificados. Este documento permanece como referência futura; nenhum acesso ou alteração na VPS foi realizado. Consulte docs/USO-LOCAL.md para a etapa atual.
+Nenhum serviço Render ou VPS foi acessado ou alterado. O guia descreve os passos para publicar; consulte também docs/USO-LOCAL.md para continuar usando a instalação local.
 
 ## Requisitos
 

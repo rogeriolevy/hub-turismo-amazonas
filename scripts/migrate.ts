@@ -1,5 +1,9 @@
+import { existsSync } from "node:fs";
 import { openDatabase } from "../db/index.ts";
 import { migrateDatabase } from "../db/migrate-auth.ts";
+
+if (existsSync(".env.local")) process.loadEnvFile(".env.local");
+
 const db = openDatabase();
 try {
   await migrateDatabase(db);
