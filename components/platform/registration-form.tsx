@@ -2,6 +2,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { registrationSchema } from "@/lib/platform-schema";
+import { useLanguage } from "@/components/site/language-provider";
 import { TurnstileChallenge } from "@/components/site/turnstile-challenge";
 export function RegistrationForm({
   onCreated,
@@ -12,6 +13,7 @@ export function RegistrationForm({
   turnstileSiteKey: string;
   captchaRequired: boolean;
 }) {
+  const { t } = useLanguage();
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [done, setDone] = useState(false),
@@ -30,15 +32,15 @@ export function RegistrationForm({
       consent: form.has("consent"),
     });
     if (!parsed.success) {
-      setError(parsed.error.issues[0].message);
+      setError(t("auth.invalidRegistrationData"));
       return;
     }
     if (form.get("confirm") !== parsed.data.password) {
-      setError("As senhas não coincidem.");
+      setError(t("auth.passwordsMismatch"));
       return;
     }
     if (challengeEnabled && !captchaToken) {
-      setError("Confirme a verificação antirobô antes de criar a conta.");
+      setError(t("auth.captchaRequired"));
       return;
     }
     setBusy(true);
@@ -60,13 +62,13 @@ export function RegistrationForm({
         const code = payload.code ?? payload.error?.code;
         throw new Error(
           ["MISSING_RESPONSE", "VERIFICATION_FAILED"].includes(code)
-            ? "A verificação antirobô expirou ou falhou. Confirme-a novamente."
+            ? t("auth.captchaExpired")
             : payload.error?.message ||
                 (response.status === 429
-                  ? "Muitas tentativas de cadastro. Tente mais tarde."
+                  ? t("auth.tooManySignups")
                   : response.status === 503
-                    ? "A verificação antirobô ainda não está configurada neste ambiente."
-                    : "Não foi possível criar a conta. Se já possui cadastro, use Entrar."),
+                    ? t("auth.captchaNotConfigured")
+                    : t("auth.signupFailed")),
         );
       }
       setDone(true);
@@ -75,7 +77,7 @@ export function RegistrationForm({
       setError(
         error instanceof Error && error.name !== "TypeError" && error.name !== "TimeoutError"
           ? error.message
-          : "Verifique a conexão e tente novamente.",
+          : t("auth.connectionRetry"),
       );
     } finally {
       setBusy(false);
@@ -84,17 +86,17 @@ export function RegistrationForm({
   if (done)
     return (
       <div className="portal-empty" role="status">
-        <h2>Conta criada.</h2>
-        <p>Agora entre com seu e-mail e sua senha para começar.</p>
+        <h2>{t("auth.accountCreated")}</h2>
+        <p>{t("auth.accountCreatedHelp")}</p>
         <Link href="/entrar" className="button button-dark">
-          Entrar na minha conta
+          {t("auth.loginToAccount")}
         </Link>
       </div>
     );
   return (
     <form className="platform-form" onSubmit={submit} aria-busy={busy}>
       <div className="field">
-        <label htmlFor="signup-name">Nome</label>
+        <label htmlFor="signup-name">{t("auth.name")}</label>
         <input
           id="signup-name"
           name="name"
@@ -106,7 +108,7 @@ export function RegistrationForm({
         />
       </div>
       <div className="field">
-        <label htmlFor="signup-email">E-mail</label>
+        <label htmlFor="signup-email">{t("auth.email")}</label>
         <input
           id="signup-email"
           name="email"
@@ -118,7 +120,7 @@ export function RegistrationForm({
         />
       </div>
       <div className="field">
-        <label htmlFor="signup-phone">Celular com DDD</label>
+        <label htmlFor="signup-phone">{t("auth.phone")}</label>
         <input
           id="signup-phone"
           name="phoneNumber"
@@ -130,13 +132,10 @@ export function RegistrationForm({
           required
           disabled={busy}
         />
-        <span className="field-help">
-          Validamos o formato e recusamos sequências obviamente fictícias. A confirmação de
-          titularidade por SMS depende de um serviço de envio.
-        </span>
+        <span className="field-help">{t("auth.phoneHelp")}</span>
       </div>
       <div className="field">
-        <label htmlFor="signup-password">Senha</label>
+        <label htmlFor="signup-password">{t("auth.password")}</label>
         <input
           id="signup-password"
           name="password"
@@ -147,10 +146,10 @@ export function RegistrationForm({
           required
           disabled={busy}
         />
-        <span className="field-help">De 12 a 128 caracteres. Maiúsculas e espaços contam.</span>
+        <span className="field-help">{t("auth.passwordHelp")}</span>
       </div>
       <div className="field">
-        <label htmlFor="signup-confirm">Confirme a senha</label>
+        <label htmlFor="signup-confirm">{t("auth.confirmPassword")}</label>
         <input
           id="signup-confirm"
           name="confirm"
@@ -165,11 +164,11 @@ export function RegistrationForm({
       <label className="platform-consent">
         <input type="checkbox" name="consent" required disabled={busy} />
         <span>
-          Li o{" "}
+          {t("auth.privacyLead")}{" "}
           <Link href="/privacidade" target="_blank">
-            aviso de privacidade (nova aba)
+            {t("auth.privacyOpen")}
           </Link>{" "}
-          e autorizo o uso dos dados, incluindo meu celular, para minha conta e solicitações.
+          {t("auth.privacyTail")}
         </span>
       </label>
       {turnstileSiteKey ? (
@@ -180,7 +179,7 @@ export function RegistrationForm({
         />
       ) : captchaRequired ? (
         <p className="field-help" role="alert">
-          Verificação antirobô indisponível. Configure TURNSTILE_SITE_KEY e TURNSTILE_SECRET_KEY.
+          {t("auth.captchaUnavailable")}
         </p>
       ) : null}
       {error && (
@@ -192,11 +191,9 @@ export function RegistrationForm({
         className="button button-dark"
         disabled={busy || (challengeEnabled && (!turnstileSiteKey || !captchaToken))}
       >
-        {busy ? "Criando conta…" : "Criar minha conta"}
+        {busy ? t("auth.creatingAccount") : t("auth.createMyAccount")}
       </button>
-      <p className="field-help">
-        O cadastro não concede acesso a empresas. Perfis de equipe são liberados pela administração.
-      </p>
+      <p className="field-help">{t("auth.teamAccessNote")}</p>
     </form>
   );
 }

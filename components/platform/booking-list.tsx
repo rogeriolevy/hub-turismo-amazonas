@@ -8,22 +8,22 @@ import {
 import type { Booking } from "@/server/platform-models";
 import { ActionForm } from "./action-form";
 import { EmptyState } from "./shared";
-export function BookingList({
+import { getLocale } from "@/lib/i18n/server";
+import { translate, type MessageKey } from "@/lib/i18n/messages";
+export async function BookingList({
   bookings,
   business = false,
 }: {
   bookings: Booking[];
   business?: boolean;
 }) {
+  const locale = await getLocale();
+  const t = (key: MessageKey) => translate(locale, key);
   const today = todayInManaus();
   if (!bookings.length)
     return (
-      <EmptyState title="Nenhuma solicitação por aqui.">
-        <p>
-          {business
-            ? "As solicitações dos turistas aparecerão nesta área."
-            : "Escolha uma hospedagem ou passeio para começar."}
-        </p>
+      <EmptyState title={t("booking.noRequestsTitle")}>
+        <p>{business ? t("booking.businessEmpty") : t("booking.customerEmpty")}</p>
       </EmptyState>
     );
   return (
@@ -33,12 +33,15 @@ export function BookingList({
           <div className="reservation-heading">
             <div>
               <p className="eyebrow">
-                {item.kind === "hotel" ? "HOSPEDAGEM" : "PASSEIO"} · {item.id.slice(0, 8)}
+                {item.kind === "hotel" ? t("booking.stayTag") : t("booking.tourTag")} ·{" "}
+                {item.id.slice(0, 8)}
               </p>
               <h2>{item.item_name}</h2>
               <p>{item.company_name}</p>
             </div>
-            <span className={"status-pill " + item.status}>{bookingLabels[item.status]}</span>
+            <span className={"status-pill " + item.status}>
+              {t(`bookingLabels.${item.status}` as MessageKey) || bookingLabels[item.status]}
+            </span>
           </div>
           <div className="reservation-data">
             <span>
@@ -46,9 +49,11 @@ export function BookingList({
                 ? displayDate(item.check_in!) + " → " + displayDate(item.check_out!)
                 : displayTime(item.starts_at!)}
             </span>
-            <span>{item.guests} pessoa(s)</span>
+            <span>
+              {item.guests} {t(item.guests === 1 ? "booking.onePerson" : "booking.manyPeople")}
+            </span>
             <strong>
-              {money(item.total_cents)} <small>valor da solicitação</small>
+              {money(item.total_cents)} <small>{t("booking.requestAmount")}</small>
             </strong>
           </div>
           {business && (
@@ -68,7 +73,7 @@ export function BookingList({
                         booking_id: item.id,
                         decision: "confirmed",
                       }}
-                      label="Aprovar solicitação"
+                      label={t("booking.approve")}
                     />
                     <ActionForm
                       action="decisao"
@@ -77,7 +82,7 @@ export function BookingList({
                         booking_id: item.id,
                         decision: "declined",
                       }}
-                      label="Não aprovar"
+                      label={t("booking.decline")}
                     />
                   </>
                 )
@@ -86,7 +91,7 @@ export function BookingList({
                   <ActionForm
                     action="cancelar"
                     fixed={{ booking_id: item.id }}
-                    label="Cancelar solicitação"
+                    label={t("booking.cancel")}
                   />
                 )}
             {business &&
@@ -102,8 +107,8 @@ export function BookingList({
                   fixed={{ company_id: item.company_id, booking_id: item.id, action: "checkin" }}
                   initial={{ country: "Brasil" }}
                   fields={[
-                    { name: "country", label: "País de origem", maxLength: 80 },
-                    { name: "origin_city", label: "Cidade de origem", maxLength: 100 },
+                    { name: "country", label: t("booking.originCountry"), maxLength: 80 },
+                    { name: "origin_city", label: t("booking.originCity"), maxLength: 100 },
                   ]}
                   label="Registrar check-in"
                 />

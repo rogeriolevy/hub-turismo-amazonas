@@ -55,10 +55,13 @@ import {
   todayInManaus,
 } from "@/lib/platform-schema";
 import { avatarKeyFromImage, defaultAvatarForUser, profileAvatarUrl } from "@/lib/profile-avatars";
+import { getLocale } from "@/lib/i18n/server";
+import { translate, translateText, type Locale } from "@/lib/i18n/messages";
 export const metadata = { title: "Painel de operação", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 type AdminDashboardProps = {
+  locale: Locale;
   actor: { id: string; name: string; email: string; image?: string | null };
   companyCount: number;
   publishedCount: number;
@@ -68,6 +71,7 @@ type AdminDashboardProps = {
 };
 
 function AdminDashboard({
+  locale,
   actor,
   companyCount,
   publishedCount,
@@ -75,6 +79,8 @@ function AdminDashboard({
   pendingCadastur,
   contactCount,
 }: AdminDashboardProps) {
+  const t = (key: Parameters<typeof translate>[1], values?: Record<string, string | number>) =>
+    translate(locale, key, values);
   const avatar = avatarKeyFromImage(actor.image) ?? defaultAvatarForUser(actor.id);
   const firstName = actor.name.trim().split(/\s+/)[0] || "administrador";
   const metrics: {
@@ -85,30 +91,30 @@ function AdminDashboard({
     href: string;
   }[] = [
     {
-      label: "Empresas cadastradas",
+      label: t("admin.companies"),
       value: companyCount,
-      detail: `${publishedCount} publicadas no catálogo`,
+      detail: t("admin.published", { count: publishedCount }),
       icon: Building2,
       href: "/painel/plataforma/empresas",
     },
     {
-      label: "Vínculos de equipe",
+      label: t("admin.members"),
       value: memberCount,
-      detail: "Acessos concedidos às empresas",
+      detail: t("admin.membersDetail"),
       icon: UsersRound,
       href: "/painel/plataforma/acessos",
     },
     {
-      label: "Cadastur a revisar",
+      label: t("admin.cadastur"),
       value: pendingCadastur,
-      detail: "Cadastros aguardando análise",
+      detail: t("admin.cadasturDetail"),
       icon: ClipboardCheck,
       href: "/painel/plataforma/cadastur",
     },
     {
-      label: "Contatos recebidos",
+      label: t("admin.contacts"),
       value: contactCount,
-      detail: "Mensagens enviadas pelo site",
+      detail: t("admin.contactsDetail"),
       icon: MessageSquareText,
       href: "/painel/contato",
     },
@@ -121,38 +127,38 @@ function AdminDashboard({
     icon: LucideIcon;
   }[] = [
     {
-      title: "Empresas",
-      description: "Cadastre parceiros e mantenha os perfis da rede atualizados.",
+      title: t("admin.companiesTitle"),
+      description: t("admin.companiesDescription"),
       href: "/painel/plataforma/empresas",
-      label: "Gerenciar empresas",
+      label: t("admin.manageCompanies"),
       icon: Building2,
     },
     {
-      title: "Contas e permissões",
-      description: "Vincule pessoas às empresas e defina seus perfis de trabalho.",
+      title: t("admin.membersTitle"),
+      description: t("admin.membersDescription"),
       href: "/painel/plataforma/acessos",
-      label: "Gerenciar acessos",
+      label: t("admin.manageMembers"),
       icon: ShieldCheck,
     },
     {
-      title: "Diretório Cadastur",
-      description: "Revise, associe e publique informações do diretório turístico.",
+      title: t("admin.directoryTitle"),
+      description: t("admin.directoryDescription"),
       href: "/painel/plataforma/cadastur",
-      label: "Abrir diretório",
+      label: t("admin.openDirectory"),
       icon: ClipboardCheck,
     },
     {
-      title: "Conteúdos dos catálogos",
-      description: "Edite apresentações, contatos e imagens dos sete módulos públicos.",
+      title: t("admin.contentTitle"),
+      description: t("admin.contentDescription"),
       href: "/painel/plataforma/conteudos",
-      label: "Gerenciar conteúdos",
+      label: t("admin.manageContent"),
       icon: Files,
     },
     {
-      title: "Contatos do site",
-      description: "Consulte as mensagens enviadas pelos visitantes da Hub.",
+      title: t("admin.contactsTitle"),
+      description: t("admin.contactsDescription"),
       href: "/painel/contato",
-      label: "Ver mensagens",
+      label: t("admin.viewMessages"),
       icon: MessageSquareText,
     },
   ];
@@ -174,23 +180,23 @@ function AdminDashboard({
             />
           </div>
           <div className={styles.welcomeCopy}>
-            <p className={styles.eyebrow}>PAINEL DO ADMINISTRADOR</p>
-            <h1 id="admin-dashboard-title">Olá, {firstName}.</h1>
-            <p>Gerencie a rede de parceiros e os serviços da Hub Amazonas.</p>
+            <p className={styles.eyebrow}>{t("admin.panel")}</p>
+            <h1 id="admin-dashboard-title">{t("admin.greeting", { name: firstName })}</h1>
+            <p>{t("admin.description")}</p>
             <span>{actor.email}</span>
           </div>
         </div>
         <div className={styles.welcomeActions}>
           <Link href="/minha-conta?editar=perfil">
-            Meu perfil <ArrowUpRight size={15} aria-hidden="true" />
+            {t("admin.profile")} <ArrowUpRight size={15} aria-hidden="true" />
           </Link>
           <Link href="/">
-            <Globe2 size={16} aria-hidden="true" /> Ver site
+            <Globe2 size={16} aria-hidden="true" /> {t("admin.viewSite")}
           </Link>
         </div>
       </section>
 
-      <section className={styles.metrics} aria-label="Resumo administrativo">
+      <section className={styles.metrics} aria-label={t("admin.summary")}>
         {metrics.map(({ label, value, detail, icon: Icon, href }, index) => (
           <Link
             className={`${styles.metric} ${styles.motion}`}
@@ -215,10 +221,10 @@ function AdminDashboard({
       <section className={styles.actionsSection} aria-labelledby="admin-actions-title">
         <div className={styles.sectionHeading}>
           <div>
-            <p className={styles.sectionKicker}>CENTRO DE CONTROLE</p>
-            <h2 id="admin-actions-title">Acessos administrativos</h2>
+            <p className={styles.sectionKicker}>{t("admin.controlCenter")}</p>
+            <h2 id="admin-actions-title">{t("admin.accesses")}</h2>
           </div>
-          <p>Atalhos para as tarefas mais importantes da plataforma.</p>
+          <p>{t("admin.accessesDescription")}</p>
         </div>
         <div className={styles.actions}>
           {actions.map(({ title, description, href, label, icon: Icon }, index) => (
@@ -246,27 +252,23 @@ function AdminDashboard({
         <span className={styles.footerIcon}>
           <ShieldCheck size={19} aria-hidden="true" />
         </span>
-        <p>
-          As permissões são verificadas em cada operação. Use <strong>Contas e permissões</strong>{" "}
-          para conceder acesso de equipe às empresas.
-        </p>
+        <p>{t("admin.permissionNotice")}</p>
       </div>
     </div>
   );
 }
 
-function Denied() {
+async function Denied() {
+  const locale = await getLocale();
+  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   return (
     <>
       <Header />
       <main className="portal-main container" id="conteudo" tabIndex={-1}>
-        <EmptyState title="Este módulo precisa de autorização.">
-          <p>
-            Peça ao administrador para vincular sua conta a uma empresa e conceder o perfil
-            adequado.
-          </p>
+        <EmptyState title={t("admin.deniedTitle")}>
+          <p>{t("admin.deniedText")}</p>
           <Link className="button button-dark" href="/minha-conta">
-            Voltar à minha conta
+            {t("admin.backAccount")}
           </Link>
         </EmptyState>
       </main>
@@ -282,6 +284,7 @@ export default async function Page({
   searchParams: Promise<{ empresa?: string; categoria?: string; cadastur?: string }>;
 }) {
   const route = await params;
+  const locale = await getLocale();
   if (!["hotel", "passeios", "plataforma"].includes(route.module)) notFound();
   const area = route.module as "hotel" | "passeios" | "plataforma",
     section = route.section?.join("/") || "";
@@ -341,6 +344,7 @@ export default async function Page({
       content = (
         <CadasturPanel
           initial={initial}
+          locale={locale}
           companies={allCompanies
             .filter((c) => c.kind === "hotel")
             .map((c) => ({ id: c.id, name: companyDisplayName(c) }))}
@@ -383,12 +387,12 @@ export default async function Page({
       content = (
         <>
           <PageIntro
-            eyebrow="REDE HUB"
+            eyebrow={translateText(locale, "REDE HUB")}
             title="Empresas"
             description="Cadastre hospedagens, operadores de passeios, navegação fluvial e transporte aéreo."
           />
           <details className="editor-card" open={!allCompanies.length}>
-            <summary>Cadastrar uma empresa</summary>
+            <summary>{translateText(locale, "Cadastrar uma empresa")}</summary>
             <CompanyEditor />
           </details>
           <div className="editor-list">
@@ -402,11 +406,14 @@ export default async function Page({
                     </small>
                   </span>
                   <span className="status-pill">
-                    {company.status === "published"
-                      ? "Publicado"
-                      : company.status === "draft"
-                        ? "Rascunho"
-                        : "Suspenso"}
+                    {translateText(
+                      locale,
+                      company.status === "published"
+                        ? "Publicado"
+                        : company.status === "draft"
+                          ? "Rascunho"
+                          : "Suspenso",
+                    )}
                   </span>
                 </summary>
                 <CompanyEditor company={company} />
@@ -419,8 +426,8 @@ export default async function Page({
       content = (
         <>
           <PageIntro
-            eyebrow="CONTAS E SEGURANÇA"
-            title="Pessoas certas. Acessos definidos."
+            eyebrow={translateText(locale, "CONTAS E SEGURANÇA")}
+            title={translateText(locale, "Pessoas certas. Acessos definidos.")}
             description="A pessoa cria sua conta primeiro. Depois, vincule o e-mail a uma empresa e ao perfil de trabalho."
           />
           <PortalNotice>
@@ -429,14 +436,14 @@ export default async function Page({
           </PortalNotice>
           {allCompanies.length ? (
             <details className="editor-card" open>
-              <summary>Conceder ou alterar acesso</summary>
+              <summary>{translateText(locale, "Conceder ou alterar acesso")}</summary>
               <ActionForm
                 action="acessos"
                 reset
                 fields={[
                   {
                     name: "company_id",
-                    label: "Empresa",
+                    label: translateText(locale, "Empresa"),
                     type: "select",
                     options: allCompanies.map((c) => ({
                       value: c.id,
@@ -445,23 +452,25 @@ export default async function Page({
                   },
                   {
                     name: "email",
-                    label: "E-mail da conta cadastrada",
+                    label: translateText(locale, "E-mail da conta cadastrada"),
                     type: "email",
                     maxLength: 254,
                   },
                   {
                     name: "role",
-                    label: "Perfil",
+                    label: translateText(locale, "Perfil"),
                     type: "select",
                     options: Object.entries(roles).map(([value, label]) => ({ value, label })),
                   },
                 ]}
-                label="Salvar permissão"
+                label={translateText(locale, "Salvar permissão")}
               />
             </details>
           ) : (
-            <EmptyState title="Cadastre uma empresa primeiro.">
-              <Link href="/painel/plataforma/empresas">Ir para empresas →</Link>
+            <EmptyState title={translateText(locale, "Cadastre uma empresa primeiro.")}>
+              <Link href="/painel/plataforma/empresas">
+                {translateText(locale, "Ir para empresas →")}
+              </Link>
             </EmptyState>
           )}
           <div className="resource-list">
@@ -477,7 +486,7 @@ export default async function Page({
                 <ActionForm
                   action="revogar-acesso"
                   fixed={{ company_id: member.company_id, user_id: member.user_id }}
-                  label="Remover acesso"
+                  label={translateText(locale, "Remover acesso")}
                 />
               </article>
             ))}
@@ -504,6 +513,7 @@ export default async function Page({
       const pendingCadastur = pendingCadasturRow?.n ?? 0;
       content = (
         <AdminDashboard
+          locale={locale}
           actor={actor}
           companyCount={allCompanies.length}
           publishedCount={publishedCount}

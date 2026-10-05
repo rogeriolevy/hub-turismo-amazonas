@@ -11,28 +11,32 @@ import {
 } from "lucide-react";
 import { Header, Footer } from "@/components/site/navigation";
 import { ContactForm } from "@/components/site/contact-form";
+import { getLocale } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/messages";
 
 const solutions = [
   {
     icon: CalendarCheck2,
     number: "01",
-    title: "Uma recepção mais simples",
-    text: "Reservas, hóspedes e registros de check-in e check-out conectados à rotina da recepção. Mais clareza para quem recebe, mais cuidado com quem chega.",
+    titleKey: "home.solutionReceptionTitle",
+    textKey: "home.solutionReceptionText",
   },
   {
     icon: BedDouble,
     number: "02",
-    title: "Cada quarto, no seu tempo",
-    text: "Acompanhe o que está pronto, ocupado, em limpeza ou manutenção e atualize a situação dos quartos durante a operação.",
+    titleKey: "home.solutionRoomTitle",
+    textKey: "home.solutionRoomText",
   },
   {
     icon: Network,
     number: "03",
-    title: "Informação que aproxima",
-    text: "Um resumo local de chegadas, saídas, solicitações e quartos que precisam de atenção. O registro de estadias apoia a operação; IA e integração oficial da FNRH seguem como evoluções futuras.",
+    titleKey: "home.solutionDataTitle",
+    textKey: "home.solutionDataText",
   },
-];
-export default function Home() {
+] as const;
+export default async function Home() {
+  const locale = await getLocale();
+  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   return (
     <>
       <Header />
@@ -50,31 +54,28 @@ export default function Home() {
           <div className="hero-shade" />
           <div className="container hero-content">
             <p className="eyebrow light">
-              <span className="short-line" /> NASCEMOS DA AMAZÔNIA
+              <span className="short-line" /> {t("home.eyebrow")}
             </p>
             <h1 id="hero-title">
-              Conectando pessoas.
+              {t("home.headlineFirst")}
               <br />
-              Valorizando a <em>Amazônia.</em>
+              {t("home.headlineSecond")} <em>{t("home.headlineEmphasis")}</em>
             </h1>
-            <p className="hero-description">
-              Tecnologia com raízes locais para transformar a hospitalidade e construir novos
-              caminhos para o turismo no Amazonas.
-            </p>
+            <p className="hero-description">{t("home.description")}</p>
             <div className="hero-actions">
               <a className="button button-gold" href="#solucoes">
-                Conheça nossa proposta <ArrowUpRight size={18} />
+                {t("home.proposal")} <ArrowUpRight size={18} />
               </a>
               <a className="text-link light" href="#sobre">
-                Nossa história <ArrowDown size={17} />
+                {t("home.history")} <ArrowDown size={17} />
               </a>
             </div>
           </div>
           <div className="container hero-bottom">
             <span>
-              <MapPin size={16} /> Amazonas, Brasil
+              <MapPin size={16} /> {t("home.location")}
             </span>
-            <span>Raízes locais. Conexões que vão além.</span>
+            <span>{t("home.slogan")}</span>
             <a href="#sobre" aria-label="Ir para a apresentação">
               <ArrowDown size={22} />
             </a>
@@ -83,43 +84,33 @@ export default function Home() {
         <div className="purpose-strip">
           <div className="container">
             <span>
-              <Waves /> Hospitalidade amazônica
+              <Waves /> {t("home.purposeHospitality")}
             </span>
             <span>
-              <Compass /> Desenvolvimento local
+              <Compass /> {t("home.purposeDevelopment")}
             </span>
             <span>
-              <ShieldCheck /> Tecnologia com propósito
+              <ShieldCheck /> {t("home.purposeTechnology")}
             </span>
           </div>
         </div>
         <section className="section container about" id="sobre">
           <div>
-            <p className="eyebrow">QUEM SOMOS</p>
+            <p className="eyebrow">{t("home.who")}</p>
             <h2>
-              O futuro do turismo
+              {t("home.futureTourism")}
               <br />
-              começa com quem
+              {t("home.startsWith")}
               <br />
-              <em>já faz parte daqui.</em>
+              <em>{t("home.alreadyHere")}</em>
             </h2>
           </div>
           <div className="about-copy">
-            <p className="lead">
-              A Hub Turismo Amazonas nasce de uma ideia: aproximar a tecnologia de quem faz a
-              hospitalidade acontecer na Amazônia.
-            </p>
-            <p>
-              Nosso ponto de partida são os hotéis e pousadas de Maués. Estamos desenvolvendo uma
-              proposta para simplificar a gestão e apoiar as equipes que acolhem visitantes todos os
-              dias.
-            </p>
-            <p>
-              A visão é crescer junto com a região, conectando hospedagem, experiências e parceiros
-              locais, respeitando os ritmos e as particularidades do território.
-            </p>
+            <p className="lead">{t("home.aboutLead")}</p>
+            <p>{t("home.aboutFirst")}</p>
+            <p>{t("home.aboutSecond")}</p>
             <a className="text-link" href="#caminho">
-              Conheça o caminho que estamos construindo <ArrowUpRight size={18} />
+              {t("home.aboutLink")} <ArrowUpRight size={18} />
             </a>
           </div>
         </section>
@@ -127,27 +118,24 @@ export default function Home() {
           <div className="container">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">TECNOLOGIA QUE ACOLHE</p>
+                <p className="eyebrow">{t("home.techEyebrow")}</p>
                 <h2>
-                  Mais conexão.
+                  {t("home.moreConnection")}
                   <br />
-                  <em>Uma gestão mais humana.</em>
+                  <em>{t("home.humanManagement")}</em>
                 </h2>
               </div>
-              <p>
-                Começamos pelo essencial: uma solução de gestão pensada para a rotina de pequenos
-                meios de hospedagem.
-              </p>
+              <p>{t("home.techIntro")}</p>
             </div>
             <div className="solution-grid">
-              {solutions.map(({ icon: Icon, number, title, text }) => (
+              {solutions.map(({ icon: Icon, number, titleKey, textKey }) => (
                 <article className="solution-card" key={number}>
                   <div className="card-top">
                     <Icon size={29} strokeWidth={1.4} />
                     <span>{number}</span>
                   </div>
-                  <h3>{title}</h3>
-                  <p>{text}</p>
+                  <h3>{t(titleKey)}</h3>
+                  <p>{t(textKey)}</p>
                 </article>
               ))}
             </div>
@@ -155,51 +143,40 @@ export default function Home() {
         </section>
         <section className="section container journey" id="caminho">
           <div>
-            <p className="eyebrow">NOSSO CAMINHO</p>
+            <p className="eyebrow">{t("home.journeyEyebrow")}</p>
             <h2>
-              Um começo em Maués.
+              {t("home.journeyStart")}
               <br />
-              <em>Um horizonte amazônico.</em>
+              <em>{t("home.journeyHorizon")}</em>
             </h2>
-            <p className="journey-intro">
-              Construir com foco, ouvir quem está na ponta e evoluir com responsabilidade.
-            </p>
+            <p className="journey-intro">{t("home.journeyIntro")}</p>
             <a className="button button-dark" href="#contato">
-              Vamos construir juntos <ArrowUpRight size={18} />
+              {t("home.journeyCta")} <ArrowUpRight size={18} />
             </a>
           </div>
           <ol className="timeline">
             <li>
               <span className="timeline-number">01</span>
               <div>
-                <span className="stage-label">PONTO DE PARTIDA</span>
-                <h3>Ouvir e entender</h3>
-                <p>
-                  Conhecer os desafios de hotéis e pousadas e desenhar uma experiência que faça
-                  sentido para a região.
-                </p>
+                <span className="stage-label">{t("home.stageStart")}</span>
+                <h3>{t("home.stageListen")}</h3>
+                <p>{t("home.stageListenText")}</p>
               </div>
             </li>
             <li>
               <span className="timeline-number">02</span>
               <div>
-                <span className="stage-label">FOCO DO PROJETO</span>
-                <h3>Organizar a hospitalidade</h3>
-                <p>
-                  Desenvolver o núcleo de gestão: da reserva à recepção, da estadia à preparação do
-                  próximo quarto.
-                </p>
+                <span className="stage-label">{t("home.stageFocus")}</span>
+                <h3>{t("home.stageOrganize")}</h3>
+                <p>{t("home.stageOrganizeText")}</p>
               </div>
             </li>
             <li>
               <span className="timeline-number">03</span>
               <div>
-                <span className="stage-label">VISÃO DE FUTURO</span>
-                <h3>Conectar o ecossistema</h3>
-                <p>
-                  Aproximar hospedagem, experiências e transporte regional. Integrações e
-                  comercialização dependem de etapas futuras.
-                </p>
+                <span className="stage-label">{t("home.stageFuture")}</span>
+                <h3>{t("home.stageConnect")}</h3>
+                <p>{t("home.stageConnectText")}</p>
               </div>
             </li>
           </ol>
@@ -207,20 +184,17 @@ export default function Home() {
         <section className="contact-section section" id="contato">
           <div className="container contact-layout">
             <div>
-              <p className="eyebrow light">VAMOS CONVERSAR</p>
+              <p className="eyebrow light">{t("home.contactEyebrow")}</p>
               <h2>
-                O próximo capítulo
+                {t("home.contactTitleFirst")}
                 <br />
-                pode começar
+                {t("home.contactTitleSecond")}
                 <br />
-                <em>com você.</em>
+                <em>{t("home.contactTitleThird")}</em>
               </h2>
-              <p>
-                Tem um hotel, uma pousada ou uma ideia para fortalecer o turismo na região? Queremos
-                conhecer sua história.
-              </p>
+              <p>{t("home.contactDescription")}</p>
               <span className="contact-location">
-                <MapPin size={18} /> Foco inicial em Maués, Amazonas
+                <MapPin size={18} /> {t("home.contactLocation")}
               </span>
             </div>
             <ContactForm />

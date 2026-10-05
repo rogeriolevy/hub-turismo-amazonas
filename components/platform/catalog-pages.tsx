@@ -24,8 +24,12 @@ import { CatalogCard, EmptyState, PageIntro, PortalNotice } from "./shared";
 import { BookingForm } from "./booking-form";
 import { NearbyRecommendations } from "./nearby-recommendations";
 import { HubContentGrid } from "./provider-directory";
+import { getLocale } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/messages";
 export async function Directory({ kind, query }: { kind: "hotel" | "tour"; query: string }) {
-  const db = getDatabase();
+  const [db, locale] = [getDatabase(), await getLocale()];
+  const t = (key: Parameters<typeof translate>[1], values?: Record<string, string | number>) =>
+    translate(locale, key, values);
   const [hotels, tours, allExperiences] = await Promise.all([
     kind === "hotel" ? publicHotels(db, query) : [],
     kind === "tour" ? publicTours(db, query) : [],
@@ -45,57 +49,45 @@ export async function Directory({ kind, query }: { kind: "hotel" | "tour"; query
       <main id="conteudo" tabIndex={-1} className="portal-main">
         <div className="container">
           <PageIntro
-            eyebrow={kind === "hotel" ? "HUB. HOSPEDAGEM" : "HUB. PASSEIOS"}
-            title={
-              kind === "hotel"
-                ? "Seu próximo lugar na Amazônia."
-                : "Histórias que começam pelo caminho."
-            }
-            description={
-              kind === "hotel"
-                ? "Encontre hospedagens e envie sua solicitação diretamente à equipe responsável."
-                : "Conheça experiências, guias e saídas disponíveis. Escolha uma atividade e aguarde a aprovação do operador."
-            }
+            eyebrow={t(kind === "hotel" ? "catalog.hotelEyebrow" : "catalog.tourEyebrow")}
+            title={t(kind === "hotel" ? "catalog.hotelTitle" : "catalog.tourTitle")}
+            description={t(
+              kind === "hotel" ? "catalog.hotelDescription" : "catalog.tourDescription",
+            )}
           />
           <form className="catalog-search" role="search">
             <label className="sr-only" htmlFor="catalog-search">
-              Buscar por nome ou cidade
+              {t("catalog.searchLabel")}
             </label>
             <input
               id="catalog-search"
               name="q"
-              placeholder="Busque pelo nome ou pela cidade"
+              placeholder={t("catalog.searchPlaceholder")}
               defaultValue={query}
               maxLength={100}
             />
-            <button className="button button-dark">Buscar</button>
+            <button className="button button-dark">{t("catalog.search")}</button>
             {query && (
               <Link
                 href={kind === "hotel" ? "/hospedagens" : "/experiencias"}
                 className="text-link"
               >
-                Limpar
+                {t("catalog.clear")}
               </Link>
             )}
           </form>
           <div className="catalog-count">
             <span>
               {hotels.length + tours.length + experiences.length}{" "}
-              {kind === "hotel" ? "hospedagem(ns)" : "experiência(s)"}
+              {kind === "hotel" ? t("catalog.stays") : t("catalog.experiences")}
             </span>
-            <span>Solicitação online · Aprovação pelo responsável</span>
+            <span>{t("catalog.bookingNote")}</span>
           </div>
           {!hotels.length && !tours.length && !experiences.length ? (
-            <EmptyState
-              title={query ? "Nenhum resultado por aqui." : "Estamos preparando novas conexões."}
-            >
-              <p>
-                {query
-                  ? "Experimente outro nome ou cidade."
-                  : "Os parceiros publicados pela administração aparecerão neste espaço. Ainda não há ofertas cadastradas."}
-              </p>
+            <EmptyState title={query ? t("catalog.noResults") : t("catalog.comingSoon")}>
+              <p>{query ? t("catalog.tryNameOrCity") : t("catalog.notPublished")}</p>
               <Link className="text-link" href="/#contato">
-                Converse com a Hub
+                {t("catalog.contactHub")}
               </Link>
             </EmptyState>
           ) : (
@@ -132,7 +124,7 @@ export async function Directory({ kind, query }: { kind: "hotel" | "tour"; query
                 </div>
               )}
               {kind === "tour" && (
-                <HubContentGrid items={experiences} title="Atividades e roteiros da Hub" />
+                <HubContentGrid items={experiences} title={t("catalog.hubActivities")} />
               )}
             </>
           )}
@@ -149,6 +141,9 @@ export async function HotelDetail({
   slug: string;
   search?: StaySearchValues;
 }) {
+  const locale = await getLocale();
+  const t = (key: Parameters<typeof translate>[1], values?: Record<string, string | number>) =>
+    translate(locale, key, values);
   const hotel = await publicHotel(getDatabase(), slug);
   if (!hotel) notFound();
   const session = await getSession();
@@ -161,7 +156,7 @@ export async function HotelDetail({
       <main id="conteudo" tabIndex={-1} className="portal-main">
         <div className="container">
           <Link className="text-link" href="/hospedagens">
-            ← Todas as hospedagens
+            {t("catalog.allStays")}
           </Link>
           <PageIntro
             eyebrow={companyActivityLabels[hotel.activity_type].toLocaleUpperCase("pt-BR")}
@@ -172,31 +167,26 @@ export async function HotelDetail({
             <div>
               <div className="detail-art hotel">
                 <BedDouble size={72} />
-                <span>Encontre seu tempo de ficar.</span>
+                <span>{t("catalog.stayTagline")}</span>
               </div>
-              <h2 className="subheading">Sobre a hospedagem</h2>
+              <h2 className="subheading">{t("catalog.aboutStay")}</h2>
               <p className="preserve-lines">{hotel.description}</p>
-              <h2 className="subheading">Quartos</h2>
+              <h2 className="subheading">{t("catalog.rooms")}</h2>
               <div className="resource-list">
                 {hotel.rooms.map((room) => (
                   <article key={room.id}>
                     <div>
                       <h3>{room.name}</h3>
-                      <p>
-                        Quarto {room.code} · Até {room.capacity} pessoas
-                      </p>
+                      <p>{t("catalog.roomInfo", { code: room.code, capacity: room.capacity })}</p>
                     </div>
                     <strong>
                       {money(room.price_cents)}
-                      <small>por noite / quarto</small>
+                      <small>{t("catalog.perNight")}</small>
                     </strong>
                   </article>
                 ))}
               </div>
-              <PortalNotice>
-                Uma solicitação não garante a reserva. A equipe confirmará a disponibilidade antes
-                de aprovar. O valor considera as diárias informadas no momento da solicitação.
-              </PortalNotice>
+              <PortalNotice>{t("catalog.bookingDisclaimer")}</PortalNotice>
             </div>
             <BookingForm
               kind="hotel"
@@ -217,6 +207,9 @@ export async function HotelDetail({
   );
 }
 export async function TourDetail({ slug }: { slug: string }) {
+  const locale = await getLocale();
+  const t = (key: Parameters<typeof translate>[1], values?: Record<string, string | number>) =>
+    translate(locale, key, values);
   const tour = await publicTour(getDatabase(), slug);
   if (!tour) notFound();
   const session = await getSession();
@@ -226,14 +219,18 @@ export async function TourDetail({ slug }: { slug: string }) {
       <main id="conteudo" tabIndex={-1} className="portal-main">
         <div className="container">
           <Link className="text-link" href="/experiencias">
-            ← Todas as experiências
+            {t("catalog.allExperiences")}
           </Link>
-          <PageIntro eyebrow="EXPERIÊNCIA AMAZÔNICA" title={tour.name} description={tour.city} />
+          <PageIntro
+            eyebrow={t("catalog.experienceEyebrow")}
+            title={tour.name}
+            description={tour.city}
+          />
           <div className="detail-layout">
             <div>
               <div className="detail-art tour">
                 <Compass size={72} />
-                <span>Cada caminho, uma nova história.</span>
+                <span>{t("catalog.experienceTagline")}</span>
               </div>
               <div className="detail-facts">
                 <span>
@@ -242,20 +239,22 @@ export async function TourDetail({ slug }: { slug: string }) {
                 </span>
                 <span>
                   <Clock size={18} />
-                  {tour.duration_minutes} minutos
+                  {tour.duration_minutes} {t("catalog.minutes")}
                 </span>
-                <strong>{money(tour.price_cents)} por pessoa</strong>
+                <strong>
+                  {money(tour.price_cents)} {t("catalog.perPerson")}
+                </strong>
               </div>
-              <h2 className="subheading">Sua experiência</h2>
+              <h2 className="subheading">{t("catalog.yourExperience")}</h2>
               <p className="preserve-lines">{tour.description}</p>
               <PortalNotice>
-                Organização: {tour.company_name}. Horários apresentados no fuso de Manaus.
+                {t("catalog.organizedBy", { company: tour.company_name })}
               </PortalNotice>
               {tour.guide && (
                 <Link className="guide-card" href={"/guias/" + tour.guide.slug}>
                   <span className="avatar">{tour.guide.name.slice(0, 1)}</span>
                   <span>
-                    <small>Conheça quem acompanha</small>
+                    <small>{t("catalog.meetGuide")}</small>
                     <strong>{tour.guide.name}</strong>
                   </span>
                   <span>→</span>
@@ -282,6 +281,8 @@ export async function TourDetail({ slug }: { slug: string }) {
   );
 }
 export async function GuideDetail({ slug }: { slug: string }) {
+  const locale = await getLocale();
+  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   const guide = await publicGuide(getDatabase(), slug);
   if (!guide) notFound();
   return (
@@ -290,10 +291,10 @@ export async function GuideDetail({ slug }: { slug: string }) {
       <main id="conteudo" tabIndex={-1} className="portal-main">
         <div className="container">
           <Link className="text-link" href="/experiencias?tipo=guia">
-            ← Guias e experiências
+            {t("catalog.guidesAndExperiences")}
           </Link>
           <PageIntro
-            eyebrow="GUIA LOCAL"
+            eyebrow={t("catalog.guide")}
             title={guide.name}
             description={guide.city + " · " + guide.company_name}
           />
@@ -307,7 +308,7 @@ export async function GuideDetail({ slug }: { slug: string }) {
               </p>
             </div>
           </div>
-          <h2 className="subheading">Experiências com este guia</h2>
+          <h2 className="subheading">{t("catalog.experiencesWithGuide")}</h2>
           {guide.tours.length ? (
             <div className="catalog-grid">
               {guide.tours.map((tour) => (
@@ -323,8 +324,8 @@ export async function GuideDetail({ slug }: { slug: string }) {
               ))}
             </div>
           ) : (
-            <EmptyState title="Novas experiências a caminho.">
-              <p>Os passeios deste guia serão apresentados aqui.</p>
+            <EmptyState title={t("catalog.newExperiences")}>
+              <p>{t("catalog.guideToursWillAppear")}</p>
             </EmptyState>
           )}
         </div>

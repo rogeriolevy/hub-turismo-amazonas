@@ -3,6 +3,7 @@ import { useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { bookingSchema, todayInManaus } from "@/lib/platform-schema";
+import { useLanguage } from "@/components/site/language-provider";
 export function BookingForm({
   kind,
   options,
@@ -16,6 +17,7 @@ export function BookingForm({
   returnTo: string;
   initialStay?: { entrada: string; saida: string; pessoas: string };
 }) {
+  const { t } = useLanguage();
   const router = useRouter(),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -23,24 +25,22 @@ export function BookingForm({
   if (!options.length)
     return (
       <div className="portal-notice">
-        {kind === "hotel"
-          ? "Ainda não há quartos disponíveis para solicitar."
-          : "Novas saídas serão anunciadas aqui."}
+        {kind === "hotel" ? t("booking.noRooms") : t("booking.noDepartures")}
       </div>
     );
   if (!authenticated)
     return (
       <div className="booking-box">
-        <h2>Planeje sua próxima história.</h2>
-        <p>Entre ou crie sua conta para solicitar uma reserva e acompanhar a resposta.</p>
+        <h2>{t("booking.nextStory")}</h2>
+        <p>{t("booking.signInDescription")}</p>
         <Link
           className="button button-dark"
           href={"/entrar?voltar=" + encodeURIComponent(returnTo)}
         >
-          Entrar para solicitar
+          {t("booking.signInRequest")}
         </Link>
         <Link href={"/cadastro?voltar=" + encodeURIComponent(returnTo)} className="text-link">
-          Criar uma conta
+          {t("booking.createAccount")}
         </Link>
       </div>
     );
@@ -62,14 +62,14 @@ export function BookingForm({
     };
     const parsed = bookingSchema.safeParse(input);
     if (!parsed.success) {
-      setError("Confira o período, a quantidade de pessoas e a opção selecionada.");
+      setError(t("booking.invalid"));
       return;
     }
     if (parsed.data.kind === "hotel") {
       const nights =
         (Date.parse(parsed.data.check_out) - Date.parse(parsed.data.check_in)) / 86400000;
       if (parsed.data.check_in < todayInManaus() || nights < 1 || nights > 30) {
-        setError("Escolha uma chegada a partir de hoje e uma saída de 1 a 30 noites depois.");
+        setError(t("booking.dateInvalid"));
         return;
       }
     }
@@ -86,7 +86,7 @@ export function BookingForm({
       const payload = await response.json();
       if (!response.ok) {
         if (payload.error?.code === "IDEMPOTENCY") key.current = null;
-        throw new Error(payload.error?.message || "Não foi possível enviar a solicitação.");
+        throw new Error(payload.error?.message || t("booking.sendFailed"));
       }
       router.push("/minha-conta/reservas");
       router.refresh();
@@ -94,21 +94,21 @@ export function BookingForm({
       setError(
         error instanceof Error && error.name !== "TypeError" && error.name !== "TimeoutError"
           ? error.message
-          : "Não foi possível conectar. Tente novamente.",
+          : t("booking.connection"),
       );
       setBusy(false);
     }
   }
   return (
     <form className="booking-box platform-form" onSubmit={submit} aria-busy={busy}>
-      <h2>Solicite sua reserva</h2>
-      <p>A confirmação depende da aprovação do responsável. Não há cobrança online.</p>
+      <h2>{t("booking.request")}</h2>
+      <p>{t("booking.approval")}</p>
       <div className="field">
         <label htmlFor="resource">
-          {kind === "hotel" ? "Quarto" : "Saída (horário de Manaus)"}
+          {kind === "hotel" ? t("booking.room") : t("booking.departure")}
         </label>
         <select id="resource" name="resource" required disabled={busy}>
-          <option value="">Selecione</option>
+          <option value="">{t("booking.select")}</option>
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -119,7 +119,7 @@ export function BookingForm({
       {kind === "hotel" && (
         <div className="form-row">
           <div className="field">
-            <label htmlFor="check-in">Chegada</label>
+            <label htmlFor="check-in">{t("booking.arrival")}</label>
             <input
               id="check-in"
               type="date"
@@ -131,7 +131,7 @@ export function BookingForm({
             />
           </div>
           <div className="field">
-            <label htmlFor="check-out">Saída</label>
+            <label htmlFor="check-out">{t("booking.exit")}</label>
             <input
               id="check-out"
               type="date"
@@ -145,7 +145,7 @@ export function BookingForm({
         </div>
       )}
       <div className="field">
-        <label htmlFor="guests">Pessoas</label>
+        <label htmlFor="guests">{t("booking.people")}</label>
         <input
           id="guests"
           name="guests"
@@ -158,9 +158,9 @@ export function BookingForm({
         />
       </div>
       <div className="field">
-        <label htmlFor="booking-notes">Observações (opcional)</label>
+        <label htmlFor="booking-notes">{t("booking.notes")}</label>
         <textarea id="booking-notes" name="notes" rows={3} maxLength={1000} disabled={busy} />
-        <span className="field-help">Não inclua documentos ou dados sensíveis.</span>
+        <span className="field-help">{t("booking.sensitive")}</span>
       </div>
       {error && (
         <p className="form-error" role="alert">
@@ -168,7 +168,7 @@ export function BookingForm({
         </p>
       )}
       <button className="button button-dark" disabled={busy}>
-        {busy ? "Enviando…" : "Solicitar reserva"}
+        {busy ? t("booking.sending") : t("booking.submit")}
       </button>
     </form>
   );

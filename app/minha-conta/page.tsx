@@ -18,13 +18,15 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { Header, Footer } from "@/components/site/navigation";
-import { ModuleSwitcher, publicModules } from "@/components/platform/shared";
+import { ModuleSwitcher, publicModules, localizeModule } from "@/components/platform/shared";
 import { ProfileEditor } from "@/components/platform/profile-editor";
 import { pageActor } from "@/server/platform-session";
 import { getDatabase } from "@/db";
 import { companiesFor, isPlatformAdmin } from "@/server/platform-access";
 import { myBookings } from "@/server/booking-service";
 import { avatarKeyFromImage, defaultAvatarForUser, profileAvatarUrl } from "@/lib/profile-avatars";
+import { getLocale } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/messages";
 
 export const dynamic = "force-dynamic";
 
@@ -57,49 +59,51 @@ export default async function Page({
   searchParams: Promise<{ editar?: string }>;
 }) {
   const { editar } = await searchParams;
-  const actor = await pageActor();
+  const [actor, locale] = await Promise.all([pageActor(), getLocale()]);
+  const t = (key: Parameters<typeof translate>[1], values?: Record<string, string | number>) =>
+    translate(locale, key, values);
   const db = getDatabase();
   const [companies, bookings] = await Promise.all([companiesFor(db, actor), myBookings(db, actor)]);
   const admin = isPlatformAdmin(actor);
-  const modules = [...publicModules];
+  const modules = publicModules.map((module) => localizeModule(module, locale));
   if (admin || companies.some((c) => c.kind === "hotel"))
     modules.push({
       href: "/painel/hotel",
-      label: "Painel hoteleiro",
-      description: "Quartos, reservas e estadias.",
+      label: t("account.hotelPanel"),
+      description: t("account.hotelPanelDescription"),
     });
   if (admin || companies.some((c) => c.kind === "operator"))
     modules.push({
       href: "/painel/passeios",
-      label: "Painel de experiências",
-      description: "Passeios, guias, agenda e vagas.",
+      label: t("account.experiencesPanel"),
+      description: t("account.experiencesPanelDescription"),
     });
   if (admin)
     modules.push({
       href: "/painel/plataforma",
-      label: "Administração geral",
-      description: "Empresas e permissões.",
+      label: t("account.adminPanel"),
+      description: t("account.adminPanelDescription"),
     });
   const visibleModules = modules.filter((module) => module.href !== "/minha-conta");
   const avatar = avatarKeyFromImage(actor.image) ?? defaultAvatarForUser(actor.id);
   const metrics = [
     {
-      label: "Solicitações",
+      label: t("account.requests"),
       value: bookings.length,
-      detail: "Acompanhe suas reservas",
+      detail: t("account.requestsDetail"),
       icon: CalendarCheck2,
       href: "/minha-conta/reservas",
     },
     {
-      label: "Aguardando resposta",
+      label: t("account.waiting"),
       value: bookings.filter((booking) => booking.status === "pending").length,
-      detail: "Decisão do estabelecimento",
+      detail: t("account.waitingDetail"),
       icon: Clock3,
     },
     {
-      label: "Módulos disponíveis",
+      label: t("account.modules"),
       value: visibleModules.length,
-      detail: "Acessos para sua conta",
+      detail: t("account.modulesDetail"),
       icon: Grid2X2,
     },
   ];
@@ -121,9 +125,11 @@ export default async function Page({
                 />
               </div>
               <div className="account-welcome-copy">
-                <p className="account-overline">MINHA CONTA</p>
-                <h1 id="account-title">Olá, {actor.name.trim().split(/\s+/)[0]}.</h1>
-                <p>Suas experiências e seus módulos, em um só lugar.</p>
+                <p className="account-overline">{t("account.heading")}</p>
+                <h1 id="account-title">
+                  {t("account.greeting", { name: actor.name.trim().split(/\s+/)[0] })}
+                </h1>
+                <p>{t("account.description")}</p>
                 <span className="account-user-email">{actor.email}</span>
               </div>
             </div>
@@ -135,7 +141,7 @@ export default async function Page({
             />
           </section>
 
-          <section className="account-stats" aria-label="Resumo da sua conta">
+          <section className="account-stats" aria-label={t("account.summary")}>
             {metrics.map(({ label, value, detail, icon: Icon, href }, index) => {
               const card = (
                 <>
@@ -168,14 +174,15 @@ export default async function Page({
           <section className="account-modules-section" aria-labelledby="account-modules-title">
             <div className="account-modules-heading">
               <div>
-                <p className="account-section-kicker">EXPLORE A HUB</p>
-                <h2 id="account-modules-title">Para onde vamos?</h2>
+                <p className="account-section-kicker">{t("account.explore")}</p>
+                <h2 id="account-modules-title">{t("account.destination")}</h2>
               </div>
-              <p>Encontre os catálogos e as áreas liberadas para sua conta.</p>
+              <p>{t("account.modulesDescription")}</p>
             </div>
             <div className="account-modules">
               {visibleModules.map((module, index) => {
                 const Icon = moduleIcons[module.href] ?? Compass;
+                const localizedModule = localizeModule(module, locale);
                 return (
                   <Link
                     className="account-module-card account-motion"
@@ -189,10 +196,10 @@ export default async function Page({
                       </span>
                       <ArrowUpRight className="account-module-arrow" size={19} aria-hidden="true" />
                     </div>
-                    <h3>{module.label}</h3>
-                    <p>{module.description}</p>
+                    <h3>{localizedModule.label}</h3>
+                    <p>{localizedModule.description}</p>
                     <span className="account-module-action">
-                      Explorar <ArrowRight size={15} aria-hidden="true" />
+                      {t("account.exploreAction")} <ArrowRight size={15} aria-hidden="true" />
                     </span>
                   </Link>
                 );
@@ -202,7 +209,7 @@ export default async function Page({
 
           <div className="portal-toolbar account-tools">
             <ModuleSwitcher modules={modules} />
-            <p>Os painéis aparecem conforme os acessos concedidos à sua conta.</p>
+            <p>{t("account.panelAccessNote")}</p>
           </div>
         </div>
       </main>

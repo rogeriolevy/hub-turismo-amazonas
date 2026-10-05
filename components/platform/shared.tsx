@@ -1,5 +1,12 @@
 import Link from "next/link";
 import { ArrowUpRight, ChevronDown, Compass, MapPin, BedDouble } from "lucide-react";
+import { getLocale } from "@/lib/i18n/server";
+import { translate, translateText, type Locale, type MessageKey } from "@/lib/i18n/messages";
+import {
+  LocalizedEmptyState,
+  LocalizedPageIntro,
+  LocalizedPortalNotice,
+} from "./shared-views";
 export type ModuleLink = { href: string; label: string; description: string };
 export const publicModules: ModuleLink[] = [
   { href: "/", label: "Institucional", description: "Conheça a Hub e nossa proposta." },
@@ -27,24 +34,46 @@ export const publicModules: ModuleLink[] = [
   },
   { href: "/minha-conta", label: "Minha conta", description: "Acompanhe suas solicitações." },
 ];
-export function ModuleSwitcher({ modules = publicModules }: { modules?: ModuleLink[] }) {
+const moduleMessages: Record<string, [MessageKey, MessageKey]> = {
+  "/": ["module.home", "module.homeDescription"],
+  "/hospedagens": ["module.hotel", "module.hotelDescription"],
+  "/gastronomia": ["module.food", "module.foodDescription"],
+  "/experiencias": ["module.experiences", "module.experiencesDescription"],
+  "/agencias": ["module.agencies", "module.agenciesDescription"],
+  "/servicos": ["module.services", "module.servicesDescription"],
+  "/navegacao": ["module.navigation", "module.navigationDescription"],
+  "/minha-conta": ["module.account", "module.accountDescription"],
+};
+
+export function localizeModule(item: ModuleLink, locale: Locale): ModuleLink {
+  const keys = moduleMessages[item.href];
+  if (!keys) return item;
+  return {
+    ...item,
+    label: translate(locale, keys[0]),
+    description: translate(locale, keys[1]),
+  };
+}
+
+export async function ModuleSwitcher({ modules = publicModules }: { modules?: ModuleLink[] }) {
+  const locale = await getLocale();
   return (
     <details className="module-switcher">
       <summary>
-        Alternar módulo <ChevronDown size={16} />
+        {translate(locale, "account.switchModule")} <ChevronDown size={16} />
       </summary>
-      <nav aria-label="Módulos da plataforma">
+      <nav aria-label={translate(locale, "account.moduleNav")}>
         {modules.map((item) => (
           <Link key={item.href} href={item.href}>
-            <strong>{item.label}</strong>
-            <span>{item.description}</span>
+            <strong>{localizeModule(item, locale).label}</strong>
+            <span>{localizeModule(item, locale).description}</span>
           </Link>
         ))}
       </nav>
     </details>
   );
 }
-export function PageIntro({
+export async function PageIntro({
   eyebrow,
   title,
   description,
@@ -53,24 +82,20 @@ export function PageIntro({
   title: string;
   description: string;
 }) {
-  return (
-    <div className="portal-intro">
-      <p className="eyebrow">{eyebrow}</p>
-      <h1>{title}</h1>
-      <p>{description}</p>
-    </div>
-  );
+  const locale = await getLocale();
+  return <LocalizedPageIntro locale={locale} eyebrow={eyebrow} title={title} description={description} />;
 }
-export function EmptyState({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="portal-empty">
-      <Compass size={36} />
-      <h2>{title}</h2>
-      <div>{children}</div>
-    </div>
-  );
+export async function EmptyState({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  const locale = await getLocale();
+  return <LocalizedEmptyState locale={locale} title={title}>{children}</LocalizedEmptyState>;
 }
-export function CatalogCard({
+export async function CatalogCard({
   href,
   title,
   city,
@@ -87,9 +112,14 @@ export function CatalogCard({
   kind: "hotel" | "tour";
   subtype?: string;
 }) {
+  const locale = await getLocale();
   return (
     <article className="catalog-card">
-      <Link href={href} className={`catalog-art ${kind}`} aria-label={`Conhecer ${title}`}>
+      <Link
+        href={href}
+        className={`catalog-art ${kind}`}
+        aria-label={`${translateText(locale, "Conhecer")} ${title}`}
+      >
         {kind === "hotel" ? <BedDouble size={52} /> : <Compass size={52} />}
         <span>AMAZONAS · {kind === "hotel" ? "HOSPEDAGEM" : "EXPERIÊNCIA"}</span>
       </Link>
@@ -106,13 +136,14 @@ export function CatalogCard({
         <div className="catalog-bottom">
           <strong>{price}</strong>
           <Link href={href} className="text-link">
-            Conhecer <ArrowUpRight size={16} />
+            {translateText(locale, "Conhecer")} <ArrowUpRight size={16} />
           </Link>
         </div>
       </div>
     </article>
   );
 }
-export function PortalNotice({ children }: { children: React.ReactNode }) {
-  return <div className="portal-notice">{children}</div>;
+export async function PortalNotice({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
+  return <LocalizedPortalNotice locale={locale}>{children}</LocalizedPortalNotice>;
 }

@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { z } from "zod";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/components/site/language-provider";
 import { TurnstileChallenge } from "./turnstile-challenge";
 const credentials = z.object({
   email: z.string().trim().email(),
@@ -19,6 +20,7 @@ export function LoginForm({
   captchaRequired: boolean;
 }) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -34,11 +36,11 @@ export function LoginForm({
       password: form.get("password"),
     });
     if (!parsed.success) {
-      setError("Informe um e-mail válido e sua senha.");
+      setError(t("auth.invalidCredentials"));
       return;
     }
     if (challengeEnabled && !captchaToken) {
-      setError("Confirme a verificação antirobô antes de entrar.");
+      setError(t("auth.captchaRequiredLogin"));
       return;
     }
     setBusy(true);
@@ -62,20 +64,12 @@ export function LoginForm({
             payload.code ?? payload.error?.code ?? "",
           )
         )
-          setError("A verificação antirobô expirou ou falhou. Confirme-a novamente.");
-        else if (response.status === 429)
-          setError("Muitas tentativas. Aguarde um minuto e tente novamente.");
-        else if (response.status === 401)
-          setError(
-            "E-mail ou senha incorretos. Confira a digitação, incluindo maiúsculas e espaços.",
-          );
-        else if (response.status === 403)
-          setError(
-            "A origem deste acesso não foi autorizada. Abra o painel pelo endereço configurado para o site.",
-          );
-        else if (response.status === 503)
-          setError("A verificação antirobô ainda não está configurada neste ambiente.");
-        else setError("Não foi possível entrar agora. Tente novamente em instantes.");
+          setError(t("auth.captchaExpired"));
+        else if (response.status === 429) setError(t("auth.tooManyLogins"));
+        else if (response.status === 401) setError(t("auth.badCredentials"));
+        else if (response.status === 403) setError(t("auth.originDenied"));
+        else if (response.status === 503) setError(t("auth.captchaNotConfigured"));
+        else setError(t("auth.loginFailed"));
         setCaptchaToken("");
         if (challengeEnabled) setCaptchaReset((current) => current + 1);
         setBusy(false);
@@ -95,7 +89,7 @@ export function LoginForm({
   return (
     <form className="admin-login" onSubmit={submit} aria-busy={busy}>
       <div className="field">
-        <label htmlFor="admin-email">E-mail</label>
+        <label htmlFor="admin-email">{t("auth.email")}</label>
         <input
           id="admin-email"
           name="email"
@@ -108,7 +102,7 @@ export function LoginForm({
         />
       </div>
       <div className="field">
-        <label htmlFor="admin-password">Senha</label>
+        <label htmlFor="admin-password">{t("auth.password")}</label>
         <input
           id="admin-password"
           name="password"
@@ -130,17 +124,16 @@ export function LoginForm({
           aria-pressed={showPassword}
           onClick={() => setShowPassword((visible) => !visible)}
         >
-          {showPassword ? "Ocultar senha" : "Mostrar senha"}
+          {showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
         </button>
         {capsLock && (
           <p id="caps-lock-hint" className="field-help" role="status">
-            Caps Lock está ativado.
+            {t("auth.capsLock")}
           </p>
         )}
       </div>
       <p id="login-help" className="field-help">
-        Use a senha criada para esta instalação. Para recuperar o acesso, fale com o responsável
-        pelo site.
+        {t("auth.loginHelp")}
       </p>
       {turnstileSiteKey ? (
         <TurnstileChallenge
@@ -150,7 +143,7 @@ export function LoginForm({
         />
       ) : captchaRequired ? (
         <p className="field-help" role="alert">
-          Verificação antirobô indisponível. Configure TURNSTILE_SITE_KEY e TURNSTILE_SECRET_KEY.
+          {t("auth.captchaUnavailable")}
         </p>
       ) : null}
       {error && (
@@ -163,16 +156,17 @@ export function LoginForm({
         type="submit"
         disabled={busy || (challengeEnabled && (!turnstileSiteKey || !captchaToken))}
       >
-        {busy ? "Entrando…" : "Entrar"}
+        {busy ? t("auth.loggingIn") : t("auth.login")}
       </button>
       <span className="sr-only" role="status">
-        {busy ? "Validando acesso" : ""}
+        {busy ? t("auth.validateAccess") : ""}
       </span>
     </form>
   );
 }
 export function SignOutButton({ showIcon = false }: { showIcon?: boolean } = {}) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   async function signOut() {
@@ -184,10 +178,10 @@ export function SignOutButton({ showIcon = false }: { showIcon?: boolean } = {})
         headers: { "Content-Type": "application/json" },
         body: "{}",
       });
-      if (!response.ok) throw new Error("Não foi possível sair. Tente novamente.");
+      if (!response.ok) throw new Error(t("auth.signOutFailed"));
       router.refresh();
     } catch {
-      setError("Não foi possível sair. Tente novamente.");
+      setError(t("auth.signOutFailed"));
       setBusy(false);
     }
   }
@@ -195,7 +189,7 @@ export function SignOutButton({ showIcon = false }: { showIcon?: boolean } = {})
     <div>
       <button className="text-link" onClick={signOut} disabled={busy}>
         {showIcon && <LogOut size={16} aria-hidden="true" />}
-        {busy ? "Saindo…" : "Sair"}
+        {busy ? t("auth.signingOut") : t("auth.signOut")}
       </button>
       {error && <p role="alert">{error}</p>}
     </div>

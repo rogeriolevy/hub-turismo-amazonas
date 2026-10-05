@@ -15,6 +15,7 @@ import {
 } from "@/server/cadastur/public-directory";
 import { CatalogCard, EmptyState } from "./shared";
 import { ProviderCard } from "./provider-directory";
+import { LocalizedTree } from "@/lib/i18n/localized-tree";
 import "./provider-directory.css";
 import "./experience-directory.css";
 
@@ -198,145 +199,149 @@ export async function ExperienceDirectory({ search = {} }: { search?: DirectoryS
   return (
     <>
       <Header />
-      <main id="conteudo" tabIndex={-1} className="provider-page provider-experiencias">
-        <section className="provider-hero">
-          <div className="container provider-hero-inner">
-            <div>
-              <p className="eyebrow">HUB. EXPERIÊNCIAS</p>
-              <h1>Descubra o Amazonas com quem vive a região.</h1>
-              <p>
-                Encontre passeios, roteiros e guias de turismo em um só lugar. Consulte os detalhes
-                de cada experiência antes de planejar sua viagem.
-              </p>
-              <span className="provider-hero-note">
-                <MapPin size={16} aria-hidden="true" />
-                Todo o Amazonas, com Maués e região em destaque.
-              </span>
-            </div>
-            <div className="provider-hero-symbol" aria-hidden="true">
-              <Compass size={96} strokeWidth={1} />
-              <span>AMAZONAS</span>
-            </div>
-          </div>
-        </section>
-        <div className="container">
-          <section className="provider-search-area" aria-label="Buscar experiências">
-            <form
-              className="provider-search experience-search"
-              role="search"
-              action="/experiencias"
-            >
-              <label>
-                <span>O que você procura?</span>
-                <div>
-                  <Search size={18} aria-hidden="true" />
-                  <input
-                    name="q"
-                    defaultValue={q}
-                    maxLength={100}
-                    placeholder="Passeio, guia, cidade ou palavra-chave"
-                  />
-                </div>
-              </label>
-              <label>
-                <span>Município</span>
-                <select name="cidade" defaultValue={city}>
-                  <option value="">Todo o Amazonas</option>
-                  {cities.map((name) => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Tipo de experiência</span>
-                <select name="tipo" defaultValue={type}>
-                  <option value="">Todas as experiências</option>
-                  <option value="atividade">Passeios e roteiros</option>
-                  <option value="guia">Guias de turismo</option>
-                </select>
-              </label>
-              <button className="button button-dark" type="submit">
-                Buscar <ArrowRight size={17} aria-hidden="true" />
-              </button>
-            </form>
-            <div className="provider-city-links">
-              <span>Explore a região:</span>
-              {regionCities.map((name) => (
-                <Link
-                  key={name}
-                  href={`/experiencias?${new URLSearchParams({ q, tipo: type, cidade: name })}`}
-                  aria-current={normalizeLabel(name) === normalizeLabel(city) ? "page" : undefined}
-                >
-                  {name}
-                </Link>
-              ))}
-              {(q || city || type) && <Link href="/experiencias">Limpar filtros</Link>}
-            </div>
-          </section>
-          <section
-            className="provider-results experience-results"
-            id="resultados"
-            aria-labelledby="experience-results-title"
-          >
-            <div className="provider-section-heading">
+      <LocalizedTree>
+        <main id="conteudo" tabIndex={-1} className="provider-page provider-experiencias">
+          <section className="provider-hero">
+            <div className="container provider-hero-inner">
               <div>
-                <p className="eyebrow">EXPLORE O AMAZONAS</p>
-                <h2 id="experience-results-title">{city || "Experiências turísticas"}</h2>
-              </div>
-              <span>
-                {results.length.toLocaleString("pt-BR")}{" "}
-                {results.length === 1 ? "resultado" : "resultados"}
-                {q && ` · “${q}”`}
-                {type === "guia" && " · Guias de turismo"}
-                {type === "atividade" && " · Passeios e roteiros"}
-              </span>
-            </div>
-            {results.length ? (
-              <div className="provider-grid experience-grid">
-                {visibleResults.map((result) => (
-                  <ExperienceResultCard key={result.key} result={result} />
-                ))}
-              </div>
-            ) : (
-              <EmptyState title="Nenhuma experiência encontrada.">
-                <p>Tente outra palavra, município ou tipo de experiência.</p>
-                <Link className="text-link" href="/experiencias">
-                  Ver todas as experiências
-                </Link>
-              </EmptyState>
-            )}
-            {pages > 1 && (
-              <nav className="provider-pagination" aria-label="Páginas de experiências">
-                {page > 1 ? <Link href={pageHref(page - 1)}>← Anterior</Link> : <span />}
-                <span>
-                  Página {page} de {pages} · {results.length.toLocaleString("pt-BR")} resultados
+                <p className="eyebrow">HUB. EXPERIÊNCIAS</p>
+                <h1>Descubra o Amazonas com quem vive a região.</h1>
+                <p>
+                  Encontre passeios, roteiros e guias de turismo em um só lugar. Consulte os
+                  detalhes de cada experiência antes de planejar sua viagem.
+                </p>
+                <span className="provider-hero-note">
+                  <MapPin size={16} aria-hidden="true" />
+                  Todo o Amazonas, com Maués e região em destaque.
                 </span>
-                {page < pages ? <Link href={pageHref(page + 1)}>Próxima →</Link> : <span />}
-              </nav>
-            )}
+              </div>
+              <div className="provider-hero-symbol" aria-hidden="true">
+                <Compass size={96} strokeWidth={1} />
+                <span>AMAZONAS</span>
+              </div>
+            </div>
           </section>
-          {results.some(
-            (item) => item.kind === "provider" && item.provider.source === "cadastur",
-          ) && (
-            <p className="provider-attribution">
-              <span>
-                Perfis de guias incluem dados do Cadastur · Ministério do Turismo, sob a licença{" "}
-                <a
-                  href="https://opendatacommons.org/licenses/odbl/1-0/"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  ODbL 1.0
-                </a>
-                . Conteúdos adicionais são mantidos pela Hub.
-              </span>
-              <a href="/api/diretorio?categoria=guias">Dados do Cadastur (JSON)</a>
-            </p>
-          )}
-        </div>
-      </main>
+          <div className="container">
+            <section className="provider-search-area" aria-label="Buscar experiências">
+              <form
+                className="provider-search experience-search"
+                role="search"
+                action="/experiencias"
+              >
+                <label>
+                  <span>O que você procura?</span>
+                  <div>
+                    <Search size={18} aria-hidden="true" />
+                    <input
+                      name="q"
+                      defaultValue={q}
+                      maxLength={100}
+                      placeholder="Passeio, guia, cidade ou palavra-chave"
+                    />
+                  </div>
+                </label>
+                <label>
+                  <span>Município</span>
+                  <select name="cidade" defaultValue={city}>
+                    <option value="">Todo o Amazonas</option>
+                    {cities.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Tipo de experiência</span>
+                  <select name="tipo" defaultValue={type}>
+                    <option value="">Todas as experiências</option>
+                    <option value="atividade">Passeios e roteiros</option>
+                    <option value="guia">Guias de turismo</option>
+                  </select>
+                </label>
+                <button className="button button-dark" type="submit">
+                  Buscar <ArrowRight size={17} aria-hidden="true" />
+                </button>
+              </form>
+              <div className="provider-city-links">
+                <span>Explore a região:</span>
+                {regionCities.map((name) => (
+                  <Link
+                    key={name}
+                    href={`/experiencias?${new URLSearchParams({ q, tipo: type, cidade: name })}`}
+                    aria-current={
+                      normalizeLabel(name) === normalizeLabel(city) ? "page" : undefined
+                    }
+                  >
+                    {name}
+                  </Link>
+                ))}
+                {(q || city || type) && <Link href="/experiencias">Limpar filtros</Link>}
+              </div>
+            </section>
+            <section
+              className="provider-results experience-results"
+              id="resultados"
+              aria-labelledby="experience-results-title"
+            >
+              <div className="provider-section-heading">
+                <div>
+                  <p className="eyebrow">EXPLORE O AMAZONAS</p>
+                  <h2 id="experience-results-title">{city || "Experiências turísticas"}</h2>
+                </div>
+                <span>
+                  {results.length.toLocaleString("pt-BR")}{" "}
+                  {results.length === 1 ? "resultado" : "resultados"}
+                  {q && ` · “${q}”`}
+                  {type === "guia" && " · Guias de turismo"}
+                  {type === "atividade" && " · Passeios e roteiros"}
+                </span>
+              </div>
+              {results.length ? (
+                <div className="provider-grid experience-grid">
+                  {visibleResults.map((result) => (
+                    <ExperienceResultCard key={result.key} result={result} />
+                  ))}
+                </div>
+              ) : (
+                <EmptyState title="Nenhuma experiência encontrada.">
+                  <p>Tente outra palavra, município ou tipo de experiência.</p>
+                  <Link className="text-link" href="/experiencias">
+                    Ver todas as experiências
+                  </Link>
+                </EmptyState>
+              )}
+              {pages > 1 && (
+                <nav className="provider-pagination" aria-label="Páginas de experiências">
+                  {page > 1 ? <Link href={pageHref(page - 1)}>← Anterior</Link> : <span />}
+                  <span>
+                    Página {page} de {pages} · {results.length.toLocaleString("pt-BR")} resultados
+                  </span>
+                  {page < pages ? <Link href={pageHref(page + 1)}>Próxima →</Link> : <span />}
+                </nav>
+              )}
+            </section>
+            {results.some(
+              (item) => item.kind === "provider" && item.provider.source === "cadastur",
+            ) && (
+              <p className="provider-attribution">
+                <span>
+                  Perfis de guias incluem dados do Cadastur · Ministério do Turismo, sob a licença{" "}
+                  <a
+                    href="https://opendatacommons.org/licenses/odbl/1-0/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    ODbL 1.0
+                  </a>
+                  . Conteúdos adicionais são mantidos pela Hub.
+                </span>
+                <a href="/api/diretorio?categoria=guias">Dados do Cadastur (JSON)</a>
+              </p>
+            )}
+          </div>
+        </main>
+      </LocalizedTree>
       <Footer photoCredit={false} />
     </>
   );

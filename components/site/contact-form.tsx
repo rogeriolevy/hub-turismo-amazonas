@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { ArrowUpRight, CheckCircle2, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useLanguage } from "@/components/site/language-provider";
 import {
   Select,
   SelectContent,
@@ -10,8 +11,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { contactSchema, interests } from "@/lib/contact-schema";
+import { translateText, type MessageKey } from "@/lib/i18n/messages";
 type Errors = Record<string, string[] | undefined>;
+const interestKeys: Record<(typeof interests)[number], MessageKey> = {
+  "Conhecer a solução": "contact.interestSolution",
+  "Hotel ou pousada": "contact.interestHotel",
+  Parcerias: "contact.interestPartners",
+  Privacidade: "contact.interestPrivacy",
+  "Outro assunto": "contact.interestOther",
+};
 export function ContactForm() {
+  const { locale, t } = useLanguage();
   const [interest, setInterest] = useState("");
   const [consent, setConsent] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -23,7 +33,7 @@ export function ContactForm() {
   function fieldError(name: string) {
     return errors[name] ? (
       <span className="field-error" id={name + "-error"}>
-        {errors[name]?.[0]}
+        {translateText(locale, errors[name]?.[0] ?? "")}
       </span>
     ) : null;
   }
@@ -36,7 +46,7 @@ export function ContactForm() {
     if (!result.success) {
       setErrors(result.error.flatten().fieldErrors);
       setStatus("error");
-      setMessage("Confira os campos destacados para enviar.");
+      setMessage(t("contact.reviewFields"));
       requestAnimationFrame(() =>
         (form.querySelector('[aria-invalid="true"]') as HTMLElement)?.focus(),
       );
@@ -60,7 +70,7 @@ export function ContactForm() {
       if (!response.ok) {
         setErrors(payload.error?.fields || {});
         if (response.status === 409) key.current = null;
-        throw new Error(payload.error?.message || "Não foi possível enviar. Tente novamente.");
+        throw new Error(payload.error?.message || t("contact.sendFailed"));
       }
       setStatus("success");
       setMessage(payload.data.message);
@@ -74,7 +84,7 @@ export function ContactForm() {
       setMessage(
         error instanceof Error && error.name !== "TimeoutError" && error.name !== "TypeError"
           ? error.message
-          : "Não foi possível conectar. Seus dados foram mantidos. Tente novamente.",
+          : t("contact.connectionFailed"),
       );
     }
   }
@@ -83,11 +93,9 @@ export function ContactForm() {
       {status === "success" ? (
         <div className="form-success" ref={feedback} tabIndex={-1} role="status">
           <CheckCircle2 size={42} />
-          <h3>Conversa iniciada!</h3>
-          <p>{message}</p>
-          <p>
-            Sua mensagem está disponível para nossa equipe. O retorno será pelo e-mail informado.
-          </p>
+          <h3>{t("contact.successTitle")}</h3>
+          <p>{translateText(locale, message)}</p>
+          <p>{t("contact.successNote")}</p>
           <button
             className="button button-dark"
             onClick={() => {
@@ -96,18 +104,16 @@ export function ContactForm() {
               requestAnimationFrame(() => nameInput.current?.focus());
             }}
           >
-            Enviar outra mensagem
+            {t("contact.sendAnother")}
           </button>
         </div>
       ) : (
         <>
-          <h3>Faça parte dessa conversa</h3>
-          <p className="form-intro">
-            Conte um pouco sobre você. Todos os campos são obrigatórios, exceto a organização.
-          </p>
+          <h3>{t("contact.title")}</h3>
+          <p className="form-intro">{t("contact.intro")}</p>
           <form noValidate onSubmit={submit} aria-busy={status === "loading"}>
             <div className="field">
-              <label htmlFor="name">Seu nome</label>
+              <label htmlFor="name">{t("contact.yourName")}</label>
               <input
                 id="name"
                 ref={nameInput}
@@ -117,12 +123,12 @@ export function ContactForm() {
                 required
                 aria-invalid={!!errors.name}
                 aria-describedby={errors.name ? "name-error" : undefined}
-                placeholder="Como podemos chamar você?"
+                placeholder={t("contact.namePlaceholder")}
               />
               {fieldError("name")}
             </div>
             <div className="field">
-              <label htmlFor="email">E-mail</label>
+              <label htmlFor="email">{t("contact.email")}</label>
               <input
                 id="email"
                 name="email"
@@ -138,7 +144,7 @@ export function ContactForm() {
             </div>
             <div className="field">
               <label htmlFor="organization">
-                Hotel, pousada ou organização <span>(opcional)</span>
+                {t("contact.organization")} <span>{t("contact.optional")}</span>
               </label>
               <input
                 id="organization"
@@ -147,12 +153,12 @@ export function ContactForm() {
                 maxLength={120}
                 aria-invalid={!!errors.organization}
                 aria-describedby={errors.organization ? "organization-error" : undefined}
-                placeholder="Nome do seu negócio"
+                placeholder={t("contact.organizationPlaceholder")}
               />
               {fieldError("organization")}
             </div>
             <div className="field">
-              <label htmlFor="interest">Sobre o que vamos conversar?</label>
+              <label htmlFor="interest">{t("contact.interest")}</label>
               <Select value={interest} onValueChange={setInterest}>
                 <SelectTrigger
                   id="interest"
@@ -161,12 +167,12 @@ export function ContactForm() {
                   aria-describedby={errors.interest ? "interest-error" : undefined}
                   className="form-select"
                 >
-                  <SelectValue placeholder="Selecione um assunto" />
+                  <SelectValue placeholder={t("contact.selectInterest")} />
                 </SelectTrigger>
                 <SelectContent>
                   {interests.map((value) => (
                     <SelectItem key={value} value={value}>
-                      {value}
+                      {t(interestKeys[value])}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -174,7 +180,7 @@ export function ContactForm() {
               {fieldError("interest")}
             </div>
             <div className="field">
-              <label htmlFor="message">Sua mensagem</label>
+              <label htmlFor="message">{t("contact.message")}</label>
               <textarea
                 id="message"
                 name="message"
@@ -183,15 +189,15 @@ export function ContactForm() {
                 required
                 aria-invalid={!!errors.message}
                 aria-describedby={errors.message ? "message-error" : "message-help"}
-                placeholder="Como podemos contribuir com sua jornada?"
+                placeholder={t("contact.messagePlaceholder")}
               />
               <span className="field-help" id="message-help">
-                De 10 a 2.000 caracteres. Não envie dados sensíveis.
+                {t("contact.messageHelp")}
               </span>
               {fieldError("message")}
             </div>
             <div className="honeypot" aria-hidden="true">
-              <label htmlFor="website">Deixe este campo em branco</label>
+              <label htmlFor="website">{t("contact.honeypot")}</label>
               <input id="website" name="website" tabIndex={-1} autoComplete="off" />
             </div>
             <div className="consent">
@@ -204,9 +210,9 @@ export function ContactForm() {
                 aria-describedby={errors.consent ? "consent-error" : undefined}
               />
               <label htmlFor="consent">
-                Autorizo o uso dos meus dados para responder a este contato, conforme o{" "}
+                {t("contact.consentLead")}{" "}
                 <a href="/privacidade" target="_blank" rel="noreferrer">
-                  aviso de privacidade (nova aba)
+                  {t("contact.privacyLink")}
                 </a>
                 .
               </label>
@@ -214,7 +220,7 @@ export function ContactForm() {
             {fieldError("consent")}
             {status === "error" && (
               <p className="form-error" role="alert">
-                {message}
+                {translateText(locale, message)}
               </p>
             )}
             <button
@@ -224,16 +230,16 @@ export function ContactForm() {
             >
               {status === "loading" ? (
                 <>
-                  Enviando mensagem <Loader2 className="animate-spin" size={18} />
+                  {t("contact.sending")} <Loader2 className="animate-spin" size={18} />
                 </>
               ) : (
                 <>
-                  Enviar mensagem <ArrowUpRight size={18} />
+                  {t("contact.submit")} <ArrowUpRight size={18} />
                 </>
               )}
             </button>
             <span className="sr-only" role="status">
-              {status === "loading" ? "Aguarde, enviando sua mensagem." : ""}
+              {status === "loading" ? t("contact.wait") : ""}
             </span>
           </form>
         </>

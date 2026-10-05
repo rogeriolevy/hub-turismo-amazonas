@@ -44,6 +44,9 @@ import { lodgingHighlights } from "@/lib/lodging-highlights";
 import { CatalogCard } from "./shared";
 import { NearbyRecommendations } from "./nearby-recommendations";
 import { TravelSearchPanel } from "./travel-search";
+import { LocalizedTree } from "@/lib/i18n/localized-tree";
+import { getLocale } from "@/lib/i18n/server";
+import { translate, translateText } from "@/lib/i18n/messages";
 import "./provider-directory.css";
 
 const modules = {
@@ -90,11 +93,13 @@ const modules = {
     icon: Ship,
   },
 } as const;
-function Contacts({
+async function Contacts({
   entry,
 }: {
   entry: Pick<PublicProvider, "phone" | "email" | "address" | "website">;
 }) {
+  const locale = await getLocale();
+  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   return (
     <div className="provider-contacts">
       {entry.phone ? (
@@ -105,7 +110,7 @@ function Contacts({
       ) : (
         <span>
           <Phone size={15} aria-hidden="true" />
-          Telefone não informado
+          {t("directory.phoneMissing")}
         </span>
       )}
       {entry.email ? (
@@ -116,26 +121,29 @@ function Contacts({
       ) : (
         <span>
           <Mail size={15} aria-hidden="true" />
-          E-mail não informado
+          {t("directory.emailMissing")}
         </span>
       )}
       <span>
         <MapPin size={15} aria-hidden="true" />
-        <span>{entry.address || "Endereço não informado"}</span>
+        <span>{entry.address || t("directory.addressMissing")}</span>
       </span>
       {entry.website && (
         <a href={entry.website} target="_blank" rel="noopener noreferrer">
           <Globe size={15} aria-hidden="true" />
-          <span>Visitar site</span>
+          <span>{t("directory.visitSite")}</span>
           <ArrowUpRight size={14} aria-hidden="true" />
         </a>
       )}
     </div>
   );
 }
-export function ProviderCard({ entry }: { entry: PublicProvider }) {
+export async function ProviderCard({ entry }: { entry: PublicProvider }) {
+  const locale = await getLocale();
+  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   const category = entry.category as CatalogCategory;
   const Icon = modules[category].icon;
+  const categoryLabel = translateText(locale, modules[category].label);
   return (
     <article className="provider-card">
       <div className="provider-card-top">
@@ -161,18 +169,18 @@ export function ProviderCard({ entry }: { entry: PublicProvider }) {
       <h2>
         <Link href={"/prestadores/" + entry.id}>{entry.name}</Link>
       </h2>
-      <p className="provider-subtype">{entry.subtype || modules[category].label}</p>
+      <p className="provider-subtype">{entry.subtype || categoryLabel}</p>
       {entry.summary && <p className="provider-card-summary">{entry.summary}</p>}
       <Contacts entry={entry} />
       <div className="provider-card-bottom">
         <span>
           {category === "hospedagens"
-            ? "Diárias sob consulta"
+            ? t("directory.dailyOnRequest")
             : category === "agencias"
-              ? "Pacotes sob consulta"
+              ? t("directory.packagesOnRequest")
               : entry.editorial
-                ? "Conteúdo Hub"
-                : "Conheça o prestador"}
+                ? t("directory.hubContent")
+                : t("directory.meetProvider")}
         </span>
         <Link href={"/prestadores/" + entry.id} aria-label={"Ver detalhes de " + entry.name}>
           <ArrowUpRight size={21} aria-hidden="true" />
@@ -181,17 +189,20 @@ export function ProviderCard({ entry }: { entry: PublicProvider }) {
     </article>
   );
 }
-export function HubContentGrid({ items, title }: { items: CatalogItem[]; title: string }) {
+export async function HubContentGrid({ items, title }: { items: CatalogItem[]; title: string }) {
   if (!items.length) return null;
+  const locale = await getLocale();
+  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   return (
     <section className="provider-results hub-content-results" aria-label={title}>
       <div className="provider-section-heading">
         <div>
-          <p className="eyebrow">CONTEÚDO DA HUB</p>
-          <h2>{title}</h2>
+          <p className="eyebrow">{t("directory.hubContentLabel")}</p>
+          <h2>{translateText(locale, title)}</h2>
         </div>
         <span>
-          {items.length} {items.length === 1 ? "apresentação" : "apresentações"}
+          {items.length}{" "}
+          {t(items.length === 1 ? "directory.presentation" : "directory.presentations")}
         </span>
       </div>
       <div className="provider-grid">
@@ -202,31 +213,43 @@ export function HubContentGrid({ items, title }: { items: CatalogItem[]; title: 
     </section>
   );
 }
-function ProviderAttribution({
+async function ProviderAttribution({
   category,
   includesHub = false,
 }: {
   category: DirectoryCategory;
   includesHub?: boolean;
 }) {
+  const locale = await getLocale();
+  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   return (
     <div className="provider-attribution">
       <span>
-        Dados do{" "}
+        {t("directory.source")}{" "}
         <a href={providerSource(category)} target="_blank" rel="noreferrer">
           Cadastur · Ministério do Turismo
         </a>{" "}
-        sob a licença{" "}
+        {t("directory.license")}{" "}
         <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noreferrer">
           ODbL 1.0
         </a>
-        .{includesHub && " Conteúdos adicionais são mantidos pela Hub."}
+        .{includesHub && " " + t("directory.extraHubContent")}
       </span>
-      <a href={"/api/diretorio?categoria=" + category}>Dados abertos (JSON)</a>
+      <a href={"/api/diretorio?categoria=" + category}>{t("directory.openData")}</a>
     </div>
   );
 }
-function LodgingHighlights({ city, query, type }: { city: string; query: string; type: string }) {
+async function LodgingHighlights({
+  city,
+  query,
+  type,
+}: {
+  city: string;
+  query: string;
+  type: string;
+}) {
+  const locale = await getLocale();
+  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   const fold = (s: string) =>
     s
       .normalize("NFD")
@@ -243,10 +266,10 @@ function LodgingHighlights({ city, query, type }: { city: string; query: string;
     <section className="lodging-highlights" aria-labelledby="lodging-highlights-title">
       <div className="provider-section-heading">
         <div>
-          <p className="eyebrow">PARA PLANEJAR SUA ESTADIA</p>
-          <h2 id="lodging-highlights-title">Hospedagens em Maués e região</h2>
+          <p className="eyebrow">{t("directory.planStay")}</p>
+          <h2 id="lodging-highlights-title">{t("directory.stayInMaués")}</h2>
         </div>
-        <span>Informações dos hotéis</span>
+        <span>{t("directory.hotelInfo")}</span>
       </div>
       <div className="lodging-highlight-grid">
         {highlights.map((item) => (
@@ -259,10 +282,11 @@ function LodgingHighlights({ city, query, type }: { city: string; query: string;
             <p>{item.description}</p>
             <strong className="lodging-rate">
               {item.price === null ? (
-                "Diária sob consulta"
+                t("directory.dailyOnRequest")
               ) : (
                 <>
-                  <small>A partir de</small>R$ {item.price},00 <span>/ noite</span>
+                  <small>{t("directory.from")}</small>R$ {item.price},00{" "}
+                  <span>{t("directory.night")}</span>
                 </>
               )}
             </strong>
@@ -287,6 +311,9 @@ export async function ProviderDirectory({
   search?: DirectorySearch;
 }) {
   const db = getDatabase();
+  const locale = await getLocale();
+  const t = (key: Parameters<typeof translate>[1], values?: Record<string, string | number>) =>
+    translate(locale, key, values);
   const results = await searchProviders(db, category, search);
   const staySearch = normalizeStaySearch(search);
   const info = modules[category];
@@ -317,32 +344,133 @@ export async function ProviderDirectory({
   return (
     <>
       <Header />
-      <main id="conteudo" tabIndex={-1} className={"provider-page provider-" + category}>
-        <section className="provider-hero">
-          <div className="container provider-hero-inner">
-            <div>
-              <p className="eyebrow">HUB. {info.label.toLocaleUpperCase("pt-BR")}</p>
-              <h1>{info.title}</h1>
-              <p>{info.description}</p>
-              <span className="provider-hero-note">
-                <MapPin size={16} aria-hidden="true" />
-                Todo o Amazonas, com Maués e região em destaque.
-              </span>
+      <LocalizedTree>
+        <main id="conteudo" tabIndex={-1} className={"provider-page provider-" + category}>
+          <section className="provider-hero">
+            <div className="container provider-hero-inner">
+              <div>
+                <p className="eyebrow">HUB. {info.label.toLocaleUpperCase("pt-BR")}</p>
+                <h1>{info.title}</h1>
+                <p>{info.description}</p>
+                <span className="provider-hero-note">
+                  <MapPin size={16} aria-hidden="true" />
+                  Todo o Amazonas, com Maués e região em destaque.
+                </span>
+              </div>
+              <div className="provider-hero-symbol" aria-hidden="true">
+                <Icon size={96} strokeWidth={1} />
+                <span>AMAZONAS</span>
+              </div>
             </div>
-            <div className="provider-hero-symbol" aria-hidden="true">
-              <Icon size={96} strokeWidth={1} />
-              <span>AMAZONAS</span>
-            </div>
-          </div>
-        </section>
-        <div className="container">
-          <section className="provider-search-area" aria-label="Encontre um prestador">
-            {category === "hospedagens" && (
-              <TravelSearchPanel active="hospedagens">
-                <form className="travel-search-form" role="search" action="/hospedagens">
-                  <label className="travel-search-field">
-                    <MapPin size={21} aria-hidden="true" />
-                    <span>Destino</span>
+          </section>
+          <div className="container">
+            <section className="provider-search-area" aria-label="Encontre um prestador">
+              {category === "hospedagens" && (
+                <TravelSearchPanel active="hospedagens">
+                  <form className="travel-search-form" role="search" action="/hospedagens">
+                    <label className="travel-search-field">
+                      <MapPin size={21} aria-hidden="true" />
+                      <span>Destino</span>
+                      <select name="cidade" defaultValue={results.city}>
+                        <option value="">Todo o Amazonas</option>
+                        {results.cities.map((city) => (
+                          <option key={city}>{city}</option>
+                        ))}
+                        {results.city && !results.cities.includes(results.city) && (
+                          <option>{results.city}</option>
+                        )}
+                      </select>
+                    </label>
+                    <div className="travel-search-dates">
+                      <label className="travel-search-field">
+                        <CalendarDays size={21} aria-hidden="true" />
+                        <span>Chegada</span>
+                        <input
+                          type="date"
+                          name="entrada"
+                          min={todayInManaus()}
+                          defaultValue={staySearch.entrada}
+                          aria-label="Data de chegada"
+                        />
+                      </label>
+                      <label className="travel-search-field">
+                        <CalendarDays size={21} aria-hidden="true" />
+                        <span>Saída</span>
+                        <input
+                          type="date"
+                          name="saida"
+                          min={staySearch.entrada || todayInManaus()}
+                          defaultValue={staySearch.saida}
+                          aria-label="Data de saída"
+                        />
+                      </label>
+                    </div>
+                    <label className="travel-search-field">
+                      <UsersRound size={21} aria-hidden="true" />
+                      <span>Pessoas</span>
+                      <select name="pessoas" defaultValue={staySearch.pessoas}>
+                        {Array.from({ length: 20 }, (_, index) => index + 1).map((count) => (
+                          <option key={count} value={count}>
+                            {count} {count === 1 ? "pessoa" : "pessoas"}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button className="travel-search-submit" type="submit">
+                      Buscar <Search size={18} aria-hidden="true" />
+                    </button>
+                    <details
+                      className="travel-search-advanced"
+                      open={Boolean(results.q || results.type)}
+                    >
+                      <summary>Mais filtros</summary>
+                      <div className="travel-search-advanced-fields">
+                        <label>
+                          Nome ou palavra-chave
+                          <input
+                            name="q"
+                            defaultValue={results.q}
+                            maxLength={100}
+                            placeholder="Ex.: pousada, hotel ou cidade"
+                          />
+                        </label>
+                        <label>
+                          Tipo de hospedagem
+                          <select name="tipo" defaultValue={results.type}>
+                            <option value="">Todos os tipos</option>
+                            {results.types.map((type) => (
+                              <option key={type}>{type}</option>
+                            ))}
+                            {results.type && !results.types.includes(results.type) && (
+                              <option>{results.type}</option>
+                            )}
+                          </select>
+                        </label>
+                      </div>
+                    </details>
+                  </form>
+                  <p className="travel-search-note">
+                    As datas e o número de pessoas seguem para os pedidos de hospedagens da Hub. A
+                    disponibilidade é confirmada pelo estabelecimento.
+                  </p>
+                </TravelSearchPanel>
+              )}
+              {category !== "hospedagens" && (
+                <form className="provider-search" role="search" action={"/" + category}>
+                  <label>
+                    <span>O que você procura?</span>
+                    <div>
+                      <Search size={18} aria-hidden="true" />
+                      <input
+                        name="q"
+                        defaultValue={results.q}
+                        maxLength={100}
+                        placeholder="Nome, cidade ou tipo de serviço"
+                      />
+                    </div>
+                  </label>
+                  <label>
+                    <span>Município</span>
                     <select name="cidade" defaultValue={results.city}>
                       <option value="">Todo o Amazonas</option>
                       {results.cities.map((city) => (
@@ -353,220 +481,121 @@ export async function ProviderDirectory({
                       )}
                     </select>
                   </label>
-                  <div className="travel-search-dates">
-                    <label className="travel-search-field">
-                      <CalendarDays size={21} aria-hidden="true" />
-                      <span>Chegada</span>
-                      <input
-                        type="date"
-                        name="entrada"
-                        min={todayInManaus()}
-                        defaultValue={staySearch.entrada}
-                        aria-label="Data de chegada"
-                      />
-                    </label>
-                    <label className="travel-search-field">
-                      <CalendarDays size={21} aria-hidden="true" />
-                      <span>Saída</span>
-                      <input
-                        type="date"
-                        name="saida"
-                        min={staySearch.entrada || todayInManaus()}
-                        defaultValue={staySearch.saida}
-                        aria-label="Data de saída"
-                      />
-                    </label>
-                  </div>
-                  <label className="travel-search-field">
-                    <UsersRound size={21} aria-hidden="true" />
-                    <span>Pessoas</span>
-                    <select name="pessoas" defaultValue={staySearch.pessoas}>
-                      {Array.from({ length: 20 }, (_, index) => index + 1).map((count) => (
-                        <option key={count} value={count}>
-                          {count} {count === 1 ? "pessoa" : "pessoas"}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <button className="travel-search-submit" type="submit">
-                    Buscar <Search size={18} aria-hidden="true" />
+                  <button className="button button-dark" type="submit">
+                    Buscar <ArrowRight size={17} aria-hidden="true" />
                   </button>
-                  <details
-                    className="travel-search-advanced"
-                    open={Boolean(results.q || results.type)}
-                  >
-                    <summary>Mais filtros</summary>
-                    <div className="travel-search-advanced-fields">
-                      <label>
-                        Nome ou palavra-chave
-                        <input
-                          name="q"
-                          defaultValue={results.q}
-                          maxLength={100}
-                          placeholder="Ex.: pousada, hotel ou cidade"
-                        />
-                      </label>
-                      <label>
-                        Tipo de hospedagem
-                        <select name="tipo" defaultValue={results.type}>
-                          <option value="">Todos os tipos</option>
-                          {results.types.map((type) => (
-                            <option key={type}>{type}</option>
-                          ))}
-                          {results.type && !results.types.includes(results.type) && (
-                            <option>{results.type}</option>
-                          )}
-                        </select>
-                      </label>
-                    </div>
-                  </details>
                 </form>
-                <p className="travel-search-note">
-                  As datas e o número de pessoas seguem para os pedidos de hospedagens da Hub. A
-                  disponibilidade é confirmada pelo estabelecimento.
-                </p>
-              </TravelSearchPanel>
-            )}
-            {category !== "hospedagens" && (
-              <form className="provider-search" role="search" action={"/" + category}>
-                <label>
-                  <span>O que você procura?</span>
-                  <div>
-                    <Search size={18} aria-hidden="true" />
-                    <input
-                      name="q"
-                      defaultValue={results.q}
-                      maxLength={100}
-                      placeholder="Nome, cidade ou tipo de serviço"
-                    />
-                  </div>
-                </label>
-                <label>
-                  <span>Município</span>
-                  <select name="cidade" defaultValue={results.city}>
-                    <option value="">Todo o Amazonas</option>
-                    {results.cities.map((city) => (
-                      <option key={city}>{city}</option>
-                    ))}
-                    {results.city && !results.cities.includes(results.city) && (
-                      <option>{results.city}</option>
-                    )}
-                  </select>
-                </label>
-                <button className="button button-dark" type="submit">
-                  Buscar <ArrowRight size={17} aria-hidden="true" />
-                </button>
-              </form>
-            )}
-            <div className="provider-city-links">
-              <span>Explore a região:</span>
-              {regionCities.map((city) => (
-                <Link
-                  key={city}
-                  href={directoryUrl(undefined, city)}
-                  aria-current={city === results.city ? "page" : undefined}
-                >
-                  {city}
-                </Link>
-              ))}
-              {(results.city ||
-                results.q ||
-                results.type ||
-                staySearch.entrada ||
-                staySearch.pessoas !== "1") && <Link href={"/" + category}>Limpar filtros</Link>}
-            </div>
-          </section>
-          {category === "hospedagens" && (
-            <LodgingHighlights city={results.city} query={results.q} type={results.type} />
-          )}
-          {!!hotels.length && (
-            <section className="provider-bookable">
-              <h2>Reserve pela Hub</h2>
-              <div className="catalog-grid">
-                {hotels.map((hotel) => (
-                  <CatalogCard
-                    key={hotel.id}
-                    kind="hotel"
-                    href={
-                      "/hospedagens/" +
-                      hotel.slug +
-                      (staySearch.entrada || staySearch.pessoas !== "1"
-                        ? "?" + staySearchQuery(staySearch)
-                        : "")
-                    }
-                    title={companyDisplayName(hotel)}
-                    city={hotel.city}
-                    subtype={companyActivityLabels[hotel.activity_type]}
-                    description={hotel.description}
-                    price={
-                      hotel.from_price === null
-                        ? "Quartos em preparação"
-                        : "A partir de " + money(hotel.from_price) + " / noite"
-                    }
-                  />
+              )}
+              <div className="provider-city-links">
+                <span>Explore a região:</span>
+                {regionCities.map((city) => (
+                  <Link
+                    key={city}
+                    href={directoryUrl(undefined, city)}
+                    aria-current={city === results.city ? "page" : undefined}
+                  >
+                    {city}
+                  </Link>
                 ))}
+                {(results.city ||
+                  results.q ||
+                  results.type ||
+                  staySearch.entrada ||
+                  staySearch.pessoas !== "1") && <Link href={"/" + category}>Limpar filtros</Link>}
               </div>
             </section>
-          )}
-          <section
-            id="resultados"
-            className="provider-results"
-            aria-labelledby="provider-results-title"
-          >
-            <div className="provider-section-heading">
-              <div>
-                <p className="eyebrow">EXPLORE O AMAZONAS</p>
-                <h2 id="provider-results-title">{results.city || info.label}</h2>
-              </div>
-              <span>
-                {results.total.toLocaleString("pt-BR")}{" "}
-                {results.total === 1 ? "cadastro" : "cadastros"}
-                {results.q && " · “" + results.q + "”"}
-                {results.type && " · " + results.type}
-              </span>
-            </div>
-            {results.entries.length ? (
-              <div className="provider-grid">
-                {results.entries.map((entry) => (
-                  <ProviderCard key={entry.id} entry={entry} />
-                ))}
-              </div>
-            ) : (
-              <div className="provider-empty">
-                <Icon size={36} aria-hidden="true" />
-                <h3>Nenhum cadastro encontrado.</h3>
-                <p>Experimente outro nome ou município.</p>
-                <Link className="text-link" href={"/" + category}>
-                  Ver todos no Amazonas
-                </Link>
-              </div>
+            {category === "hospedagens" && (
+              <LodgingHighlights city={results.city} query={results.q} type={results.type} />
             )}
-            {results.pages > 1 && (
-              <nav className="provider-pagination" aria-label="Páginas de prestadores">
-                {results.page > 1 ? (
-                  <Link href={pageUrl(results.page - 1)}>← Anterior</Link>
-                ) : (
-                  <span />
-                )}
+            {!!hotels.length && (
+              <section className="provider-bookable">
+                <h2>Reserve pela Hub</h2>
+                <div className="catalog-grid">
+                  {hotels.map((hotel) => (
+                    <CatalogCard
+                      key={hotel.id}
+                      kind="hotel"
+                      href={
+                        "/hospedagens/" +
+                        hotel.slug +
+                        (staySearch.entrada || staySearch.pessoas !== "1"
+                          ? "?" + staySearchQuery(staySearch)
+                          : "")
+                      }
+                      title={companyDisplayName(hotel)}
+                      city={hotel.city}
+                      subtype={companyActivityLabels[hotel.activity_type]}
+                      description={hotel.description}
+                      price={
+                        hotel.from_price === null
+                          ? t("directory.roomsPreparing")
+                          : t("directory.fromNightPrice", { price: money(hotel.from_price) })
+                      }
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+            <section
+              id="resultados"
+              className="provider-results"
+              aria-labelledby="provider-results-title"
+            >
+              <div className="provider-section-heading">
+                <div>
+                  <p className="eyebrow">EXPLORE O AMAZONAS</p>
+                  <h2 id="provider-results-title">{results.city || info.label}</h2>
+                </div>
                 <span>
-                  Página {results.page} de {results.pages}
+                  {results.total.toLocaleString("pt-BR")}{" "}
+                  {results.total === 1 ? "cadastro" : "cadastros"}
+                  {results.q && " · “" + results.q + "”"}
+                  {results.type && " · " + results.type}
                 </span>
-                {results.page < results.pages ? (
-                  <Link href={pageUrl(results.page + 1)}>Próxima →</Link>
-                ) : (
-                  <span />
-                )}
-              </nav>
+              </div>
+              {results.entries.length ? (
+                <div className="provider-grid">
+                  {results.entries.map((entry) => (
+                    <ProviderCard key={entry.id} entry={entry} />
+                  ))}
+                </div>
+              ) : (
+                <div className="provider-empty">
+                  <Icon size={36} aria-hidden="true" />
+                  <h3>Nenhum cadastro encontrado.</h3>
+                  <p>Experimente outro nome ou município.</p>
+                  <Link className="text-link" href={"/" + category}>
+                    Ver todos no Amazonas
+                  </Link>
+                </div>
+              )}
+              {results.pages > 1 && (
+                <nav className="provider-pagination" aria-label="Páginas de prestadores">
+                  {results.page > 1 ? (
+                    <Link href={pageUrl(results.page - 1)}>← Anterior</Link>
+                  ) : (
+                    <span />
+                  )}
+                  <span>
+                    Página {results.page} de {results.pages}
+                  </span>
+                  {results.page < results.pages ? (
+                    <Link href={pageUrl(results.page + 1)}>Próxima →</Link>
+                  ) : (
+                    <span />
+                  )}
+                </nav>
+              )}
+            </section>
+            {results.entries.some((entry) => entry.source === "cadastur") && (
+              <ProviderAttribution
+                category={category}
+                includesHub={results.entries.some((entry) => entry.editorial)}
+              />
             )}
-          </section>
-          {results.entries.some((entry) => entry.source === "cadastur") && (
-            <ProviderAttribution
-              category={category}
-              includesHub={results.entries.some((entry) => entry.editorial)}
-            />
-          )}
-        </div>
-      </main>
+          </div>
+        </main>
+      </LocalizedTree>
       <Footer photoCredit={false} />
     </>
   );
@@ -586,113 +615,115 @@ export async function ProviderDetail({ id }: { id: string }) {
   return (
     <>
       <Header />
-      <main
-        id="conteudo"
-        tabIndex={-1}
-        className={"provider-page provider-detail provider-" + category}
-      >
-        <div className="container">
-          <Link href={directoryHref} className="text-link">
-            ← {info.label}
-          </Link>
-          <div className="provider-detail-layout">
-            <section>
-              <div className="provider-detail-art">
-                {entry.images[0] ? (
-                  <Image
-                    unoptimized
-                    src={entry.images[0]}
-                    alt={`Imagem de ${entry.name}`}
-                    width={1600}
-                    height={1100}
-                    sizes="(max-width: 800px) 100vw, 66vw"
-                  />
-                ) : (
-                  <Icon size={82} strokeWidth={1} aria-hidden="true" />
-                )}
-                <span>{info.label} · Amazonas</span>
-              </div>
-              <p className="eyebrow">
-                {entry.city} · {entry.uf}
-              </p>
-              <h1>{entry.name}</h1>
-              <p>{entry.subtype || info.label}</p>
-              {entry.summary && <p className="provider-detail-summary">{entry.summary}</p>}
-              {entry.description && <p className="preserve-lines">{entry.description}</p>}
-              {entry.details && (
-                <section className="provider-extra-details" aria-label="Informações adicionais">
-                  <h2>Mais informações</h2>
-                  <p className="preserve-lines">{entry.details}</p>
-                </section>
-              )}
-              {entry.images.length > 1 && (
-                <div className="provider-detail-gallery" aria-label="Outras imagens">
-                  {entry.images.slice(1).map((image, index) => (
+      <LocalizedTree>
+        <main
+          id="conteudo"
+          tabIndex={-1}
+          className={"provider-page provider-detail provider-" + category}
+        >
+          <div className="container">
+            <Link href={directoryHref} className="text-link">
+              ← {info.label}
+            </Link>
+            <div className="provider-detail-layout">
+              <section>
+                <div className="provider-detail-art">
+                  {entry.images[0] ? (
                     <Image
                       unoptimized
-                      key={image}
-                      src={image}
-                      alt={`Imagem ${index + 2} de ${entry.name}`}
-                      width={640}
-                      height={480}
-                      sizes="(max-width: 600px) 33vw, 20vw"
-                      loading="lazy"
+                      src={entry.images[0]}
+                      alt={`Imagem de ${entry.name}`}
+                      width={1600}
+                      height={1100}
+                      sizes="(max-width: 800px) 100vw, 66vw"
                     />
-                  ))}
+                  ) : (
+                    <Icon size={82} strokeWidth={1} aria-hidden="true" />
+                  )}
+                  <span>{info.label} · Amazonas</span>
                 </div>
-              )}
-              {category === "guias" && entry.languages && (
-                <dl className="provider-facts">
-                  <div>
-                    <dt>Idiomas de atendimento</dt>
-                    <dd>{entry.languages}</dd>
-                  </div>
-                </dl>
-              )}
-            </section>
-            <aside className="provider-contact-panel">
-              <p className="eyebrow">PLANEJE SUA VISITA</p>
-              <h2>Fale com {category === "guias" ? "o profissional" : "o estabelecimento"}</h2>
-              <Contacts entry={entry} />
-              {entry.phone && (
-                <a className="button button-dark" href={"tel:" + entry.phone}>
-                  Ligar agora <Phone size={17} aria-hidden="true" />
-                </a>
-              )}
-              {entry.website && (
-                <a
-                  className="button button-outline"
-                  href={entry.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Acessar site <ArrowUpRight size={17} aria-hidden="true" />
-                </a>
-              )}
-              {(category === "hospedagens" || category === "agencias") && (
-                <p>
-                  {category === "hospedagens"
-                    ? "Consulte diárias, quartos e disponibilidade para sua viagem."
-                    : "Consulte roteiros, pacotes e valores para suas datas."}
+                <p className="eyebrow">
+                  {entry.city} · {entry.uf}
                 </p>
-              )}
-            </aside>
+                <h1>{entry.name}</h1>
+                <p>{entry.subtype || info.label}</p>
+                {entry.summary && <p className="provider-detail-summary">{entry.summary}</p>}
+                {entry.description && <p className="preserve-lines">{entry.description}</p>}
+                {entry.details && (
+                  <section className="provider-extra-details" aria-label="Informações adicionais">
+                    <h2>Mais informações</h2>
+                    <p className="preserve-lines">{entry.details}</p>
+                  </section>
+                )}
+                {entry.images.length > 1 && (
+                  <div className="provider-detail-gallery" aria-label="Outras imagens">
+                    {entry.images.slice(1).map((image, index) => (
+                      <Image
+                        unoptimized
+                        key={image}
+                        src={image}
+                        alt={`Imagem ${index + 2} de ${entry.name}`}
+                        width={640}
+                        height={480}
+                        sizes="(max-width: 600px) 33vw, 20vw"
+                        loading="lazy"
+                      />
+                    ))}
+                  </div>
+                )}
+                {category === "guias" && entry.languages && (
+                  <dl className="provider-facts">
+                    <div>
+                      <dt>Idiomas de atendimento</dt>
+                      <dd>{entry.languages}</dd>
+                    </div>
+                  </dl>
+                )}
+              </section>
+              <aside className="provider-contact-panel">
+                <p className="eyebrow">PLANEJE SUA VISITA</p>
+                <h2>Fale com {category === "guias" ? "o profissional" : "o estabelecimento"}</h2>
+                <Contacts entry={entry} />
+                {entry.phone && (
+                  <a className="button button-dark" href={"tel:" + entry.phone}>
+                    Ligar agora <Phone size={17} aria-hidden="true" />
+                  </a>
+                )}
+                {entry.website && (
+                  <a
+                    className="button button-outline"
+                    href={entry.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Acessar site <ArrowUpRight size={17} aria-hidden="true" />
+                  </a>
+                )}
+                {(category === "hospedagens" || category === "agencias") && (
+                  <p>
+                    {category === "hospedagens"
+                      ? "Consulte diárias, quartos e disponibilidade para sua viagem."
+                      : "Consulte roteiros, pacotes e valores para suas datas."}
+                  </p>
+                )}
+              </aside>
+            </div>
+            {category === "hospedagens" && entry.source === "cadastur" && (
+              <NearbyRecommendations providerId={entry.id} source="cadastur" />
+            )}
+            {entry.source === "cadastur" ? (
+              <ProviderAttribution
+                category={category as DirectoryCategory}
+                includesHub={entry.editorial}
+              />
+            ) : (
+              <p className="provider-hub-credit">
+                Conteúdo enviado e mantido pela equipe da Hub Amazonas.
+              </p>
+            )}
           </div>
-          {category === "hospedagens" && entry.source === "cadastur" && (
-            <NearbyRecommendations providerId={entry.id} source="cadastur" />
-          )}
-          {entry.source === "cadastur" ? (
-            <ProviderAttribution
-              category={category as DirectoryCategory}
-              includesHub={entry.editorial}
-            />
-          ) : (
-            <p className="provider-hub-credit">
-              Conteúdo enviado e mantido pela equipe da Hub Amazonas.
-            </p>
-          )}
-        </div>
-      </main>
+        </main>
+      </LocalizedTree>
       <Footer photoCredit={false} />
     </>
   );

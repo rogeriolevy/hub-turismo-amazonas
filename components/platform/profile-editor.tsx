@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Check, ChevronDown, PencilLine } from "lucide-react";
 import { profileAvatars, profileAvatarUrl, type ProfileAvatarKey } from "@/lib/profile-avatars";
+import { useLanguage } from "@/components/site/language-provider";
 
 export function ProfileEditor({
   name: savedName,
@@ -18,6 +19,7 @@ export function ProfileEditor({
   defaultOpen?: boolean;
 }) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [name, setName] = useState(savedName);
   const [avatar, setAvatar] = useState(savedAvatar);
   const [busy, setBusy] = useState(false);
@@ -38,15 +40,14 @@ export function ProfileEditor({
         signal: AbortSignal.timeout(15000),
       });
       const payload = await response.json();
-      if (!response.ok)
-        throw new Error(payload.error?.message || "Não foi possível salvar seu perfil.");
+      if (!response.ok) throw new Error(payload.error?.message || t("profile.saveFailed"));
       setSaved(true);
       router.refresh();
     } catch (cause) {
       setError(
         cause instanceof Error && cause.name !== "TypeError" && cause.name !== "TimeoutError"
           ? cause.message
-          : "Verifique sua conexão e tente novamente.",
+          : t("auth.connectionRetry"),
       );
     } finally {
       setBusy(false);
@@ -57,13 +58,13 @@ export function ProfileEditor({
     <details className="account-profile-editor" open={defaultOpen || undefined}>
       <summary>
         <span>
-          <PencilLine size={17} aria-hidden="true" /> Editar perfil
+          <PencilLine size={17} aria-hidden="true" /> {t("profile.edit")}
         </span>
         <ChevronDown className="account-profile-chevron" size={17} aria-hidden="true" />
       </summary>
       <form onSubmit={submit} aria-busy={busy}>
         <label className="account-profile-name">
-          <span>Como podemos chamar você?</span>
+          <span>{t("profile.prompt")}</span>
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
@@ -75,12 +76,12 @@ export function ProfileEditor({
           />
         </label>
         <div className="account-avatar-field">
-          <span>Escolha seu avatar</span>
+          <span>{t("profile.chooseAvatar")}</span>
           <div
             className="account-avatar-options"
             id="account-avatar-options"
             role="radiogroup"
-            aria-label="Avatares"
+            aria-label={t("profile.avatars")}
           >
             {profileAvatars.map((item) => (
               <label
@@ -105,7 +106,7 @@ export function ProfileEditor({
           </div>
         </div>
         <p className="account-profile-email">
-          E-mail de acesso: <strong>{email}</strong>
+          {t("profile.accessEmail")} <strong>{email}</strong>
         </p>
         {error && (
           <p className="account-profile-error" role="alert">
@@ -114,11 +115,11 @@ export function ProfileEditor({
         )}
         {saved && (
           <p className="account-profile-success" role="status">
-            <Check size={16} aria-hidden="true" /> Perfil atualizado.
+            <Check size={16} aria-hidden="true" /> {t("profile.updated")}
           </p>
         )}
         <button type="submit" className="account-profile-save" disabled={busy}>
-          {busy ? "Salvando…" : "Salvar alterações"}
+          {busy ? t("profile.saving") : t("profile.save")}
         </button>
       </form>
     </details>

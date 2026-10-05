@@ -1,29 +1,37 @@
 import type { Metadata } from "next";
 import { siteUrl } from "@/lib/site-config";
+import { getLocale } from "@/lib/i18n/server";
+import { htmlLanguage, translate } from "@/lib/i18n/messages";
+import { LanguageProvider } from "@/components/site/language-provider";
 import "./globals.css";
 import "./platform.css";
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: {
-    default: "Hub Turismo Amazonas | Tecnologia que acolhe",
-    template: "%s | Hub Turismo Amazonas",
-  },
-  description:
-    "Tecnologia com raízes amazônicas. Conheça a proposta da Hub Turismo Amazonas para conectar pessoas e apoiar hotéis e pousadas de Maués.",
-  alternates: { canonical: "/" },
-  openGraph: {
-    type: "website",
-    locale: "pt_BR",
-    siteName: "Hub Turismo Amazonas",
-    title: "Hub Turismo Amazonas | Tecnologia que acolhe",
-    description: "Conectando pessoas. Valorizando a Amazônia.",
-  },
-  icons: { icon: "/favicon.svg" },
-};
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return {
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: translate(locale, "site.title"),
+      template: "%s | Hub Turismo Amazonas",
+    },
+    description: translate(locale, "site.description"),
+    alternates: { canonical: "/" },
+    openGraph: {
+      type: "website",
+      locale: locale === "pt" ? "pt_BR" : locale === "en" ? "en_US" : "es_ES",
+      siteName: "Hub Turismo Amazonas",
+      title: translate(locale, "site.openGraphTitle"),
+      description: translate(locale, "site.openGraphDescription"),
+    },
+    icons: { icon: "/favicon.svg" },
+  };
+}
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const locale = await getLocale();
   return (
-    <html lang="pt-BR">
-      <body>{children}</body>
+    <html lang={htmlLanguage(locale)}>
+      <body>
+        <LanguageProvider initialLocale={locale}>{children}</LanguageProvider>
+      </body>
     </html>
   );
 }

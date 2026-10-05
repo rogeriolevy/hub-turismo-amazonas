@@ -981,3 +981,106 @@ svg {
     font-size: 24px;
   }
 }
+.language-switcher {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  z-index: 40;
+}
+.language-trigger {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 3px;
+  color: #304453;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  list-style: none;
+}
+.language-trigger::-webkit-details-marker {
+  display: none;
+}
+.language-trigger:hover,
+.language-switcher[open] .language-trigger {
+  background: #f4f6f4;
+  color: #174d3c;
+}
+.language-trigger:focus-visible {
+  outline: 2px solid #bd7c18;
+  outline-offset: 2px;
+}
+.language-chevron {
+  transition: transform 0.16s ease;
+}
+.language-switcher[open] .language-chevron {
+  transform: rotate(180deg);
+}
+.language-menu {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 0;
+  display: grid;
+  min-width: 48px;
+  padding: 3px;
+  border: 1px solid #e7e9e6;
+  border-radius: 3px;
+  background: #fff;
+  box-shadow: 0 5px 16px rgb(24 41 32 / 12%);
+}
+.language-option {
+  display: inline-flex;
+  min-width: 40px;
+  min-height: 24px;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 5px;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: #3f4b45;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: left;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease;
+}
+.language-option[aria-current="true"] {
+  background: #f1f4f1;
+  color: #174d3c;
+}
+.language-option:hover,
+.language-option:focus-visible {
+  background: #edf3ee;
+  color: #174d3c;
+}
+.language-option:focus-visible {
+  outline: 2px solid #bd7c18;
+  outline-offset: 2px;
+}
+.language-flag {
+  font-size: 12px;
+  line-height: 1;
+}
+.language-code {
+  letter-spacing: 0.1px;
+}
+@media (max-width: 480px) {
+  .auth-screen-top {
+    flex-wrap: wrap;
+  }
+  .auth-screen-top .language-switcher {
+    order: 2;
+    margin-left: auto;
+  }
+  .auth-screen-top .auth-back-link {
+    order: 3;
+  }
+}

@@ -12,6 +12,8 @@ import {
   decisionSchema,
   staySchema,
 } from "@/lib/platform-schema";
+import { useLanguage } from "@/components/site/language-provider";
+import { translateText } from "@/lib/i18n/messages";
 export type Field = {
   name: string;
   label: string;
@@ -59,6 +61,8 @@ export function ActionForm({
   label?: string;
   reset?: boolean;
 }) {
+  const { locale } = useLanguage();
+  const localize = (value: string) => translateText(locale, value);
   const router = useRouter(),
     [busy, setBusy] = useState(false),
     [feedback, setFeedback] = useState(""),
@@ -116,14 +120,14 @@ export function ActionForm({
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error?.message || "Não foi possível salvar.");
       setSuccess(true);
-      setFeedback("Alteração salva.");
+      setFeedback(localize("Alteração salva."));
       if (reset) formRef.current?.reset();
       router.refresh();
     } catch (error) {
       setFeedback(
         error instanceof Error && error.name !== "TypeError" && error.name !== "TimeoutError"
           ? error.message
-          : "Não foi possível conectar. Confira a conexão e tente novamente.",
+          : localize("Não foi possível conectar. Confira a conexão e tente novamente."),
       );
     } finally {
       setBusy(false);
@@ -147,7 +151,7 @@ export function ActionForm({
             className={field.type === "checkbox" ? "platform-checkbox" : "field"}
             key={field.name}
           >
-            <label htmlFor={fieldId}>{field.label}</label>
+            <label htmlFor={fieldId}>{localize(field.label)}</label>
             {field.type === "textarea" ? (
               <textarea
                 id={fieldId}
@@ -166,10 +170,12 @@ export function ActionForm({
                 defaultValue={String(value ?? "")}
                 disabled={busy}
               >
-                {!field.options?.some((o) => o.value === "") && <option value="">Selecione</option>}
+                {!field.options?.some((o) => o.value === "") && (
+                  <option value="">{localize("Selecione")}</option>
+                )}
                 {field.options?.map((option) => (
                   <option key={option.value} value={option.value}>
-                    {option.label}
+                    {localize(option.label)}
                   </option>
                 ))}
               </select>
@@ -197,7 +203,7 @@ export function ActionForm({
                 disabled={busy}
               />
             )}{" "}
-            {field.hint && <span className="field-help">{field.hint}</span>}
+            {field.hint && <span className="field-help">{localize(field.hint)}</span>}
           </div>
         );
       })}
@@ -210,7 +216,7 @@ export function ActionForm({
         </p>
       )}
       <button type="submit" className="button button-dark" disabled={busy}>
-        {busy ? "Salvando…" : label}
+        {busy ? localize("Salvando…") : localize(label)}
       </button>
     </form>
   );

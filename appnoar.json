@@ -1,0 +1,26 @@
+{
+  "services": {
+    "web": {
+      "build": { "context": "." },
+      "port": 3000,
+      "public": true,
+      "healthcheck": { "path": "/api/health", "timeoutSeconds": 180 },
+      "vars": [
+        "BETTER_AUTH_SECRET",
+        "ADMIN_EMAILS",
+        "TURNSTILE_SITE_KEY",
+        "TURNSTILE_SECRET_KEY"
+      ]
+    }
+  },
+  "addons": { "db": "postgres" },
+  "env": {
+    "NODE_ENV": "production",
+    "HOST": "0.0.0.0",
+    "PORT": "3000",
+    "AUTO_MIGRATE": "true",
+    "CATALOG_MEDIA_STORAGE": "postgres",
+    "SITE_URL": "https://hub-turismo-amazonas.appnoar.com.br",
+    "TRUST_PROXY_IP_HEADER": "x-forwarded-for"
+  }
+}

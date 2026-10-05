@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ImagePlus, LoaderCircle, Trash2, Upload, X } from "lucide-react";
 import { catalogItemSchema } from "@/lib/platform-schema";
+import { LocalizedClientTree } from "@/components/site/localized-client-tree";
 import {
   catalogCategoryLabels,
   type CatalogCategory,
@@ -173,6 +174,7 @@ export function CatalogContentForm({
   }
 
   return (
+    <LocalizedClientTree>
     <form className="catalog-content-form" onSubmit={submit}>
       <div className="catalog-content-form-grid">
         <label htmlFor={`${prefix}-name`}>
@@ -382,5 +384,6 @@ export function CatalogContentForm({
         )}
       </div>
     </form>
+    </LocalizedClientTree>
   );
 }

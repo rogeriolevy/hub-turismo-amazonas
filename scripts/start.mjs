@@ -3,8 +3,9 @@ import { resolve } from "node:path";
 
 const root = process.cwd();
 const onRender = process.env.RENDER === "true";
+const autoMigrate = onRender || process.env.AUTO_MIGRATE === "true";
 
-if (onRender) {
+if (autoMigrate) {
   const migration =
     process.env.DATABASE_URL || process.env.POSTGRES_URL ? "migrate-postgres.ts" : "migrate.ts";
   const result = spawnSync(
@@ -19,7 +20,7 @@ if (onRender) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-const host = onRender ? "0.0.0.0" : "127.0.0.1";
+const host = process.env.HOST || (onRender ? "0.0.0.0" : "127.0.0.1");
 const port = process.env.PORT || "3005";
 const nextCli = resolve(root, "node_modules", "next", "dist", "bin", "next");
 const child = spawn(process.execPath, [nextCli, "start", "--hostname", host, "--port", port], {

@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, LockKeyhole } from "lucide-react";
 import { PlatformBrand } from "@/components/platform/brand";
+import { useLanguage } from "@/components/site/language-provider";
+import { LanguageSwitcher } from "@/components/site/language-switcher";
 import { RegistrationForm } from "@/components/platform/registration-form";
 import { LoginForm } from "./admin-auth";
 import "./auth-screen.css";
@@ -23,6 +25,7 @@ export function AuthScreen({
 }) {
   const [mode, setMode] = useState(initialMode);
   const [registrationComplete, setRegistrationComplete] = useState(false);
+  const { t } = useLanguage();
   const signingUp = mode === "signup";
 
   function showLoginAfterRegistration() {
@@ -34,9 +37,10 @@ export function AuthScreen({
     <main className="auth-screen">
       <div className="auth-screen-top">
         <PlatformBrand />
+        <LanguageSwitcher />
         <Link className="auth-back-link" href="/">
           <ArrowLeft size={16} aria-hidden="true" />
-          Voltar ao site
+          {t("auth.back")}
         </Link>
       </div>
       <section className="auth-screen-card" aria-labelledby="auth-title">
@@ -44,28 +48,24 @@ export function AuthScreen({
           <span className="auth-screen-icon">
             <LockKeyhole size={20} aria-hidden="true" />
           </span>
-          <p className="eyebrow">HUB TURISMO AMAZONAS</p>
-          <h1 id="auth-title">{signingUp ? "Crie sua conta." : "Boas histórias começam aqui."}</h1>
-          <p>
-            {signingUp
-              ? "Um cadastro simples para planejar sua viagem e acompanhar solicitações."
-              : "Acesse suas reservas e acompanhe cada etapa da sua viagem."}
-          </p>
+          <p className="eyebrow">{t("auth.brand")}</p>
+          <h1 id="auth-title">{signingUp ? t("auth.signupTitle") : t("auth.loginTitle")}</h1>
+          <p>{signingUp ? t("auth.signupDescription") : t("auth.loginDescription")}</p>
         </div>
 
-        <div className="auth-screen-switch" role="group" aria-label="Acesso à conta">
+        <div className="auth-screen-switch" role="group" aria-label={t("auth.access")}>
           <button type="button" aria-pressed={!signingUp} onClick={() => setMode("login")}>
-            Entrar
+            {t("auth.login")}
           </button>
           <button type="button" aria-pressed={signingUp} onClick={() => setMode("signup")}>
-            Criar conta
+            {t("auth.signup")}
           </button>
         </div>
 
         <div id="auth-panel" className="auth-screen-form">
           {registrationComplete && !signingUp && (
             <p className="auth-success" role="status">
-              Conta criada. Entre com o e-mail e a senha que acabou de cadastrar.
+              {t("auth.created")}
             </p>
           )}
           {signingUp ? (
@@ -84,11 +84,10 @@ export function AuthScreen({
         </div>
 
         <p className="auth-screen-privacy">
-          Seus dados são usados para sua conta e solicitações.{" "}
-          <Link href="/privacidade">Aviso de privacidade</Link>
+          {t("auth.privacyText")} <Link href="/privacidade">{t("auth.privacyLink")}</Link>
         </p>
       </section>
-      <p className="auth-screen-footer">Turismo local, com quem conhece o Amazonas.</p>
+      <p className="auth-screen-footer">{t("auth.footer")}</p>
     </main>
   );
 }

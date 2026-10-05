@@ -18,7 +18,13 @@ import {
   type ImportHistory,
   type MappingField,
 } from "@/lib/cadastur-schema";
-import { PageIntro, EmptyState, PortalNotice } from "./shared";
+import {
+  LocalizedEmptyState,
+  LocalizedPageIntro,
+  LocalizedPortalNotice,
+} from "./shared-views";
+import type { Locale } from "@/lib/i18n/messages";
+import { LocalizedClientTree } from "@/components/site/localized-client-tree";
 
 type Directory = {
   entries: RegistryEntry[];
@@ -30,6 +36,7 @@ type Props = {
   initial: Directory;
   companies: { id: string; name: string }[];
   guides: { id: string; name: string }[];
+  locale: Locale;
 };
 const actions: Record<string, string> = {
   added: "Incluir",
@@ -48,7 +55,7 @@ const post = (data: unknown): RequestInit => ({
   headers: { "content-type": "application/json" },
   body: JSON.stringify(data),
 });
-export function CadasturPanel({ initial, companies, guides }: Props) {
+export function CadasturPanel({ initial, companies, guides, locale }: Props) {
   const [category, setCategory] = useState<CadasturCategory>("hospedagens");
   const [mode, setMode] = useState("official"),
     [resources, setResources] = useState<SourceResource[]>([]),
@@ -148,16 +155,18 @@ export function CadasturPanel({ initial, companies, guides }: Props) {
     (typeof cadasturSources)[CadasturCategory],
   ][];
   return (
+    <LocalizedClientTree>
     <>
-      <PageIntro
+      <LocalizedPageIntro
+        locale={locale}
         eyebrow="DADOS ABERTOS · MINISTÉRIO DO TURISMO"
         title="Cadastur, conectado à sua rede."
         description="Importe referências cadastrais, confira os dados e organize os vínculos com a Hub."
       />
-      <PortalNotice>
+      <LocalizedPortalNotice locale={locale}>
         Importe os dados e marque os registros que devem aparecer no diretório público. Os contatos
         comerciais são opcionais na importação; contas e ofertas são gerenciadas separadamente.
-      </PortalNotice>
+      </LocalizedPortalNotice>
       <div className="cadastur-feedback" aria-live="polite" aria-atomic="true">
         {busy && (
           <p role="status">{busy} A leitura de uma planilha nacional pode levar alguns segundos.</p>
@@ -503,9 +512,9 @@ export function CadasturPanel({ initial, companies, guides }: Props) {
             </div>
           )}
           {!preview.records.length && (
-            <EmptyState title="Nenhum registro válido neste recorte.">
+            <LocalizedEmptyState locale={locale} title="Nenhum registro válido neste recorte.">
               <p>Confira as colunas, a aba, a UF e as ocorrências antes de tentar novamente.</p>
-            </EmptyState>
+            </LocalizedEmptyState>
           )}
           <p>
             A confirmação grava {preview.counts.added + preview.counts.updated} registros no
@@ -548,12 +557,12 @@ export function CadasturPanel({ initial, companies, guides }: Props) {
         </form>
         <p>{directory.total.toLocaleString("pt-BR")} registros importados.</p>
         {!directory.entries.length ? (
-          <EmptyState title="Nenhum registro para mostrar.">
+          <LocalizedEmptyState locale={locale} title="Nenhum registro para mostrar.">
             <p>
               Importe uma fonte oficial ou ajuste a busca. Os cadastros operacionais da Hub
               continuam no menu Empresas.
             </p>
-          </EmptyState>
+          </LocalizedEmptyState>
         ) : (
           <div className="editor-list">
             {directory.entries.map((entry) => (
@@ -699,5 +708,6 @@ export function CadasturPanel({ initial, companies, guides }: Props) {
         </p>
       </section>
     </>
+    </LocalizedClientTree>
   );
 }

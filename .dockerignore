@@ -1,0 +1,15 @@
+node_modules
+.git
+.next
+.env*
+data
+backups
+tmp
+output
+*.sqlite*
+.codex
+.agents
+.sites-runtime
+.vercel
+coverage
+test-results

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CalendarDays, Images, PencilLine, Settings2, UserRound } from "lucide-react";
 import { SignOutButton } from "@/components/site/admin-auth";
 import { profileAvatarUrl, type ProfileAvatarKey } from "@/lib/profile-avatars";
+import { useLanguage } from "@/components/site/language-provider";
 
 export function AccountMenu({
   name,
@@ -17,6 +18,7 @@ export function AccountMenu({
   avatar: ProfileAvatarKey;
 }) {
   const menuRef = useRef<HTMLDetailsElement>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     function closeOnOutside(event: PointerEvent) {
@@ -44,8 +46,8 @@ export function AccountMenu({
     <details className="header-account-menu" ref={menuRef}>
       <summary
         className="header-account-trigger"
-        aria-label={`Abrir menu da conta de ${name}`}
-        title="Menu da conta"
+        aria-label={t("account.openMenu", { name })}
+        title={t("account.menuTitle")}
       >
         <Image src={profileAvatarUrl(avatar)} alt="" width={42} height={42} priority />
       </summary>
@@ -56,23 +58,23 @@ export function AccountMenu({
         </div>
         <Link href="/minha-conta" onClick={closeMenu}>
           <UserRound size={17} aria-hidden="true" />
-          <span>Minha conta</span>
+          <span>{t("module.account")}</span>
         </Link>
         <Link href="/minha-conta?editar=perfil" onClick={closeMenu}>
           <PencilLine size={17} aria-hidden="true" />
-          <span>Editar perfil</span>
+          <span>{t("profile.edit")}</span>
         </Link>
         <Link href="/minha-conta?editar=avatar#account-avatar-options" onClick={closeMenu}>
           <Images size={17} aria-hidden="true" />
-          <span>Trocar avatar</span>
+          <span>{t("account.changeAvatar")}</span>
         </Link>
         <Link href="/minha-conta/configuracoes" onClick={closeMenu}>
           <Settings2 size={17} aria-hidden="true" />
-          <span>Configurações</span>
+          <span>{t("account.settings")}</span>
         </Link>
         <Link href="/minha-conta/reservas" onClick={closeMenu}>
           <CalendarDays size={17} aria-hidden="true" />
-          <span>Minhas reservas</span>
+          <span>{t("account.bookings")}</span>
         </Link>
         <div className="header-menu-signout">
           <SignOutButton showIcon />
