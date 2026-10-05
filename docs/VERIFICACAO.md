@@ -28,6 +28,8 @@ O checkout está em uma unidade FAT32. O build com Next.js 16.3.8 foi concluído
 
 No teste do build no Vercel, páginas que consultam a sessão eram executadas durante o prerender e inicializavam Better Auth sem `BETTER_AUTH_SECRET`. As páginas de conta, configurações, reservas, login e cadastro agora são explicitamente dinâmicas. O build foi repetido sem `.env.local` e sem esse segredo e passou. `BETTER_AUTH_SECRET` e `SITE_URL` continuam obrigatórios no ambiente do Vercel para autenticação em tempo de execução.
 
+A tentativa seguinte acionou o builder Node genérico, que procurava `app.js` ou `server.js`. O repositório agora declara `framework: nextjs` e `buildCommand: npm run build` em `vercel.json`; o Root Directory do projeto Vercel deve continuar na raiz do repositório.
+
 A auditoria completa encontra cinco avisos altos relacionados à vulnerabilidade de recursão profunda em `braces` (GHSA-vfj7-8cjw-p6xm), introduzida pela cadeia `eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch`. A base consultada não lista versão corrigida. O pacote é dependência de desenvolvimento e não aparece na auditoria de produção. `npm audit fix --force` propõe trocar o ESLint do Next 16 pelo 14; essa redução incompatível foi descartada. Reavaliar quando houver correção upstream.
 
 A revisão de código confirmou autorização no servidor, validação Zod, origem obrigatória para operações de escrita, limites de corpo, SQL parametrizado e cookies HttpOnly/SameSite. O contrato OpenAPI foi sincronizado com as rotas atuais: 41 caminhos, incluindo celular obrigatório, tipos de empresa, edição de perfil, conteúdo/imagens, proximidades e emissão/verificação JWT.

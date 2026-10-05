@@ -2,6 +2,8 @@
 
 ## Estado atual
 
+`vercel.json` fixa o Framework Preset como Next.js e o comando de build como `npm run build`. No painel Vercel, mantenha o Root Directory na raiz do repositório (`./`) e não configure um Output Directory personalizado.
+
 O deploy completo está bloqueado até a camada de persistência ser adaptada. Hoje o site usa better-sqlite3 em arquivo local para contas, sessões, reservas, contatos, Cadastur e chaves JWT; o painel também grava e remove imagens em public/uploads. As funções Node.js da Vercel têm filesystem somente leitura, exceto /tmp, que é temporário e não é compartilhado entre instâncias. Um deploy direto poderia falhar ao iniciar ou perder dados entre reinicializações e manter cópias divergentes em instâncias diferentes.
 
 Por isso, o script encerra antes de enviar arquivos enquanto detectar SQLite local ou uploads no disco. Ele não troca o banco por /tmp nem publica uma versão que pareça guardar dados sem persistência. A própria Vercel recomenda banco/armazenamento externo para estado durável: [filesystem das funções](https://vercel.com/docs/functions/runtimes), [SQLite na Vercel](https://vercel.com/kb/guide/is-sqlite-supported-in-vercel) e [armazenamento Vercel](https://vercel.com/docs/storage).
