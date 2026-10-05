@@ -5,6 +5,7 @@ import { BookingList } from "@/components/platform/booking-list";
 import { pageActor } from "@/server/platform-session";
 import { getDatabase } from "@/db";
 import { myBookings } from "@/server/booking-service";
+export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Minhas reservas",
   robots: { index: false, follow: false },

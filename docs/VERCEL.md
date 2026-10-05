@@ -27,6 +27,8 @@ Depois da migração, configure no projeto Vercel, para Preview e Production:
 
 Não envie .env.local, banco SQLite ou segredos no código. O JWT mantém chaves privadas na tabela jwks, então essa tabela também deve estar no banco durável.
 
+As páginas de login, cadastro e conta são renderizadas por requisição para não inicializar Better Auth durante o prerender do build. Mesmo assim, `BETTER_AUTH_SECRET` (com pelo menos 32 caracteres) e `SITE_URL` precisam estar configurados nos ambientes Preview e Production para autenticação funcionar nas requisições.
+
 ## Executar o script
 
 O script exige a Vercel CLI (npm install --global vercel) e autenticação (vercel login). Se a pasta ainda não estiver vinculada, iniciará vercel link. Depois que a pré-checagem de armazenamento permitir a publicação, ele confirma as variáveis e executa formatação, TypeScript, ESLint, auditoria das dependências de produção, testes unitários, build de produção e integração HTTP. Qualquer falha cancela o deploy; Preview é o destino padrão.

@@ -7,24 +7,26 @@
 | Verificação                                    | Resultado                                                                                              |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | Runtime Node.js e SQLite                       | Aprovado: Node 22.23.2, ABI 127                                                                        |
-| Instalação limpa pelo lockfile (`npm ci`)      | Aprovada em cópia temporária NTFS; 568 pacotes, Next.js e ESLint 16.3.8                                |
+| Instalação limpa pelo lockfile (`npm ci`)      | Aprovada em cópia temporária NTFS; Next.js/eslint-config-next 16.3.8 e ESLint 9.39.4                   |
 | Migração temporária                            | Aprovada em banco descartável na cópia temporária                                                      |
 | TypeScript                                     | Aprovado, sem erros                                                                                    |
 | ESLint                                         | Aprovado, sem erros ou avisos                                                                          |
 | Prettier                                       | Aprovado após corrigir a formatação dos registros e do contrato OpenAPI                                |
 | Testes unitários existentes                    | 51 aprovados, 0 falhas                                                                                 |
-| Build de produção                              | Next.js 16.3.8 com Webpack, concluído em cópia NTFS isolada; as rotas da aplicação foram geradas       |
+| Build de produção                              | Next.js 16.3.8 com Webpack, concluído sem `.env.local`/`BETTER_AUTH_SECRET` em cópia NTFS isolada      |
 | Integração HTTP                                | Aprovada: contatos, autenticação, Cadastur, reservas e isolamento entre empresas                       |
 | Auditoria de produção (`npm audit --omit=dev`) | 0 vulnerabilidades                                                                                     |
 | Auditoria completa (`npm audit`)               | 5 avisos altos na cadeia de desenvolvimento do ESLint, via `braces`; não há versão corrigida publicada |
 | CI no GitHub Actions                           | Não executado nesta revisão                                                                            |
 | Deploy no Vercel                               | Continua bloqueado: SQLite e imagens dependem do disco local; nenhuma publicação foi realizada         |
 
-O `package.json` e o lockfile foram atualizados de Next.js/ESLint 16.3.4 para 16.3.8. A instalação limpa, o build e os testes foram feitos numa cópia temporária para preservar o servidor local ativo em `127.0.0.1:3005`, o artefato `.next`, os dados e a configuração. O `node_modules` do checkout original não foi substituído; antes de executar comandos locais nele, pare esse servidor e rode `npm ci` para sincronizar as dependências instaladas com o lockfile.
+O `package.json` e o lockfile foram atualizados de Next.js e `eslint-config-next` 16.3.4 para 16.3.8. O ESLint permanece em 9.39.4 porque a tentativa com 10.12.0 quebrou regras do `eslint-plugin-react` incluído na configuração atual. A instalação limpa, o build e os testes foram feitos numa cópia temporária para preservar o servidor local ativo em `127.0.0.1:3005`, o artefato `.next`, os dados e a configuração. O `node_modules` do checkout original não foi substituído; antes de executar comandos locais nele, pare esse servidor e rode `npm ci` para sincronizar as dependências instaladas com o lockfile.
 
 Os 51 testes atuais incluem validação, consentimento, SQL parametrizado, armazenamento, idempotência, limites de envio, erro consistente, autorização por correspondência exata, reabertura do banco, backup pelo comando operacional, restauração, Cadastur e operações da plataforma. Este número substitui as contagens anteriores de 22, 29 e 49.
 
 O checkout está em uma unidade FAT32. O build com Next.js 16.3.8 foi concluído em NTFS isolado; o `.next` do servidor existente não foi substituído. A integração HTTP também foi executada nessa cópia com banco, contas e dados temporários.
+
+No teste do build no Vercel, páginas que consultam a sessão eram executadas durante o prerender e inicializavam Better Auth sem `BETTER_AUTH_SECRET`. As páginas de conta, configurações, reservas, login e cadastro agora são explicitamente dinâmicas. O build foi repetido sem `.env.local` e sem esse segredo e passou. `BETTER_AUTH_SECRET` e `SITE_URL` continuam obrigatórios no ambiente do Vercel para autenticação em tempo de execução.
 
 A auditoria completa encontra cinco avisos altos relacionados à vulnerabilidade de recursão profunda em `braces` (GHSA-vfj7-8cjw-p6xm), introduzida pela cadeia `eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch`. A base consultada não lista versão corrigida. O pacote é dependência de desenvolvimento e não aparece na auditoria de produção. `npm audit fix --force` propõe trocar o ESLint do Next 16 pelo 14; essa redução incompatível foi descartada. Reavaliar quando houver correção upstream.
 
@@ -62,7 +64,7 @@ Foi criado o backup backups/hub-2026-09-29T15-13-35-299Z.sqlite do banco local, 
 
 better-sqlite3 foi fixado em 12.11.1 após a instalação limpa da linha 13 exigir compilação nativa indisponível nesta máquina. A versão selecionada instalou seu binário e passou pelos testes. O lockfile foi regenerado e validado com npm ci. Drizzle ORM, Drizzle Kit, Wrangler e Vinext não integram a instalação final.
 
-O instalador ainda emite avisos de descontinuação do ESLint 9 e de prebuild-install, utilizado pelo driver. Eles não são resultados de vulnerabilidade da auditoria; acompanhar atualização compatível dessas ferramentas.
+O ESLint 9.39.4 está marcado como sem suporte pelo npm, e `prebuild-install` também emite aviso de manutenção. O ESLint 10.12.0 não é compatível com as versões de `eslint-plugin-react`, `eslint-plugin-jsx-a11y` e `eslint-plugin-import` trazidas pelo `eslint-config-next` 16.3.8: o lint falha ao carregar `react/display-name`. A atualização foi revertida para manter o lint funcional; atualizar quando a cadeia do Next oferecer compatibilidade com ESLint 10.
 
 ## Segurança e limites
 

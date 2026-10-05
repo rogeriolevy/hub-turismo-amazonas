@@ -26,6 +26,8 @@ import { companiesFor, isPlatformAdmin } from "@/server/platform-access";
 import { myBookings } from "@/server/booking-service";
 import { avatarKeyFromImage, defaultAvatarForUser, profileAvatarUrl } from "@/lib/profile-avatars";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Minha conta",
   robots: { index: false, follow: false },

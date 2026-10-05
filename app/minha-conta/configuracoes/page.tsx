@@ -15,6 +15,8 @@ import { pageActor } from "@/server/platform-session";
 import { avatarKeyFromImage, defaultAvatarForUser, profileAvatarUrl } from "@/lib/profile-avatars";
 import "./settings.css";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Configurações da conta",
   robots: { index: false, follow: false },
