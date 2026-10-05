@@ -4,28 +4,31 @@ import { usePathname } from "next/navigation";
 import { Waves } from "lucide-react";
 export function PlatformBrand() {
   const path = usePathname();
-  const area = path.startsWith("/minha-conta")
-    ? "usuário"
-    : path.startsWith("/hospedagens") || path.startsWith("/painel/hotel")
-      ? "hospedagem"
-      : path.startsWith("/experiencias") ||
-          path.startsWith("/guias") ||
-          path.startsWith("/passeios") ||
-          path.startsWith("/painel/passeios")
-        ? "experiências"
-        : path.startsWith("/gastronomia")
-          ? "gastronomia"
-          : path.startsWith("/agencias")
-            ? "agências"
-            : path.startsWith("/servicos")
-              ? "serviços"
-              : path.startsWith("/navegacao")
-                ? "navegação"
-                : path.startsWith("/painel/plataforma") ||
-                    path.startsWith("/painel/contato") ||
-                    path === "/admin"
-                  ? "gestão"
-                  : "turismo";
+  const area =
+    path === "/sobre"
+      ? "amazonas"
+      : path.startsWith("/minha-conta")
+        ? "usuário"
+        : path.startsWith("/hospedagens") || path.startsWith("/painel/hotel")
+          ? "hospedagem"
+          : path.startsWith("/experiencias") ||
+              path.startsWith("/guias") ||
+              path.startsWith("/passeios") ||
+              path.startsWith("/painel/passeios")
+            ? "experiências"
+            : path.startsWith("/gastronomia")
+              ? "gastronomia"
+              : path.startsWith("/agencias")
+                ? "agências"
+                : path.startsWith("/servicos")
+                  ? "serviços"
+                  : path.startsWith("/navegacao")
+                    ? "navegação"
+                    : path.startsWith("/painel/plataforma") ||
+                        path.startsWith("/painel/contato") ||
+                        path === "/admin"
+                      ? "gestão"
+                      : "turismo";
   return (
     <Link className="brand platform-brand" href="/" aria-label="Hub Turismo Amazonas, início">
       <Waves className="brand-mark" size={37} strokeWidth={2} />

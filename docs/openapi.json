@@ -114,6 +114,9 @@
         "security": [
           {
             "AdminSession": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -178,7 +181,10 @@
                   }
                 },
                 "type": "object",
-                "required": ["email", "password"]
+                "required": [
+                  "email",
+                  "password"
+                ]
               }
             }
           },
@@ -236,7 +242,9 @@
                       }
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -374,7 +382,9 @@
                       }
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -509,7 +519,9 @@
                       "$ref": "#/components/schemas/HotelDetail"
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -647,7 +659,9 @@
                       "$ref": "#/components/schemas/TourDetail"
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -785,7 +799,9 @@
                       "$ref": "#/components/schemas/GuideDetail"
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -926,7 +942,9 @@
                       }
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -1035,6 +1053,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -1059,10 +1080,14 @@
                           "format": "uuid"
                         }
                       },
-                      "required": ["id"]
+                      "required": [
+                        "id"
+                      ]
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -1171,6 +1196,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "parameters": [
@@ -1216,7 +1244,9 @@
                       }
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -1325,6 +1355,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -1349,10 +1382,14 @@
                           "format": "uuid"
                         }
                       },
-                      "required": ["id"]
+                      "required": [
+                        "id"
+                      ]
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -1461,6 +1498,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "parameters": [
@@ -1503,7 +1543,9 @@
                       "$ref": "#/components/schemas/Inventory"
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -1612,6 +1654,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "parameters": [
@@ -1647,7 +1692,9 @@
                       }
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -1756,6 +1803,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -1780,7 +1830,9 @@
                       }
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -1889,6 +1941,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "parameters": [
@@ -1924,10 +1979,14 @@
                           "format": "uuid"
                         }
                       },
-                      "required": ["id"]
+                      "required": [
+                        "id"
+                      ]
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -2036,6 +2095,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "parameters": [
@@ -2092,10 +2154,14 @@
                           "format": "uuid"
                         }
                       },
-                      "required": ["id"]
+                      "required": [
+                        "id"
+                      ]
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -2204,6 +2270,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "parameters": [
@@ -2251,10 +2320,14 @@
                           "format": "uuid"
                         }
                       },
-                      "required": ["id"]
+                      "required": [
+                        "id"
+                      ]
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -2363,6 +2436,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "parameters": [
@@ -2410,10 +2486,14 @@
                           "format": "uuid"
                         }
                       },
-                      "required": ["id"]
+                      "required": [
+                        "id"
+                      ]
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -2522,6 +2602,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "parameters": [
@@ -2569,10 +2652,14 @@
                           "format": "uuid"
                         }
                       },
-                      "required": ["id"]
+                      "required": [
+                        "id"
+                      ]
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -2681,6 +2768,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "parameters": [
@@ -2728,10 +2818,14 @@
                           "format": "uuid"
                         }
                       },
-                      "required": ["id"]
+                      "required": [
+                        "id"
+                      ]
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -2840,6 +2934,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "parameters": [
@@ -2888,13 +2985,21 @@
                         },
                         "operational_status": {
                           "type": "string",
-                          "enum": ["ready", "cleaning", "maintenance"]
+                          "enum": [
+                            "ready",
+                            "cleaning",
+                            "maintenance"
+                          ]
                         }
                       },
-                      "required": ["id"]
+                      "required": [
+                        "id"
+                      ]
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -3003,6 +3108,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "parameters": [
@@ -3050,10 +3158,14 @@
                           "format": "uuid"
                         }
                       },
-                      "required": ["id"]
+                      "required": [
+                        "id"
+                      ]
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -3162,6 +3274,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "parameters": [
@@ -3209,10 +3324,14 @@
                           "format": "uuid"
                         }
                       },
-                      "required": ["id"]
+                      "required": [
+                        "id"
+                      ]
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -3321,6 +3440,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "parameters": [
@@ -3367,10 +3489,14 @@
                           "type": "boolean"
                         }
                       },
-                      "required": ["ok"]
+                      "required": [
+                        "ok"
+                      ]
                     }
                   },
-                  "required": ["data"]
+                  "required": [
+                    "data"
+                  ]
                 }
               }
             }
@@ -3479,6 +3605,9 @@
         "security": [
           {
             "Session": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "parameters": [
@@ -3671,10 +3800,15 @@
       "get": {
         "summary": "Listar arquivos oficiais por categoria",
         "description": "Apenas administrador. Nenhuma publicação automática.",
-        "tags": ["Cadastur"],
+        "tags": [
+          "Cadastur"
+        ],
         "security": [
           {
             "AdminSession": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "responses": {
@@ -3710,7 +3844,14 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["hospedagens", "guias", "gastronomia", "transportes", "agencias", "servicos"]
+              "enum": [
+                "hospedagens",
+                "guias",
+                "gastronomia",
+                "transportes",
+                "agencias",
+                "servicos"
+              ]
             }
           }
         ]
@@ -3720,10 +3861,15 @@
       "get": {
         "summary": "Consultar diretório interno e histórico",
         "description": "Apenas administrador. Nenhuma publicação automática.",
-        "tags": ["Cadastur"],
+        "tags": [
+          "Cadastur"
+        ],
         "security": [
           {
             "AdminSession": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "responses": {
@@ -3759,7 +3905,14 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["hospedagens", "guias", "gastronomia", "transportes", "agencias", "servicos"]
+              "enum": [
+                "hospedagens",
+                "guias",
+                "gastronomia",
+                "transportes",
+                "agencias",
+                "servicos"
+              ]
             }
           },
           {
@@ -3786,10 +3939,15 @@
       "post": {
         "summary": "Identificar abas e colunas de CSV/XLSX",
         "description": "Origin obrigatório. JSON com resource_id consulta o CKAN e baixa apenas do domínio oficial, sem redirecionamentos. Alternativa: multipart com file e config (JSON em texto). Arquivo até 20 MB; request multipart até 20 MB + 24000 bytes; 100 mil linhas, 100 colunas; XLSX até 160 MB descompactados, 1000 entradas e 10 abas. A inspeção não retorna células brutas. Prévia substitui a anterior do mesmo administrador, mantém só campos selecionados e não altera o diretório. CPF e colunas pessoais adicionais bloqueados. Limite de 10 mil registros selecionados.",
-        "tags": ["Cadastur"],
+        "tags": [
+          "Cadastur"
+        ],
         "security": [
           {
             "AdminSession": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "responses": {
@@ -3824,7 +3982,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["category"],
+                "required": [
+                  "category"
+                ],
                 "properties": {
                   "category": {
                     "type": "string",
@@ -3851,7 +4011,10 @@
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": ["file", "config"],
+                "required": [
+                  "file",
+                  "config"
+                ],
                 "properties": {
                   "file": {
                     "type": "string",
@@ -3882,10 +4045,15 @@
       "post": {
         "summary": "Criar prévia de importação, válida por 30 minutos",
         "description": "Origin obrigatório. JSON com resource_id consulta o CKAN e baixa apenas do domínio oficial, sem redirecionamentos. Alternativa: multipart com file e config (JSON em texto). Arquivo até 20 MB; request multipart até 20 MB + 24000 bytes; 100 mil linhas, 100 colunas; XLSX até 160 MB descompactados, 1000 entradas e 10 abas. A inspeção não retorna células brutas. Prévia substitui a anterior do mesmo administrador, mantém só campos selecionados e não altera o diretório. CPF e colunas pessoais adicionais bloqueados. Limite de 10 mil registros selecionados.",
-        "tags": ["Cadastur"],
+        "tags": [
+          "Cadastur"
+        ],
         "security": [
           {
             "AdminSession": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "responses": {
@@ -3925,7 +4093,10 @@
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": ["file", "config"],
+                "required": [
+                  "file",
+                  "config"
+                ],
                 "properties": {
                   "file": {
                     "type": "string",
@@ -3956,10 +4127,15 @@
       "post": {
         "summary": "Confirmar importação idempotente",
         "description": "Origin obrigatório. Confirmar exige a prévia do mesmo administrador; confere versões em transação, rejeita fonte mais antiga e não cria contas nem ofertas. Revisar associa hospedagem a hotel existente ou guia a perfil existente; não concede permissões nem publica. Gastronomia e transporte ficam em revisão interna.",
-        "tags": ["Cadastur"],
+        "tags": [
+          "Cadastur"
+        ],
         "security": [
           {
             "AdminSession": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "responses": {
@@ -3994,7 +4170,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["id"],
+                "required": [
+                  "id"
+                ],
                 "properties": {
                   "id": {
                     "type": "string",
@@ -4022,10 +4200,15 @@
       "post": {
         "summary": "Salvar revisão e vínculo opcional",
         "description": "Origin obrigatório. Confirmar exige a prévia do mesmo administrador; confere versões em transação, rejeita fonte mais antiga e não cria contas nem ofertas. Revisar associa hospedagem a hotel existente ou guia a perfil existente; não concede permissões nem publica. Gastronomia e transporte ficam em revisão interna.",
-        "tags": ["Cadastur"],
+        "tags": [
+          "Cadastur"
+        ],
         "security": [
           {
             "AdminSession": []
+          },
+          {
+            "BearerAuth": []
           }
         ],
         "responses": {
@@ -4060,18 +4243,26 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["id"],
+                "required": [
+                  "id"
+                ],
                 "properties": {
                   "id": {
                     "type": "string",
                     "format": "uuid"
                   },
                   "company_id": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "uuid"
                   },
                   "guide_id": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "uuid"
                   },
                   "published": {
@@ -4099,7 +4290,9 @@
     "/api/diretorio": {
       "get": {
         "summary": "Exportar dados públicos do diretório do Amazonas",
-        "tags": ["Diretório"],
+        "tags": [
+          "Diretório"
+        ],
         "security": [],
         "parameters": [
           {
@@ -4108,7 +4301,13 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["hospedagens", "gastronomia", "guias", "agencias", "servicos"]
+              "enum": [
+                "hospedagens",
+                "gastronomia",
+                "guias",
+                "agencias",
+                "servicos"
+              ]
             }
           }
         ],
@@ -4121,6 +4320,272 @@
           }
         }
       }
+    },
+    "/api/conta/perfil": {
+      "post": {
+        "summary": "Atualizar perfil da conta",
+        "description": "Sessão ou JWT Bearer. Exige Origin igual a SITE_URL e JSON limitado a 12000 bytes.",
+        "security": [
+          {
+            "Session": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil atualizado"
+          },
+          "401": {
+            "description": "Sessão ou token ausente/inválido"
+          },
+          "403": {
+            "description": "Origem inválida"
+          },
+          "422": {
+            "description": "Validação dos campos"
+          },
+          "503": {
+            "description": "Indisponibilidade"
+          }
+        }
+      }
+    },
+    "/api/plataforma/conteudos": {
+      "post": {
+        "summary": "Criar ou atualizar conteúdo do catálogo",
+        "description": "Somente administrador. Exige Origin e JSON. A categoria não pode ser alterada após criação; publicação é explícita.",
+        "security": [
+          {
+            "AdminSession": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogItemInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Conteúdo salvo"
+          },
+          "401": {
+            "description": "Sem sessão"
+          },
+          "403": {
+            "description": "Conta sem permissão ou origem inválida"
+          },
+          "409": {
+            "description": "Conflito de slug ou vínculo Cadastur"
+          },
+          "422": {
+            "description": "Validação dos campos"
+          },
+          "503": {
+            "description": "Indisponibilidade"
+          }
+        }
+      }
+    },
+    "/api/plataforma/excluir-conteudo": {
+      "post": {
+        "summary": "Excluir conteúdo do catálogo",
+        "description": "Somente administrador. Exige Origin e JSON. A ação não remove registros oficiais do Cadastur.",
+        "security": [
+          {
+            "AdminSession": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteCatalogItemInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Conteúdo removido"
+          },
+          "401": {
+            "description": "Sem sessão"
+          },
+          "403": {
+            "description": "Conta sem permissão ou origem inválida"
+          },
+          "404": {
+            "description": "Conteúdo não encontrado"
+          },
+          "422": {
+            "description": "Identificador inválido"
+          },
+          "503": {
+            "description": "Indisponibilidade"
+          }
+        }
+      }
+    },
+    "/api/plataforma/conteudos/imagens": {
+      "post": {
+        "summary": "Enviar imagens para o catálogo",
+        "description": "Somente administrador. Exige Origin e multipart/form-data. De 1 a 8 arquivos JPEG, PNG ou WebP, até 5 MB cada e 16 MB por requisição. A implementação atual grava no disco local, incompatível com filesystem efêmero de functions serverless.",
+        "security": [
+          {
+            "AdminSession": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "images"
+                ],
+                "properties": {
+                  "images": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 8,
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Imagens armazenadas; a resposta inclui data.images com URLs locais."
+          },
+          "401": {
+            "description": "Sem sessão"
+          },
+          "403": {
+            "description": "Conta sem permissão ou origem inválida"
+          },
+          "413": {
+            "description": "Arquivo acima do limite"
+          },
+          "415": {
+            "description": "Tipo de arquivo inválido"
+          },
+          "422": {
+            "description": "Quantidade de imagens inválida"
+          },
+          "503": {
+            "description": "Indisponibilidade"
+          }
+        }
+      }
+    },
+    "/api/proximidades": {
+      "get": {
+        "summary": "Sugestões próximas a uma hospedagem",
+        "description": "Público. Consulta dados comerciais da hospedagem a Nominatim e Overpass quando o cache expira. Raio de 2 km; respostas prontas usam cache compartilhável por até uma hora.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "origem",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "company",
+                "cadastur"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sugestões ou estado de indisponibilidade; inclui data.status, data.places e data.hotelLocation."
+          },
+          "400": {
+            "description": "Identificador ou origem inválida"
+          },
+          "404": {
+            "description": "Hospedagem não publicada"
+          },
+          "503": {
+            "description": "Dependência externa temporariamente indisponível"
+          }
+        }
+      }
+    },
+    "/api/auth/token": {
+      "get": {
+        "summary": "Emitir token de acesso JWT",
+        "description": "Requer sessão ativa por cookie HttpOnly. Emite token com validade de 15 minutos; o payload contém sub, e-mail e nome. Não substitui verificações de autorização no servidor.",
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token JWT"
+          },
+          "401": {
+            "description": "Sessão ausente ou inválida"
+          },
+          "503": {
+            "description": "Indisponibilidade"
+          }
+        }
+      }
+    },
+    "/api/auth/jwks": {
+      "get": {
+        "summary": "Chaves públicas JWT",
+        "description": "Endpoint público para validar assinaturas. A resposta é cacheada por até uma hora.",
+        "responses": {
+          "200": {
+            "description": "JSON Web Key Set público"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4128,7 +4593,13 @@
       "ContactInput": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["name", "email", "interest", "message", "consent"],
+        "required": [
+          "name",
+          "email",
+          "interest",
+          "message",
+          "consent"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -4181,7 +4652,10 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["hotel", "operator"]
+            "enum": [
+              "hotel",
+              "operator"
+            ]
           },
           "name": {
             "type": "string",
@@ -4207,15 +4681,47 @@
           },
           "status": {
             "type": "string",
-            "enum": ["draft", "published", "suspended"]
+            "enum": [
+              "draft",
+              "published",
+              "suspended"
+            ]
           },
           "trade_name": {
             "type": "string",
             "maxLength": 100,
             "description": "Nome fantasia usado nas listagens quando preenchido (mínimo de 2 caracteres). Vazio usa name como alternativa. Na atualização, omitir preserva o valor existente."
+          },
+          "activity_type": {
+            "type": "string",
+            "enum": [
+              "hotel",
+              "pousada",
+              "albergue_hostel",
+              "alojamento_floresta",
+              "flat_aparthotel",
+              "hotel_fazenda",
+              "resort",
+              "cama_cafe",
+              "camping",
+              "outro_hospedagem",
+              "passeios",
+              "navegacao_fluvial",
+              "transporte_aereo",
+              "transportadora_turistica",
+              "outro_operador"
+            ],
+            "description": "Opcional; deve corresponder ao segmento definido em kind."
           }
         },
-        "required": ["kind", "name", "slug", "city", "description", "status"]
+        "required": [
+          "kind",
+          "name",
+          "slug",
+          "city",
+          "description",
+          "status"
+        ]
       },
       "MemberInput": {
         "type": "object",
@@ -4232,10 +4738,19 @@
           },
           "role": {
             "type": "string",
-            "enum": ["hotel_manager", "hotel_staff", "operator", "guide"]
+            "enum": [
+              "hotel_manager",
+              "hotel_staff",
+              "operator",
+              "guide"
+            ]
           }
         },
-        "required": ["company_id", "email", "role"]
+        "required": [
+          "company_id",
+          "email",
+          "role"
+        ]
       },
       "RoomInput": {
         "type": "object",
@@ -4273,7 +4788,14 @@
             "type": "boolean"
           }
         },
-        "required": ["company_id", "code", "name", "capacity", "price_cents", "active"]
+        "required": [
+          "company_id",
+          "code",
+          "name",
+          "capacity",
+          "price_cents",
+          "active"
+        ]
       },
       "GuideInput": {
         "type": "object",
@@ -4312,7 +4834,14 @@
             "type": "boolean"
           }
         },
-        "required": ["company_id", "slug", "name", "bio", "languages", "published"]
+        "required": [
+          "company_id",
+          "slug",
+          "name",
+          "bio",
+          "languages",
+          "published"
+        ]
       },
       "TourInput": {
         "type": "object",
@@ -4413,7 +4942,13 @@
             "type": "boolean"
           }
         },
-        "required": ["company_id", "tour_id", "starts_at", "capacity", "active"]
+        "required": [
+          "company_id",
+          "tour_id",
+          "starts_at",
+          "capacity",
+          "active"
+        ]
       },
       "HotelBookingInput": {
         "type": "object",
@@ -4445,7 +4980,13 @@
             "default": ""
           }
         },
-        "required": ["kind", "room_id", "check_in", "check_out", "guests"]
+        "required": [
+          "kind",
+          "room_id",
+          "check_in",
+          "check_out",
+          "guests"
+        ]
       },
       "TourBookingInput": {
         "type": "object",
@@ -4469,7 +5010,11 @@
             "default": ""
           }
         },
-        "required": ["kind", "departure_id", "guests"]
+        "required": [
+          "kind",
+          "departure_id",
+          "guests"
+        ]
       },
       "BookingInput": {
         "oneOf": [
@@ -4498,10 +5043,17 @@
           },
           "decision": {
             "type": "string",
-            "enum": ["confirmed", "declined"]
+            "enum": [
+              "confirmed",
+              "declined"
+            ]
           }
         },
-        "required": ["company_id", "booking_id", "decision"]
+        "required": [
+          "company_id",
+          "booking_id",
+          "decision"
+        ]
       },
       "StayInput": {
         "type": "object",
@@ -4517,7 +5069,10 @@
           },
           "action": {
             "type": "string",
-            "enum": ["checkin", "checkout"]
+            "enum": [
+              "checkin",
+              "checkout"
+            ]
           },
           "country": {
             "type": "string",
@@ -4532,7 +5087,11 @@
             "default": "Não informado"
           }
         },
-        "required": ["company_id", "booking_id", "action"]
+        "required": [
+          "company_id",
+          "booking_id",
+          "action"
+        ]
       },
       "CancelInput": {
         "type": "object",
@@ -4543,7 +5102,9 @@
             "format": "uuid"
           }
         },
-        "required": ["booking_id"]
+        "required": [
+          "booking_id"
+        ]
       },
       "RevokeInput": {
         "type": "object",
@@ -4559,7 +5120,10 @@
             "maxLength": 128
           }
         },
-        "required": ["company_id", "user_id"]
+        "required": [
+          "company_id",
+          "user_id"
+        ]
       },
       "RegistrationInput": {
         "type": "object",
@@ -4583,9 +5147,19 @@
           "consent": {
             "type": "boolean",
             "const": true
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Celular brasileiro com DDD. A API valida e normaliza para +55 seguido dos 11 dígitos; rejeita placeholders evidentes."
           }
         },
-        "required": ["name", "email", "password", "consent"]
+        "required": [
+          "name",
+          "email",
+          "password",
+          "consent",
+          "phoneNumber"
+        ]
       },
       "DomainError": {
         "type": "object",
@@ -4615,10 +5189,16 @@
                 }
               }
             },
-            "required": ["code", "message", "requestId"]
+            "required": [
+              "code",
+              "message",
+              "requestId"
+            ]
           }
         },
-        "required": ["error"]
+        "required": [
+          "error"
+        ]
       },
       "Company": {
         "type": "object",
@@ -4630,7 +5210,10 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["hotel", "operator"]
+            "enum": [
+              "hotel",
+              "operator"
+            ]
           },
           "name": {
             "type": "string",
@@ -4656,14 +5239,21 @@
           },
           "status": {
             "type": "string",
-            "enum": ["draft", "published", "suspended"]
+            "enum": [
+              "draft",
+              "published",
+              "suspended"
+            ]
           },
           "created_at": {
             "type": "string",
             "format": "date-time"
           },
           "from_price": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 0
           },
           "trade_name": {
@@ -4672,7 +5262,15 @@
             "description": "Nome fantasia usado nas listagens quando preenchido (mínimo de 2 caracteres). Vazio usa name como alternativa. Na atualização, omitir preserva o valor existente."
           }
         },
-        "required": ["id", "kind", "name", "slug", "city", "description", "status"]
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "slug",
+          "city",
+          "description",
+          "status"
+        ]
       },
       "Room": {
         "type": "object",
@@ -4708,17 +5306,30 @@
           },
           "active": {
             "type": "integer",
-            "enum": [0, 1]
+            "enum": [
+              0,
+              1
+            ]
           },
           "operational_status": {
             "type": "string",
-            "enum": ["ready", "cleaning", "maintenance"]
+            "enum": [
+              "ready",
+              "cleaning",
+              "maintenance"
+            ]
           },
           "current_guest": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "current_departure": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date"
           }
         },
@@ -4770,10 +5381,21 @@
           },
           "published": {
             "type": "integer",
-            "enum": [0, 1]
+            "enum": [
+              0,
+              1
+            ]
           }
         },
-        "required": ["id", "company_id", "slug", "name", "bio", "languages", "published"]
+        "required": [
+          "id",
+          "company_id",
+          "slug",
+          "name",
+          "bio",
+          "languages",
+          "published"
+        ]
       },
       "Tour": {
         "type": "object",
@@ -4819,11 +5441,17 @@
             "maximum": 100000000
           },
           "guide_id": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "published": {
             "type": "integer",
-            "enum": [0, 1]
+            "enum": [
+              0,
+              1
+            ]
           }
         },
         "required": [
@@ -4862,14 +5490,23 @@
           },
           "active": {
             "type": "integer",
-            "enum": [0, 1]
+            "enum": [
+              0,
+              1
+            ]
           },
           "reserved": {
             "type": "integer",
             "minimum": 0
           }
         },
-        "required": ["id", "tour_id", "starts_at", "capacity", "active"]
+        "required": [
+          "id",
+          "tour_id",
+          "starts_at",
+          "capacity",
+          "active"
+        ]
       },
       "HotelDetail": {
         "allOf": [
@@ -4886,7 +5523,9 @@
                 }
               }
             },
-            "required": ["rooms"]
+            "required": [
+              "rooms"
+            ]
           }
         ]
       },
@@ -4918,7 +5557,10 @@
                 }
               }
             },
-            "required": ["company_name", "departures"]
+            "required": [
+              "company_name",
+              "departures"
+            ]
           }
         ]
       },
@@ -4943,7 +5585,11 @@
                 }
               }
             },
-            "required": ["company_name", "city", "tours"]
+            "required": [
+              "company_name",
+              "city",
+              "tours"
+            ]
           }
         ]
       },
@@ -4960,7 +5606,12 @@
           },
           "role": {
             "type": "string",
-            "enum": ["hotel_manager", "hotel_staff", "operator", "guide"]
+            "enum": [
+              "hotel_manager",
+              "hotel_staff",
+              "operator",
+              "guide"
+            ]
           },
           "name": {
             "type": "string"
@@ -4974,7 +5625,14 @@
             "type": "string"
           }
         },
-        "required": ["company_id", "user_id", "role", "name", "email", "company_name"]
+        "required": [
+          "company_id",
+          "user_id",
+          "role",
+          "name",
+          "email",
+          "company_name"
+        ]
       },
       "Booking": {
         "type": "object",
@@ -4992,19 +5650,34 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["hotel", "tour"]
+            "enum": [
+              "hotel",
+              "tour"
+            ]
           },
           "room_id": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "departure_id": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "check_in": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "check_out": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "guests": {
             "type": "integer",
@@ -5028,7 +5701,12 @@
           },
           "status": {
             "type": "string",
-            "enum": ["pending", "confirmed", "declined", "cancelled"]
+            "enum": [
+              "pending",
+              "confirmed",
+              "declined",
+              "cancelled"
+            ]
           },
           "created_at": {
             "type": "string",
@@ -5045,22 +5723,44 @@
             "type": "string"
           },
           "starts_at": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "country": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "origin_city": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "checked_in_at": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "checked_out_at": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
-        "required": ["id", "kind", "status", "total_cents", "guests", "company_id"]
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "total_cents",
+          "guests",
+          "company_id"
+        ]
       },
       "Inventory": {
         "type": "object",
@@ -5094,11 +5794,22 @@
             }
           }
         },
-        "required": ["company", "rooms", "guides", "tours", "departures"]
+        "required": [
+          "company",
+          "rooms",
+          "guides",
+          "tours",
+          "departures"
+        ]
       },
       "CadasturMapping": {
         "type": "object",
-        "required": ["external_id", "name", "uf", "city"],
+        "required": [
+          "external_id",
+          "name",
+          "uf",
+          "city"
+        ],
         "properties": {
           "external_id": {
             "type": "integer",
@@ -5189,11 +5900,25 @@
       },
       "CadasturPreviewInput": {
         "type": "object",
-        "required": ["category", "period", "uf", "sheet", "mapping", "checksum"],
+        "required": [
+          "category",
+          "period",
+          "uf",
+          "sheet",
+          "mapping",
+          "checksum"
+        ],
         "properties": {
           "category": {
             "type": "string",
-            "enum": ["hospedagens", "guias", "gastronomia", "transportes", "agencias", "servicos"]
+            "enum": [
+              "hospedagens",
+              "guias",
+              "gastronomia",
+              "transportes",
+              "agencias",
+              "servicos"
+            ]
           },
           "period": {
             "type": "string",
@@ -5242,10 +5967,255 @@
           },
           "operational_status": {
             "type": "string",
-            "enum": ["ready", "cleaning", "maintenance"]
+            "enum": [
+              "ready",
+              "cleaning",
+              "maintenance"
+            ]
           }
         },
-        "required": ["company_id", "room_id", "operational_status"]
+        "required": [
+          "company_id",
+          "room_id",
+          "operational_status"
+        ]
+      },
+      "ProfileUpdateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "avatar"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "avatar": {
+            "type": "string",
+            "enum": [
+              "sol",
+              "rio",
+              "folha",
+              "brisa",
+              "barro",
+              "nuvem"
+            ]
+          }
+        }
+      },
+      "CatalogItemInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "category",
+          "name",
+          "slug",
+          "city",
+          "summary",
+          "description",
+          "image_urls",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Omitir para criar; enviar para atualizar."
+          },
+          "source_entry_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "hospedagens",
+              "gastronomia",
+              "passeios",
+              "guias",
+              "agencias",
+              "servicos",
+              "navegacao"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 120
+          },
+          "slug": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 80,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "city": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "subtype": {
+            "type": "string",
+            "maxLength": 100,
+            "default": ""
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 15,
+            "maxLength": 260
+          },
+          "description": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 5000
+          },
+          "details": {
+            "type": "string",
+            "maxLength": 5000,
+            "default": ""
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 300,
+            "default": ""
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 40,
+            "default": ""
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "description": "E-mail válido ou texto vazio."
+          },
+          "website": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "URL HTTP/HTTPS válida ou texto vazio."
+          },
+          "image_urls": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "type": "string",
+              "maxLength": 500
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ]
+          }
+        }
+      },
+      "DeleteCatalogItemInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "NearbyRecommendations": {
+        "type": "object",
+        "required": [
+          "status",
+          "places",
+          "radiusMeters",
+          "updatedAt",
+          "stale",
+          "hotelLocation"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "location_missing",
+              "temporarily_unavailable"
+            ]
+          },
+          "places": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "restaurant",
+                    "snack",
+                    "bar",
+                    "gym"
+                  ]
+                },
+                "distanceMeters": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "registeredInHub": {
+                  "type": "boolean"
+                },
+                "registeredProviderId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "googleMapsUrl": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          },
+          "radiusMeters": {
+            "type": "integer",
+            "const": 2000
+          },
+          "updatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "hotelLocation": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              }
+            }
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -5260,6 +6230,12 @@
         "in": "cookie",
         "name": "__Secure-better-auth.session_token",
         "type": "apiKey"
+      },
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token de 15 minutos obtido em GET /api/auth/token. A autorização é revalidada no servidor."
       }
     }
   }
