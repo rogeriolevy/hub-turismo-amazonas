@@ -3,6 +3,8 @@ param(
   [Parameter(Mandatory = $true)]
   [string]$DownloadedBackupPath,
   [Parameter(Mandatory = $true)]
+  [string]$SyncDirectory,
+  [Parameter(Mandatory = $true)]
   [string]$ReceiptPath,
   [switch]$ConfirmFreshDownload
 )
@@ -15,6 +17,10 @@ $temporaryRoot = [System.IO.Path]::GetFullPath($env:TEMP)
 $ssh = (Get-Command ssh.exe -ErrorAction Stop).Source
 $scp = (Get-Command scp.exe -ErrorAction Stop).Source
 
+if (-not (Test-Path -LiteralPath $SyncDirectory -PathType Container)) {
+  throw "A pasta sincronizada precisa existir para confirmar que o download foi salvo fora dela: $SyncDirectory"
+}
+$syncRoot = (Resolve-Path -LiteralPath $SyncDirectory -ErrorAction Stop).Path
 if (-not $ConfirmFreshDownload) {
   throw "Confirme o download novo pelo portal acrescentando -ConfirmFreshDownload. Um arquivo na pasta sincronizada não comprova a recuperação externa."
 }
@@ -26,6 +32,29 @@ if (-not (Test-Path -LiteralPath $ReceiptPath -PathType Leaf)) {
 }
 $downloadedBackup = (Resolve-Path -LiteralPath $DownloadedBackupPath -ErrorAction Stop).Path
 $receiptFile = (Resolve-Path -LiteralPath $ReceiptPath -ErrorAction Stop).Path
+function Test-PathWithinDirectory {
+  param(
+    [Parameter(Mandatory = $true)][string]$CandidatePath,
+    [Parameter(Mandatory = $true)][string]$DirectoryPath
+  )
+  $separatorChars = [char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+  $candidateFullPath = [System.IO.Path]::GetFullPath($CandidatePath).TrimEnd($separatorChars)
+  $directoryFullPath = [System.IO.Path]::GetFullPath($DirectoryPath).TrimEnd($separatorChars)
+  if ([string]::Equals($candidateFullPath, $directoryFullPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+    return $true
+  }
+  $directoryPrefix = $directoryFullPath + [System.IO.Path]::DirectorySeparatorChar
+  return $candidateFullPath.StartsWith($directoryPrefix, [System.StringComparison]::OrdinalIgnoreCase)
+}
+if (Test-PathWithinDirectory -CandidatePath $downloadedBackup -DirectoryPath $syncRoot) {
+  throw "A cópia precisa estar fora da pasta sincronizada; use o arquivo obtido em um novo download do portal."
+}
+if (Test-PathWithinDirectory -CandidatePath $receiptFile -DirectoryPath $syncRoot) {
+  throw "O recibo independente precisa permanecer fora da pasta sincronizada."
+}
+if (Test-PathWithinDirectory -CandidatePath $temporaryRoot -DirectoryPath $syncRoot) {
+  throw "A pasta temporária local está dentro da pasta sincronizada; escolha outra pasta de sincronização."
+}
 $receiptRoot = (Resolve-Path -LiteralPath $receiptDirectory -ErrorAction Stop).Path.TrimEnd("\", "/") + [System.IO.Path]::DirectorySeparatorChar
 if (-not $receiptFile.StartsWith($receiptRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
   throw "O recibo deve estar dentro de $receiptDirectory."

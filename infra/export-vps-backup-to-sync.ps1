@@ -18,6 +18,28 @@ if (-not (Test-Path -LiteralPath $SyncDirectory -PathType Container)) {
 $syncRoot = (Resolve-Path -LiteralPath $SyncDirectory -ErrorAction Stop).Path
 $receiptDirectory = Join-Path $repositoryRoot "tmp\offsite-backup-receipts"
 
+function Test-PathWithinDirectory {
+  param(
+    [Parameter(Mandatory = $true)][string]$CandidatePath,
+    [Parameter(Mandatory = $true)][string]$DirectoryPath
+  )
+  $separatorChars = [char[]]@([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+  $candidateFullPath = [System.IO.Path]::GetFullPath($CandidatePath).TrimEnd($separatorChars)
+  $directoryFullPath = [System.IO.Path]::GetFullPath($DirectoryPath).TrimEnd($separatorChars)
+  if ([string]::Equals($candidateFullPath, $directoryFullPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+    return $true
+  }
+  $directoryPrefix = $directoryFullPath + [System.IO.Path]::DirectorySeparatorChar
+  return $candidateFullPath.StartsWith($directoryPrefix, [System.StringComparison]::OrdinalIgnoreCase)
+}
+
+if (Test-PathWithinDirectory -CandidatePath $receiptDirectory -DirectoryPath $syncRoot) {
+  throw "A pasta de sincronização contém o recibo independente; escolha uma pasta mais específica para manter o recibo fora dela."
+}
+if (Test-PathWithinDirectory -CandidatePath $temporaryRoot -DirectoryPath $syncRoot) {
+  throw "A pasta temporária local está dentro da pasta sincronizada; escolha outra pasta de sincronização."
+}
+
 function Invoke-OpenSsh {
   param(
     [Parameter(Mandatory = $true)][string]$Executable,
