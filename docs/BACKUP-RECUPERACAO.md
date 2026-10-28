@@ -17,9 +17,9 @@ O dump contém dados de produção, inclusive dados pessoais. Use somente uma pa
 ## Baixar e ensaiar a recuperação
 
 1. Pelo portal web do serviço escolhido, baixe o dump e o arquivo .sha256 para um diretório local separado da pasta sincronizada. Mantenha o nome original de ambos.
-2. Revise que o portal mostra a sincronização concluída. No PowerShell, passe o caminho da cópia recém-baixada e o recibo da etapa anterior:
+2. Revise que o portal mostra a sincronização concluída. Execute `infra/verify-vps-offsite-backup.ps1` no PowerShell, informando o caminho da cópia recém-baixada, a mesma pasta sincronizada usada na exportação e o recibo da etapa anterior. O verificador recusa cópias ou recibos que ainda estejam dentro da pasta sincronizada:
 
-        .\infra\verify-vps-offsite-backup.ps1 -DownloadedBackupPath 'C:\caminho\Downloads\hub-AAAA...dump' -ReceiptPath '.\tmp\offsite-backup-receipts\hub-AAAA...dump.json' -ConfirmFreshDownload
+        .\infra\verify-vps-offsite-backup.ps1 -DownloadedBackupPath 'C:\caminho\Downloads\hub-AAAA...dump' -SyncDirectory 'C:\caminho\da\pasta\sincronizada' -ReceiptPath '.\tmp\offsite-backup-receipts\hub-AAAA...dump.json' -ConfirmFreshDownload
 
 3. O verificador compara os bytes baixados com o SHA-256 do recibo independente e do manifesto. Depois envia a cópia a um staging único em /var/tmp, valida o formato PostgreSQL pelo restorer existente e restaura para um banco temporário novo hub_restore_offsite_....
 4. O script consulta somente as contagens agregadas de usuários, reservas, lembretes e entradas Cadastur. Depois remove somente o banco temporário que criou e os arquivos do próprio staging. Confira no resultado RESTORE_DATABASE_CLEANUP=ok, REMOTE_STAGING_CLEANUP=ok e as quatro contagens. Se a limpeza do banco falhar, a saída identifica o nome do banco temporário para revisão; não remova outro banco.
