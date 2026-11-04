@@ -7,7 +7,7 @@ import { isAdmin } from "../server/authorization.ts";
 export async function verifyStoredPassword(db: DatabaseExecutor, email: string, password: string) {
   const account = await one<{ password: string | null }>(
     db,
-    "SELECT a.password FROM account a JOIN \"user\" u ON u.id = a.userId WHERE u.email = ? AND a.providerId = 'credential'",
+    'SELECT a.password FROM account a JOIN "user" u ON u.id = a."userId" WHERE u.email = ? AND a."providerId" = \'credential\'',
     email.trim().toLowerCase(),
   );
   if (!account?.password || !(await verifyPassword({ hash: account.password, password })))
@@ -38,14 +38,14 @@ export async function resetLocalAccountPassword(
   await write(db, async (tx) => {
     const result = await run(
       tx,
-      "UPDATE account SET password = ?, updatedAt = ? WHERE userId = ? AND providerId = ?",
+      'UPDATE account SET password = ?, "updatedAt" = ? WHERE "userId" = ? AND "providerId" = ?',
       hash,
       new Date().toISOString(),
       user.id,
       "credential",
     );
     if (result.changes !== 1) throw new Error("Credencial de senha não encontrada.");
-    await run(tx, "DELETE FROM session WHERE userId = ?", user.id);
+    await run(tx, 'DELETE FROM session WHERE "userId" = ?', user.id);
   });
   await verifyStoredPassword(db, email, password);
 }

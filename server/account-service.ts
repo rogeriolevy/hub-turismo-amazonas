@@ -19,7 +19,7 @@ export async function updateOwnProfile(
   const image = profileAvatarUrl(data.avatar);
   const result = await run(
     db,
-    'UPDATE "user" SET name = ?, image = ?, updatedAt = ? WHERE id = ?',
+    'UPDATE "user" SET name = ?, image = ?, "updatedAt" = ? WHERE id = ?',
     data.name,
     image,
     new Date().toISOString(),
@@ -37,7 +37,7 @@ export async function assignInitialProfileAvatar(db: DatabaseExecutor, email: st
   const avatar = profileAvatars[randomInt(profileAvatars.length)];
   await run(
     db,
-    'UPDATE "user" SET image = ?, updatedAt = ? WHERE id = ? AND image IS NULL',
+    'UPDATE "user" SET image = ?, "updatedAt" = ? WHERE id = ? AND image IS NULL',
     profileAvatarUrl(avatar.key),
     new Date().toISOString(),
     user.id,
