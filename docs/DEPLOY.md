@@ -2,13 +2,13 @@
 
 ## Estado publicado
 
-A versão 0.12.10 está publicada na VPS com Docker Compose, PostgreSQL e Nginx em `https://hubamazonas.vps12233.panel.icontainer.site`. Em 04/11/2026, HTTPS validou sem erro de certificado; `/api/health` respondeu HTTP 200 com `status=ok`, `version=0.12.10` e `database=postgresql`. Web, worker e PostgreSQL estão saudáveis. O link `/opt/hub-turismo/current` aponta para `/opt/hub-turismo/release-0.12.10`; a release 0.12.9 continua disponível para retorno.
+A versão 0.12.11 está publicada na VPS com Docker Compose, PostgreSQL e Nginx em `https://hubamazonas.vps12233.panel.icontainer.site`. Em 04/11/2026, HTTPS validou sem erro de certificado; `/api/health` respondeu HTTP 200 com `status=ok`, `version=0.12.11` e `database=postgresql`. Web, worker e PostgreSQL estão saudáveis. O link `/opt/hub-turismo/current` aponta para `/opt/hub-turismo/release-0.12.11`; a release 0.12.10 permanece disponível para retorno.
 
-Na plataforma, o cabeçalho oferece links para os seis módulos turísticos; Sobre a Hub e Contato ficam somente na área institucional. A entrada `/plataforma`, `/sobre` e `/navegacao` responderam HTTP 200. A página institucional mantém Sobre/Contato, e a grade Maués ↔ Parintins aparece em Navegação. O heartbeat do worker foi atualizado e as contagens agregadas da base após a publicação foram `users=2`, `bookings=0`, `booking_reminders=0`, `cadastur_entries=42`, `cadastur_imports=6` e `catalog_media=1`.
+Na plataforma, o cabeçalho oferece links para os seis módulos turísticos e destaca a página ativa; Sobre a Hub e Contato ficam somente na área institucional e não aparecem no rodapé da plataforma. As páginas `/plataforma`, `/hospedagens` e `/navegacao` foram verificadas por HTTPS; o item Navegação recebeu `aria-current="page"`. A página institucional mantém Sobre/Contato, e a grade Maués ↔ Parintins aparece em Navegação. O heartbeat do worker foi atualizado e as contagens agregadas da base após a publicação foram `users=2`, `bookings=0`, `booking_reminders=0`, `cadastur_entries=42`, `cadastur_imports=6` e `catalog_media=1`.
 
-Antes da publicação, um backup PostgreSQL foi copiado para este computador, conferido por SHA-256 e restaurado em banco isolado. A restauração confirmou `users=2`, `bookings=0`, `booking_reminders=0` e `cadastur_entries=42`. O arquivo está em `%LOCALAPPDATA%\HubTurismo\Backups\hub-20261104T204746Z-2405754\hub-20261104T204746Z-2405754.dump`; o SHA-256 é `338ec3a1dd916133c0ad65d89260bf7f0166484d2f50806cee323039c50b7daf`. Consulte o [runbook de backup local e recuperação](BACKUP-RECUPERACAO.md).
+Antes da publicação 0.12.11, um backup PostgreSQL foi copiado para este computador, conferido por SHA-256 e restaurado em banco isolado. A restauração confirmou `users=2`, `bookings=0`, `booking_reminders=0` e `cadastur_entries=42`. O arquivo está em `%LOCALAPPDATA%\HubTurismo\Backups\hub-20261104T213535Z-2422434\hub-20261104T213535Z-2422434.dump`; o SHA-256 é `6eb2ebf7c27ee633fe3d0eaf85b50af1e7c38517b976206e1d81b052e7485753`. Consulte o [runbook de backup local e recuperação](BACKUP-RECUPERACAO.md).
 
-As releases históricas 0.12.6 a 0.12.9 permanecem preservadas; a 0.12.9 é a versão anterior elegível para retorno. A imagem 0.12.10 foi construída exclusivamente no Docker da VPS. Nenhum schema ou volume foi alterado e a importação SQLite→PostgreSQL não foi repetida. Consulte a [baseline de proveniência](../.planning/phases/01-baseline-e-candidata/01-BASELINE.md) e o [registro da versão 0.12.10](releases/0.12.10.md).
+As releases 0.12.6 a 0.12.11 permanecem preservadas; a 0.12.10 é a versão anterior elegível para retorno. A imagem 0.12.11 foi construída exclusivamente no Docker da VPS. Nenhum schema ou volume foi alterado e a importação SQLite→PostgreSQL não foi repetida. Consulte a [baseline de proveniência](../.planning/phases/01-baseline-e-candidata/01-BASELINE.md), o [registro da versão 0.12.10](releases/0.12.10.md) e a [proveniência da 0.12.11](releases/0.12.11.md).
 
 O serviço Sites existente permanece independente da VPS. A origem oficial foi confirmada e validada em uma transferência descartável antes da publicação. Consulte também [USO-LOCAL.md](USO-LOCAL.md) para continuar usando a instalação local.
 
@@ -106,7 +106,7 @@ Para configurar uma VPS com releases em `/opt/hub-turismo/release-VERSÃO`, exec
 Após a nova release passar pela verificação de saúde, atualize o link como root, ajustando a versão. Remova escrita de grupo/outros e mantenha `vps.env` restrito; o wrapper de backup recusa executar se essas condições falharem. O comando abaixo troca o destino do link de forma atômica:
 
 ```sh
-release=/opt/hub-turismo/release-0.12.10
+release=/opt/hub-turismo/release-0.12.11
 chmod -R go-w "$release"
 chown hub:hub "$release/infra/vps.env"
 chmod 600 "$release/infra/vps.env"

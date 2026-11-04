@@ -1,0 +1,4196 @@
+{
+  "format": "hub-source-snapshot-v1",
+  "createdAtUtc": "2026-11-04T21:55:30.0467573Z",
+  "packageVersion": "0.12.11",
+  "gitHead": "86d307e1121be34dbcd5b496ce4d1f547dcfa377",
+  "gitStatusLineCount": 367,
+  "gitWorkingTreeClean": false,
+  "excludedPathPattern": "(^|/)(\\.git|node_modules|\\.next|tmp|data|backups|output|coverage|test-results|public/uploads|\\.planning|\\.codex|\\.agents|\\.sites-runtime|\\.vercel|\\.ssh|secrets|credentials)(/|$)|(^|/)\\.env[^/]*$|(^|/)[^/]+\\.env$|(^|/)\\.npmrc$|(^|/)(authorized_keys|known_hosts)$|(^|/)(id_rsa|id_ed25519|id_ecdsa|id_dsa)(\\.pub)?$|(^|/)[^/]*\\.(sqlite|pem|key|p12|pfx|ppk|crt|p7b|secret)([-.].*)?$",
+  "sourceFileCount": 523,
+  "files": [
+    {
+      "path": ".dockerignore",
+      "sha256": "530dd2bf874c3e55ae22997199da00923e5a9b7c4a4cc92d582a1f2412c61e9c",
+      "bytes": 183,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": ".gitattributes",
+      "sha256": "de3dfa29139d161d47688d477b35790defee1c3af17abf6485e582700bb11cfb",
+      "bytes": 47,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "edbcbe5bdfc65e918220b273a54bd57a9cc2ce30408401af72fb352375e036f9",
+      "bytes": 2441,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "aecea60f349e6430cdf2ed7dabfe9ade915fe80b5cb1aa76143bfa837333cfad",
+      "bytes": 759,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": ".nvmrc",
+      "sha256": "f14b4987904bcb5814e4459a057ed4d20f58a633152288a761214dcd28780b56",
+      "bytes": 3,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": ".prettierignore",
+      "sha256": "3ae68ebe7e46f229621ad09791524482a112cd481acb170a5cb4d56290d56796",
+      "bytes": 125,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": ".prettierrc.json",
+      "sha256": "9b23e5f565b48301e923079b321b7a5fc656ee44966308014d20dda1d9dd20d2",
+      "bytes": 82,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "63f2c50380ed6303237cce215ce27af1d620d094c215e28d1b1538a3c070e3bb",
+      "bytes": 678,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/admin/page.tsx",
+      "sha256": "68fa04d6f36485c902bea7fb3345621b2d4a77af696f421d2b52cebff62314cb",
+      "bytes": 120,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/agencias/page.tsx",
+      "sha256": "37852328ff107b89d2bee9a222b198ff9e9d56459cac65b99a00ff4d19509e1a",
+      "bytes": 481,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/api/admin/contatos/route.ts",
+      "sha256": "fb065ec290c9a53e2fa939b44bc0da997d782dd019b628073929a1c495ef88b3",
+      "bytes": 649,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/api/auth/[...all]/route.ts",
+      "sha256": "f1326f51f855cb555ecd626bff2223ca1807fa6b181276949a8e7522b08e144f",
+      "bytes": 2281,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/api/cadastur/[action]/route.ts",
+      "sha256": "6c72c0bdd80a7024a1e36e4558bf37a961a6b20dfa842431ef3e94fdf7747fbe",
+      "bytes": 4759,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/api/catalogo/[...path]/route.ts",
+      "sha256": "9c767fec258a968f0c892b14eb5c2af999fdf42d889d599d0365f4018afb0c44",
+      "bytes": 2134,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/api/conta/cadastro/route.ts",
+      "sha256": "7eb5e51921b48a154c737f83a2c0a3a115b4b1d5c5dcd4228d8da0e76e9c287d",
+      "bytes": 2507,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/api/conta/perfil/route.ts",
+      "sha256": "3f93c51b5196180573126a572bb4cc8315cb8534628e762ecc86ba54aae84510",
+      "bytes": 720,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/api/contatos/route.ts",
+      "sha256": "1f38929728b96f316e18fd7dd1abc8ace0bae625e91c6d3903b26d8cd707ae4f",
+      "bytes": 788,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/api/diretorio/route.ts",
+      "sha256": "7f5c010ddb3828bdb2b20ee935bdabf180ba8d89fe0995e80d21276cd60f5ee3",
+      "bytes": 866,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/api/health/route.ts",
+      "sha256": "9fc922a544f8015972796569cd6ff024bce4d55d8b63bbe2d7da72560b46b0cb",
+      "bytes": 820,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/api/media/catalog/[name]/route.ts",
+      "sha256": "02e56d2b21f7d1daa6b770de416fa7c265933abdf89646247ca17a7b39989986",
+      "bytes": 778,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/api/openapi/route.ts",
+      "sha256": "948a506affaaaa5ad8db331051beb0808927bb572e692183524646eca5517bc3",
+      "bytes": 222,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/api/plataforma/[...path]/route.ts",
+      "sha256": "7d00fecca17e4bc929dd0bda767f42bfe5cc6f31f15b9e0791bdee771a58713e",
+      "bytes": 2848,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/api/plataforma/conteudos/imagens/route.ts",
+      "sha256": "8f2a480989617adeb4121ac20b3493b229c9b2bf777ac950c6c4d8417d9a5464",
+      "bytes": 3294,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/api/preferences/locale/route.ts",
+      "sha256": "3d97f5c521d37f99e32e5156f41d22997b6ae927028fa7af868bb590546e762b",
+      "bytes": 953,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/api/proximidades/route.ts",
+      "sha256": "7fd12aea00ea169ead766ba40673d1365d5923c98b94cb08ba7d6531a4b5377d",
+      "bytes": 3329,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/cadastro/page.tsx",
+      "sha256": "a11b21dab863d645a5cbbae65cfe148220d0124e56d3223b92595af1101a5d9b",
+      "bytes": 1094,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/confirmar-email/page.tsx",
+      "sha256": "f79e86654463d55524a3b0db25569f4fc4998a569d9680edf1143aca40b007ba",
+      "bytes": 701,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "app/entrar/page.tsx",
+      "sha256": "8cd5056598a0595a7c33dffae0dac6293eb452e328cc76bc1caa54d106836f64",
+      "bytes": 1223,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/error.tsx",
+      "sha256": "8a570db6840e1a35e71eefbb7e09e58f02e5da806669ba70001e062bdfd75a67",
+      "bytes": 353,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/experiencias/page.tsx",
+      "sha256": "ade3db9c933fdcd98c10d4ebcc00d01b7e2d9bf72c76519081cd6425c4c4d843",
+      "bytes": 553,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/gastronomia/page.tsx",
+      "sha256": "a8daf5736c53a2adc83ba22627dd49ed4acfa3a81309e16c91eff51d98c7c71d",
+      "bytes": 478,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/globals.css",
+      "sha256": "166b966540a713dcf5c13fa1b25f652cca04ec2b0dc5bde4731ad70940b6a05b",
+      "bytes": 18656,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/guias/[slug]/page.tsx",
+      "sha256": "80bde6cba7ee61aa0e7ee561381ef70ae72fb51d50fefd9507f6ea85d517e9f1",
+      "bytes": 603,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/guias/page.tsx",
+      "sha256": "7c77229538cab378a44dfdd93e8106f41d295e176462d6edb4121fd0b33934a4",
+      "bytes": 679,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/hospedagens/[slug]/page.tsx",
+      "sha256": "e287b9ca94f57190acfd116b91ea0db249ae0575f41fd25e1a4a6892b7457e9d",
+      "bytes": 986,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/hospedagens/page.tsx",
+      "sha256": "e3804aa8a0987666a2b4c98e92a0977557dafa5550fe0d385b8165c429a60abd",
+      "bytes": 478,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/layout.tsx",
+      "sha256": "968ca8717fef9f1a6fca908576aa4f44c6cf4f1146ea0ccc95f4d4bee6939763",
+      "bytes": 1335,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/loading.tsx",
+      "sha256": "c4a4961b35653775d00fbcd649d9bd0e345c92c960a7e5c6bc4b0ab1dcd1e4fc",
+      "bytes": 308,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/minha-conta/account.css",
+      "sha256": "1d88e70778af2ec4a47c937675b5b5ce9ff941b0681ec14ee74a045afac5f820",
+      "bytes": 11151,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/minha-conta/configuracoes/page.tsx",
+      "sha256": "12f71d84872bf94bb04c00dc6fad56d5af6863d88746f73de43982cd5303a5b0",
+      "bytes": 4949,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/minha-conta/configuracoes/settings.css",
+      "sha256": "0cd2d60b1184cf2fcf793297e57fd82479bc2e358698a7d188ab0cf9e8169019",
+      "bytes": 3895,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/minha-conta/notificacoes/page.tsx",
+      "sha256": "791834f02a291386894f8c24015c4ca591b5a3b00e75f67590f2bfbdc6212307",
+      "bytes": 2048,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "app/minha-conta/page.tsx",
+      "sha256": "f57ac530b03b45ad8e35d9ba3d3bc6432fd6fa8574f8e7032b4579f3185fa074",
+      "bytes": 8313,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/minha-conta/reservas/page.tsx",
+      "sha256": "ab8fca90ee9da09afa9aec1391f29808a076f3a66e06e59693de000b6a4be2df",
+      "bytes": 1805,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/navegacao/navigation.css",
+      "sha256": "d79b2061238e9872e14b9bbb6d33d6146e4ece835d4d3a7f5a451e7286b660c6",
+      "bytes": 14883,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/navegacao/page.tsx",
+      "sha256": "a0b94c417fa6570ce04ae2f77c0fa720aeb64df92334383aeb7e80b2fc3dc55a",
+      "bytes": 4383,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/not-found.tsx",
+      "sha256": "7e143ab8d2f56fc98ee8aaf17271b067d80fae8a6368442213b66c3a3d4e1158",
+      "bytes": 701,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/page.tsx",
+      "sha256": "11ec9386c4bf68da623a3152ce657c44b6593d3279e4531b0f51e27724f17aba",
+      "bytes": 7089,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/painel/[module]/[[...section]]/_components/administration/overview.module.css",
+      "sha256": "c47d7eec8903f0ed117579ae79f1faafb9e051cb55cf27e065fa748bbc047af2",
+      "bytes": 8496,
+      "gitStatus": "AM",
+      "gitStatusLabel": "added",
+      "gitTracked": true
+    },
+    {
+      "path": "app/painel/[module]/[[...section]]/_components/administration/overview.tsx",
+      "sha256": "4f74469d4a24416f8a9bc050ed9a365dfd9a48570720f047f795bfd4c768554e",
+      "bytes": 8929,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "app/painel/[module]/[[...section]]/page.tsx",
+      "sha256": "e0de3c6c6fecf42771c1274bba815dce92ce5474219b3112b1e4c1978df2c79a",
+      "bytes": 14359,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/painel/contato/page.tsx",
+      "sha256": "8f96a68b98786c47bce29e8f2a3215c27b5bc434db878e30ac014f9c318a5c81",
+      "bytes": 2297,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/passeios/[slug]/page.tsx",
+      "sha256": "bf767c2a78abdcc778b366c3dd2116e5fec624f1653e643234566ca0a82fd43b",
+      "bytes": 674,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/passeios/page.tsx",
+      "sha256": "fad444c8507551d446ef787c64a2dd6b0e784bc12b46c8dd76aff7ba419ee8c1",
+      "bytes": 684,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/plataforma/page.tsx",
+      "sha256": "da9f334a5dda4f1faefff9e7531d3488e5d7ffb0bef9893094c91a3f2e539547",
+      "bytes": 4641,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "app/plataforma/platform-entry.css",
+      "sha256": "3266253904572aa5e75b13f2a4218806850df0ae4c51e9097b5c8879c1d0349e",
+      "bytes": 4823,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "app/platform.css",
+      "sha256": "18db6937e1b44677bf2772202408754778e270ee67d21cd892e175cef604a9df",
+      "bytes": 26986,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/prestadores/[id]/page.tsx",
+      "sha256": "81b521c4bce449b2fdbd9099f81202b1085904662e424b7365bf51df0f9d49f0",
+      "bytes": 671,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/privacidade/page.tsx",
+      "sha256": "507808d10ac3555ad6b41e07172ced5a45e6f69ec9d5f667e3d197041ff964a2",
+      "bytes": 6759,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/recuperar-senha/page.tsx",
+      "sha256": "3192e03ca9fafe9d2a90e38e2260422c875fa1d21b9cf01211f26847722ab78e",
+      "bytes": 696,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "app/redefinir-senha/page.tsx",
+      "sha256": "8eb7d476ff720c5e524bb80a5bc6cf97b6d2c497ce2ed0f5643fb3a4c005661c",
+      "bytes": 648,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "app/robots.ts",
+      "sha256": "e6d2d565c5f31d72161f7d340ccc7cf201071ab7c15704a986f3b80b68cf3e53",
+      "bytes": 351,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "app/servicos/page.tsx",
+      "sha256": "6f018e40f7cdc841107b0197227956d4377d5ab9024e9b1694e179151ca317e3",
+      "bytes": 482,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/sitemap.ts",
+      "sha256": "b690c6c99c9dfbd8b8154f43e73ded8b6ba7dc0ba21df18b48156e977f3d1c0f",
+      "bytes": 928,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/sobre/page.tsx",
+      "sha256": "49ca493d3a3190a2023e49eb1c59039d87cf00930d8475391328a49cbd6f394c",
+      "bytes": 10929,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "app/sobre/sobre.css",
+      "sha256": "f8c6407f5c929c5042867ce0f99874a6a3b8d422d818675da7b2225eb10d54b4",
+      "bytes": 10594,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "appnoar.json",
+      "sha256": "4de30453a3346ea0e739d43b1e58c866d6da7f606ea9f2728a4f3cc77274fa4a",
+      "bytes": 632,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "CLAUDE.md",
+      "sha256": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49",
+      "bytes": 11,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components.json",
+      "sha256": "31f4ca67a4a62572571003d3d5aac85ee6fbfca67a192924bac6b168d95e98fd",
+      "bytes": 420,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/action-form.tsx",
+      "sha256": "ac9a96e79fe86aef391829f66e42dd9d82cb366872cc05092657ecd6e8904baf",
+      "bytes": 3469,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/action-form/fields.tsx",
+      "sha256": "3cd0f26d009b1f0afdb0f79b308bc07d88e05eb54ee65e5430413b8f5975b573",
+      "bytes": 4478,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/action-form/submission.ts",
+      "sha256": "a8f0893517fffdfff751f2f204f1d3979eac14c40de99ddd75d39b5e00e887b5",
+      "bytes": 2163,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/action-form/types.ts",
+      "sha256": "9cbc5559aab6bfb6bccfd10315d7a006b9efccb551919f97da2144eabb44f0d5",
+      "bytes": 587,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/administration/access-management.tsx",
+      "sha256": "a8888f17933511727b0dc649bada284e022f10c948cf7f3f684248f75a95ff59",
+      "bytes": 3916,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/administration/company-management.tsx",
+      "sha256": "e4429e71f14a30b0ca95a9042bda365a6a6a86e4d7af2d578364155f99832fb8",
+      "bytes": 1979,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/audit-log-panel.tsx",
+      "sha256": "5c69a28218e0dd6709e12773bf8347394d7fe8c8a9cd042a19a05ef7e3c932d0",
+      "bytes": 5427,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/booking-email-operations-refresh.tsx",
+      "sha256": "d10d288d47c4872064e9a809f13354fa932ff4ee16b8b2ddb8924084e9fcf751",
+      "bytes": 672,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/booking-email-operations.module.css",
+      "sha256": "821902e0cc60932952c239a06e889a361a91938bbbea90d6d8023cb5b17f9f96",
+      "bytes": 926,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/booking-email-operations.tsx",
+      "sha256": "a97bcfef9e7f8162617acbf8638ac17e6ea863db123d08709ab4afaa4a840416",
+      "bytes": 4983,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/booking-form.tsx",
+      "sha256": "f3a786a233295befed9cd0bd72bf41538c1799b309620a4811e85a717cfdd406",
+      "bytes": 5739,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/booking-list.tsx",
+      "sha256": "198b7cd80c438435e0c6427665d2799bb2051de1752adf638082ac2d8ae746e2",
+      "bytes": 7314,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/booking-management.tsx",
+      "sha256": "b31ed60eeed38b23f6608548f7bb47a0f318c1080fbdbe550759268c1a982220",
+      "bytes": 2532,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/brand.tsx",
+      "sha256": "d287f1b5bc089f99fc38839beb5312bc1ce6493406f1855bff50b12b2f9677da",
+      "bytes": 1709,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/cadastur-panel.tsx",
+      "sha256": "2750763e0708cfc495589bbfcd097fa403dc3e407bd94ac7930320aad7dcb89f",
+      "bytes": 9588,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/cadastur/api.ts",
+      "sha256": "404adbcbfaaf8eceaa38694f2c9631dbfae0dbf39e8d9c1848fd6398702a0d6a",
+      "bytes": 482,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/cadastur/directory-management.tsx",
+      "sha256": "5cc42b5a691adc30c07da389fa062ec7cdc96afc02060391b40f0c01313fc2dc",
+      "bytes": 7939,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/cadastur/mapping-step.tsx",
+      "sha256": "1791b38a5bf7c0981dc5d4db6b05b0a6b8c9d6f3d4e7cf8aad05733361814b86",
+      "bytes": 4316,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/cadastur/preview-step.tsx",
+      "sha256": "0ad4f809f3ff2a6904f50b9acac05a53da358ebcb7bf584faf4590669127a1b9",
+      "bytes": 3918,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/cadastur/source-step.tsx",
+      "sha256": "30d495483966a1e42d0da916870d8ff42d2b33b6040c281a4077061571d53e10",
+      "bytes": 5048,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/cadastur/types.ts",
+      "sha256": "1978d394addbae6b7341107447d5ac0d91b70cbfa73ccc3f3aff6b597fc6be3b",
+      "bytes": 207,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/catalog-content-form.tsx",
+      "sha256": "ba3a49f16cb8691b2f7424eb0efd0991d8487498a4d3e71279ecd3d1c456f4a3",
+      "bytes": 5436,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/catalog-content-panel.tsx",
+      "sha256": "e0ec29d03c6a117956d119251bf4c470bc3324e73b7478c82f11226f7d6576ff",
+      "bytes": 5879,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/catalog-content.css",
+      "sha256": "008e9f26e8b6e59bc5969506ef8a17d01d5ccb918abebfe39fde2c19b5f80fc0",
+      "bytes": 7675,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/catalog-pages.tsx",
+      "sha256": "f9317e74e1bd2dbf98f732ab7b807c4f4f24ad019db7ee26fcda47d5b8c337ca",
+      "bytes": 216,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/catalog/content-fields.tsx",
+      "sha256": "353a515272fed75c8688d3fd507ccb2689ebb2ab5ccdd1ae22a5bf3313422135",
+      "bytes": 4699,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/catalog/guide-detail.tsx",
+      "sha256": "053289b28fadcf28448079e0d836e3783c186eef1dd29fee7aab9f4548e1119c",
+      "bytes": 2371,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/catalog/hotel-detail.tsx",
+      "sha256": "9dbe7504d18c0df990f747d86187b284ea1a74b55187ed0d4cea7a5b1e0b8b31",
+      "bytes": 3512,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/catalog/media-editor.tsx",
+      "sha256": "97d5301d903243e89baecee4ff68e9f5aa11146c51a3b5df53211c5663e2c4c8",
+      "bytes": 4190,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/catalog/public-directory.tsx",
+      "sha256": "57d71ea4d0a2bb91aa97e9d82212bf768d740151b66d863bb1e97bd146d24236",
+      "bytes": 4949,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/catalog/tour-detail.tsx",
+      "sha256": "7575057bd6bbd856bd671f532e0bffd9452d82d56e82b74759f3d296164990a6",
+      "bytes": 3309,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/directory/bookable-hotels.tsx",
+      "sha256": "80bb764aac6bf299bc427e92f19c7ecfe27b611440df9e306b7d71cbe527cd75",
+      "bytes": 2316,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/directory/config.ts",
+      "sha256": "d18259b97f36e17dd526df7ba213646157ae956e4483cd60c9063790f1917416",
+      "bytes": 1629,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/directory/lodging-highlights.tsx",
+      "sha256": "15d87348e8dc7c2c041af0a3a30b51e076fceaf17125e7059280dad90b3efb13",
+      "bytes": 2495,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/directory/provider-attribution.tsx",
+      "sha256": "ef84d79e98b59e2512f603183a62a34e510be6d8cf870910a2f8c25f5c6bdfca",
+      "bytes": 1042,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/directory/provider-card.tsx",
+      "sha256": "1a9a31584babc2d45fe562151980afed0cd3836ae203243cd8a02be165e29e5b",
+      "bytes": 4669,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/directory/provider-detail.tsx",
+      "sha256": "093a125d1db8f43ea7d870ab8fce7835e68b0dc0845b13249eca5e634cee27e7",
+      "bytes": 5770,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/directory/provider-listing.tsx",
+      "sha256": "c36d3ad7d244381fd2417b0b896ed014fe7e31b43c00772bca2b43ddfbaaa9c0",
+      "bytes": 4872,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/directory/provider-results.tsx",
+      "sha256": "7d70924d42d0b107e577d2cc7435857d625da081f449d0353cb5623ab9d8bad7",
+      "bytes": 2566,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/directory/provider-search-area.tsx",
+      "sha256": "468689c8d22bddb26fe74493bb8571c5cec9ffd9ec42b9d4f7e45f81c743187b",
+      "bytes": 6588,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/experience-directory.css",
+      "sha256": "dadd6d85da8408c318f8ba2d3e4f5dcc9f3400a439438a084d8641e38413c6ce",
+      "bytes": 967,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/experience-directory.tsx",
+      "sha256": "a7095f337f708052b5a583dcf914fab18934dfe54060a0b71eeb4e81ef2e6831",
+      "bytes": 8955,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/experiences/departure-management.tsx",
+      "sha256": "21e0f0d12a5e0a1c43c5314891500b38626761707b6c2a4644f3f284c863a965",
+      "bytes": 1959,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/experiences/guide-schedule.tsx",
+      "sha256": "f9d2b8451d2acc953415638608482f52aa918ac08706122830b9f1583ff5f7f7",
+      "bytes": 1612,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/experiences/overview.tsx",
+      "sha256": "bb3a7fa9f5b1f27d5d056320f5314626b7246484afbf2a15a38e28dbe1a4c433",
+      "bytes": 1869,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/experiences/tour-guide-management.tsx",
+      "sha256": "feefeefb524d633cdb79c9f05038aaed4db2f49dab9af1da85f5d32d6e357ce1",
+      "bytes": 2635,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/hotel/overview.tsx",
+      "sha256": "74611c76e53f69ba995148fc6850c8a0b46265dab9a9cc9f5f4549b3aabbd8d2",
+      "bytes": 3812,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/hotel/room-management.tsx",
+      "sha256": "85c2604a9358100d4848a9e5e50ebd98bac17a3314bf64edbecfed3b9dc5a46e",
+      "bytes": 2287,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/hotel/stay-management.tsx",
+      "sha256": "46b834b1f42a13a3bf204f9e31c769819554aa84e51d8f54a6e82f4faacfcc19",
+      "bytes": 3386,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/navigation-explorer.tsx",
+      "sha256": "a0f6a2677aa3b54bf081486007f204c8f72c35b57c8c2957c4a7fe4ebf159ebe",
+      "bytes": 4847,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/navigation/attribution.tsx",
+      "sha256": "d0e86a997090445323d4c227dc5d4640774405bae1b208f77a3429ba743668a2",
+      "bytes": 1941,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/navigation/packages.tsx",
+      "sha256": "d46c5499ae8d4be550561be81a4355e2b5324529209719cf57c1c191d3be6f45",
+      "bytes": 3081,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/navigation/practical-guidance.tsx",
+      "sha256": "79a375da96e366757a7e3fab24fe1a230253d7e0a5832db8af7e825650fae20c",
+      "bytes": 2587,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/navigation/route-results.tsx",
+      "sha256": "28bb3d511e3b990a5109c875021f35dc5506b4a050dbca411b092a3a631e9fbb",
+      "bytes": 4734,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/navigation/search-form.tsx",
+      "sha256": "5692c15efd0205b34433504fd6c07d53540e9b3981031bed135c8d9c0ea8d65e",
+      "bytes": 4899,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/navigation/vessel-schedule.tsx",
+      "sha256": "7682a46cb241adfdbea4f8b18cef59a5ee6efe5a2f7b5dcc660fc04139f73272",
+      "bytes": 8079,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/nearby-recommendations.css",
+      "sha256": "e6a87b05cae7569aab7a04f148601ff5ccaada0ed8040dec5012870e71c8285a",
+      "bytes": 5479,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/nearby-recommendations.tsx",
+      "sha256": "41903e7c6f43cb2f792cc88fa6910d766042b31cdc6b216bf960ab5391d035c0",
+      "bytes": 7569,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/nearby/use-nearby-recommendations.ts",
+      "sha256": "c241dfc560362bb92ef30550d5c3436c71ea4337cfc2b1a0d84dfa5328109163",
+      "bytes": 1793,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/notification-inbox.tsx",
+      "sha256": "467ce66f79d4a283eea8f6567c40a767f2eadd4d2ccb098356a5c02b4bf161e2",
+      "bytes": 5852,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/pagination-navigation.tsx",
+      "sha256": "aae3a104c380fa7f0ff2143372c3fa8797be5c9b5ca8ba45c173a26a4c46cab8",
+      "bytes": 987,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/panel-forms.tsx",
+      "sha256": "757d64a35d8b65df99cb6f7ae300539fac434d6dc8e2ce2dd8e6c906aff0d08f",
+      "bytes": 6246,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/panel-shell.tsx",
+      "sha256": "a9f44bacb6df0da7bca02c832f41697f5db6c508d3dc2a9d2af49acdbb92ca81",
+      "bytes": 3833,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/platform-option-select.tsx",
+      "sha256": "eeb3a5ce218ddfcd4e8d9449de9a8835ddf3bacd18752714ff777e99953df7ed",
+      "bytes": 6013,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/platform/profile-editor.tsx",
+      "sha256": "745b180124a0a376be23fbb4e80a9f44565a6c1a95a36435928ae950f245579a",
+      "bytes": 4128,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/provider-directory.css",
+      "sha256": "3d5fc91470f19b2fcb2931e5168877907cc7794152b70295e26f98cecc04e2ca",
+      "bytes": 10675,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/provider-directory.tsx",
+      "sha256": "b899efa482543e71cd9036fd9d294f69616d12f33338e026119c1654782961e8",
+      "bytes": 202,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/registration-form.tsx",
+      "sha256": "dffed5b22e7391423e6f6717a7d84a7e20001cc55f895a68e4f339a8af061012",
+      "bytes": 6368,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/room-status-board.css",
+      "sha256": "c7551b378a613a14508d5e29636a89bd66160042f480d404e7c8ab0f14c66816",
+      "bytes": 7962,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/room-status-board.tsx",
+      "sha256": "e67592243dd7922859f6750175061b623181855e0790e428c64ee92a5ec45177",
+      "bytes": 7010,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/shared-views.tsx",
+      "sha256": "2e11c750edaddbe16958da09a6bb51a914c251c357d7497db6362540d3b9656e",
+      "bytes": 1172,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/shared.tsx",
+      "sha256": "025614de39c2b4cb1c417b93bcb6c64636c4e805945863b7f44ea15ced0fb378",
+      "bytes": 4848,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/travel-search.css",
+      "sha256": "db654c389ec7dc9cbcc53ef83b741cec27aad733d6e7b6f087a2726b9f55b62b",
+      "bytes": 4127,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/platform/travel-search.tsx",
+      "sha256": "96f35810684c43581f16b4105e033f87f779df1d72d0bb262056320d2337795d",
+      "bytes": 832,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/site/account-email-forms.tsx",
+      "sha256": "1dfa135e3f94114b0a6892f0c83a8e6647906984b7cd992582972693da8dbbdd",
+      "bytes": 8168,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/site/account-menu.tsx",
+      "sha256": "35bfcf505898172c7f9b28b1c35cec421eb8a8aa6e5913c9ee379f85c7b9be5c",
+      "bytes": 2975,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/site/admin-auth.tsx",
+      "sha256": "8f58559b2cbf8acd029ce0922172349fae3807290e3c7f1e8e62dd795d151219",
+      "bytes": 7073,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/site/auth-screen.css",
+      "sha256": "b85f42b98f2f13058262b04ea510450c68fa8e1f0736c1f178a752be7ebbcba6",
+      "bytes": 2903,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/site/auth-screen.tsx",
+      "sha256": "43c0600b27a6aad137aa1d2721a14473c440d6b7b8799963f7cd62ea2ee3884c",
+      "bytes": 4799,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/site/contact-form.tsx",
+      "sha256": "c94023da867b8cc1cf81b3ae4545a0351852e5f8c9f924e2d01ab5f99e64dc20",
+      "bytes": 9384,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/site/contact-inbox.tsx",
+      "sha256": "2b530038b601f9d7e849508a2f5d18b618d4256e367ed548ae51c0b7e86f8614",
+      "bytes": 4490,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/site/language-provider.tsx",
+      "sha256": "17ee19ae3da53a9da3448d286a7b7b84154bc37d6d1411c0a5609b73e04cb39b",
+      "bytes": 1168,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/site/language-switcher.tsx",
+      "sha256": "9aa494be76c46b348697db24dbf9159a05a876ca40c1c8d78f2c814cbb765ede",
+      "bytes": 3502,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/site/localized-client-tree.tsx",
+      "sha256": "86ef83ad8c702b7f56613f3f7567daee0e070b136efca7f9e609e2e567af5e29",
+      "bytes": 2216,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/site/navigation.css",
+      "sha256": "eafe99303ab16960f39c0d93894d4ef573c3d850acbd6f0c5ba0db57c11e7c8b",
+      "bytes": 12200,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/site/navigation.tsx",
+      "sha256": "8e6ac17d23a8947bf0491b1383e1df2e84d84d860737eab3769d2e946eade638",
+      "bytes": 6293,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "components/site/platform-navigation.tsx",
+      "sha256": "93ff9f162a64b41144b73c6e184805cb6952ff890c4ca97cbd07ef6d3587d3f3",
+      "bytes": 1244,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "components/site/turnstile-challenge.tsx",
+      "sha256": "64b5f4dbaba51b0ab5b24b9bd41e675dc24f2acbd492470e4774fdd49e49d946",
+      "bytes": 2392,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/accordion.tsx",
+      "sha256": "a4f153089ba886dfcf73fac26b5c01ca933fa12fbe88df6fb723912bfffdfbb0",
+      "bytes": 2048,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/alert-dialog.tsx",
+      "sha256": "9a8d950f2b9b4352d5ebb762fb44d5c28c2d353aa29712071973656a8736e311",
+      "bytes": 5439,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/alert.tsx",
+      "sha256": "2cc59b5f7bda91c1670884b1bf46bfc8a2a6f226cef184f5762acc037188885b",
+      "bytes": 1614,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/aspect-ratio.tsx",
+      "sha256": "b1c157886236782cb92d8fbcd4749532aaf6d8aabefd6e157ca40358f902f407",
+      "bytes": 274,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/attachment.tsx",
+      "sha256": "ae8a25dd1a896d3964e3ef54d97e51221b418cde287dfd794428b89951c5c790",
+      "bytes": 6002,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/avatar.tsx",
+      "sha256": "58a846bf1617b94b9681921db9b8461d0145f311424663d11678a06b6153cb34",
+      "bytes": 2916,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/badge.tsx",
+      "sha256": "46a0de5224f6a5d5d63d45246534288518dce888f031064bff925bbc7fe6ad97",
+      "bytes": 1776,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/breadcrumb.tsx",
+      "sha256": "d4c0831bba2212e778248f54a6ace6ef378df8bba4616d1abf27787a31eabae5",
+      "bytes": 2350,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/bubble.tsx",
+      "sha256": "870cc0c5cfc8a515053f7e41e706a6bd017a909b45f1305fd3b164a52cc4483b",
+      "bytes": 4699,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/button-group.tsx",
+      "sha256": "784c89d8ee683e1bc972ae69e6ea8225a7f63abe22aa1b5fc3423ae8a2a399c0",
+      "bytes": 2202,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/button.tsx",
+      "sha256": "cc36af0f8b5019c33cc039fbf03bb952a513072b15b55b53c592b78af3e5f4c4",
+      "bytes": 2392,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/calendar.tsx",
+      "sha256": "3855fbe0d3f8ad3a4b93071f98b76a9f6782d46ec8b05f5d2ddbee1e4e39bc84",
+      "bytes": 7832,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/card.tsx",
+      "sha256": "c48dd3b96be90a7066f1aebf294f0af9d00ebcdc367d5d4aca55429ade570c1c",
+      "bytes": 1987,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/carousel.tsx",
+      "sha256": "b7ea0dda3903d972c186f739e23da61f547bc83b5a0bf13b16856577846d5fc3",
+      "bytes": 5556,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/chart.tsx",
+      "sha256": "45aa5ea4a386f4fb5b8869ff4bab3a08cf89255190ee322043baf84c3e950b6a",
+      "bytes": 10614,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/checkbox.tsx",
+      "sha256": "b23ab9d4deeedf2ac8f512c368361ede681aa383437ef48563a6f9b7dbe95f27",
+      "bytes": 1214,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/collapsible.tsx",
+      "sha256": "c6598e5584f4258b5d9fefadbc5ad6a66888ad58729f4b634a0bb2d9c513188b",
+      "bytes": 795,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/combobox.tsx",
+      "sha256": "2d68e78b2dc7e38a085f222dede60a80b4f8229a6e91732c484605e204d46735",
+      "bytes": 9158,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/command.tsx",
+      "sha256": "361193df1e3d64a9e9b5048f045264782fcb387aab3f00f2b805fdcbf538b16a",
+      "bytes": 4818,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/context-menu.tsx",
+      "sha256": "2cf1fcf59df0649a3e2a126d1df2f639145f6b6bf5689ee54af1f40ab1245017",
+      "bytes": 8268,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/dialog.tsx",
+      "sha256": "dce39c6adc47d997bd2567f8b7a72f466b0134715105cd42f9194007b8ecdb14",
+      "bytes": 4303,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/direction.tsx",
+      "sha256": "84ae2ad658207f0e0f367978e5508cd8027cd00c29c41d3d13db21a708c3d1e6",
+      "bytes": 506,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/drawer.tsx",
+      "sha256": "cb6eaf58eb0757ca91af284e5d925b89a42ad7eb19cb3f44c575a3487aa9350f",
+      "bytes": 4255,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/dropdown-menu.tsx",
+      "sha256": "98f0dcdae38225b73734aceeb9213dd751fea2c72ea520df31003cd133deac8a",
+      "bytes": 8418,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/empty.tsx",
+      "sha256": "ae95bdcf367a076ae02e7925f14522a148798f72d9651749c6d55497dba584c0",
+      "bytes": 2396,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/field.tsx",
+      "sha256": "ba67d76f017ac059fc86cf8c344e0b2991c4322d3619e125498c19b87f6eefbd",
+      "bytes": 6159,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/form.tsx",
+      "sha256": "315b46bb75ab7d1c6061b5d750aa4bedf6e7a455e15e2d7f9182f053d5972b1e",
+      "bytes": 3757,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/hover-card.tsx",
+      "sha256": "f5d8df42c59370ec14d61bcc54f7d68e9bb7dfa0d6a872b2f7cffc2aafbf23b8",
+      "bytes": 1526,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/input-group.tsx",
+      "sha256": "6afbd58fea4c438e6252dc4568bddc122e84ababead4ad5cee50ace01100c9a0",
+      "bytes": 5065,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/input-otp.tsx",
+      "sha256": "161946daa89f0eda2575b9271c0494e35807c4ffb55598a49f67160c17fec299",
+      "bytes": 2254,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/input.tsx",
+      "sha256": "8c4612a7c41319ac5049daa3b34b080f9784b6245c17780eb87c127e58e473db",
+      "bytes": 962,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/item.tsx",
+      "sha256": "6e2144d6d87142dbbe56d568810bf546318c8aa661447ebb0d76ebbf382cb45f",
+      "bytes": 4486,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/kbd.tsx",
+      "sha256": "6088c3a5432338b1719c17e9b5d0e1fa74fd1f66060f248fc88909d33a82cd13",
+      "bytes": 862,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/label.tsx",
+      "sha256": "a476e41f08b9de5bd447de66a33d8bc2ad18f2fa6b96c064778bab4b6f439f4c",
+      "bytes": 606,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/marker.tsx",
+      "sha256": "3d798763f094b2bb5e7ade2d5cd1b9bab498bc8ca7fd4cfaf4e5835bdedc34a0",
+      "bytes": 1864,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/menubar.tsx",
+      "sha256": "9243af8afcea03703398ccd1c2a8c0a87ad6cbaf2bd272fb609f5b79fe46aebb",
+      "bytes": 8389,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/message-scroller.tsx",
+      "sha256": "bb7660a248e4e9589c3816c7c1c199ea1381a70d2c8476ae895b567a7a4d86cf",
+      "bytes": 3992,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/message.tsx",
+      "sha256": "9d2952bf3b641081f09aa2739535e6bbd1be0a4946789752a2c20d8aaef43185",
+      "bytes": 2232,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/native-select.tsx",
+      "sha256": "007516b111fca8c98a6c40c94ab91bb68cc5b52afce1ed1f5e510c3d86e7347c",
+      "bytes": 1995,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/navigation-menu.tsx",
+      "sha256": "889d358a77de88e9cb6f39ea4895ea4c76eaf01d731b74e44f1c41e97a78a044",
+      "bytes": 6658,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/pagination.tsx",
+      "sha256": "374ad135c3d4ff3ec080a0009cd9745cdd0e12faa89d2b0e86074f11e5127fd1",
+      "bytes": 2717,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/popover.tsx",
+      "sha256": "31c350309ff5d3034e6ecf1b0eda75ba8855bdbf987fc7ad6d71f0ef07c5a447",
+      "bytes": 2357,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/progress.tsx",
+      "sha256": "c8c26e8f5f041c3cdf4915347dc1d9c022f9448f149990fadcaf303e952fa57d",
+      "bytes": 755,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/radio-group.tsx",
+      "sha256": "fe5ce39636d0818c2bf9c4eebddff893d1225fa2c81b5fa4bb8cbb39a8c913ce",
+      "bytes": 1460,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/resizable.tsx",
+      "sha256": "bc63958467aa00557c551bb0d96a5ae4c965c1e1ba2380e595949d933b132f7c",
+      "bytes": 1815,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/scroll-area.tsx",
+      "sha256": "8bd9d986b2844c9a87de825c6de4787b6739b36c3dc9a05ccf3eb107160e4043",
+      "bytes": 1639,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/select.tsx",
+      "sha256": "0b796a108a4eb5ba52d9ad938b7aea36dc56ae66c703a6d0a23dbc24f96daff3",
+      "bytes": 6353,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/separator.tsx",
+      "sha256": "6da346505c8629a4668420d2a5ca48891383bbe0b0ceb14163537c671879427e",
+      "bytes": 694,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/sheet.tsx",
+      "sha256": "63863cf2df8f8973e52b3459ac9bdbf81be1262dbc70eb53d5271ffb03488e16",
+      "bytes": 4188,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/sidebar.tsx",
+      "sha256": "4a8d73e7730a2b1fcecfca31299ed26db65c2307b84197a59c6ec7c01c7ad28e",
+      "bytes": 21526,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/skeleton.tsx",
+      "sha256": "ba48dd5be5a6a1378bd4e011028654b5bf419f1e7d20ee4b9f8330c1264e7239",
+      "bytes": 276,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/slider.tsx",
+      "sha256": "0e37484f4b416e79ac18c655cac961aefacf6e67085cfc2b320ea8af545635a3",
+      "bytes": 1991,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/sonner.tsx",
+      "sha256": "13ccc9b0fe4248e622f83a1d3b2f0566b72b5e04162d7d0c8db8945ecc71b55f",
+      "bytes": 1034,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/spinner.tsx",
+      "sha256": "3e6e6e8d37fb4069f8e43e55318f8db06fbc36e6c8be0096da3c9337c1c798b9",
+      "bytes": 331,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/switch.tsx",
+      "sha256": "386d4d4deb39f34126f9700fe9bf5393d238485dd94018bba9d154dda84c62ae",
+      "bytes": 1408,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/table.tsx",
+      "sha256": "20e5a7f224959c6b75802995706a97e9da171f693d4b6b1b436388fcd9df96f3",
+      "bytes": 2478,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/tabs.tsx",
+      "sha256": "865d0194331b9b2be36723fa79d3575dc83078b4cb941cafee87cb72fc2cff46",
+      "bytes": 3782,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/textarea.tsx",
+      "sha256": "253cdeb487c73beaaccdf47fc163e36e7d5b7ae6ddf09a4f64998a109a112979",
+      "bytes": 759,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/toggle-group.tsx",
+      "sha256": "69f643e889e933f05c1439084480d8646f66a161c7d1cf0730ee926382ade35e",
+      "bytes": 2308,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/toggle.tsx",
+      "sha256": "ba4d0b0a2b2fee75dc36dfc19e32082e721024b919050c97fd5dc70faa924e16",
+      "bytes": 1565,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "components/ui/tooltip.tsx",
+      "sha256": "a0784eb77831a799fad7991df4f1b666f876201565a80175e1aa68733574a2e4",
+      "bytes": 1830,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "db/index.ts",
+      "sha256": "98c2feb00feac79f84d02d2eea01855ed755371194656ad8ff696a5af3046d6b",
+      "bytes": 5569,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "db/migrate-auth.ts",
+      "sha256": "2baf5314f46d19ce7dd9da0bd96bf934a045050487f175506d00b4512f0ce82b",
+      "bytes": 390,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "db/migrate-postgres.ts",
+      "sha256": "666f2c4e7e49c6c70397e4aa1ae838e2a9b48bdc53999622249337449a5d2dfc",
+      "bytes": 4724,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "db/migrate.ts",
+      "sha256": "687d57842dc371b57d5969efb92932b69692fa6438fc548de46ebbebde49cec8",
+      "bytes": 1939,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "db/migrations/001_contacts.sql",
+      "sha256": "4b55f465e2e3a1d7767fa942db906911d72193a47d5d9129ce85da9e229128c4",
+      "bytes": 664,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "db/migrations/002_platform.sql",
+      "sha256": "b7a292ac89815a6cfcdb99c231e14aa63bce0d95a61b1ba0c6dfeb4951278664",
+      "bytes": 3804,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "db/migrations/003_cadastur.sql",
+      "sha256": "e573a42582199e94792b7ecb9bb22223aa39b3896ef91efa3f5cd7f77b2e8ab0",
+      "bytes": 1352,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "db/migrations/004_company_trade_name.sql",
+      "sha256": "21bd62272b7391f23ea537236e2e7c09309388c4408dd932c99bf56a23215df9",
+      "bytes": 141,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "db/migrations/005_public_directory.sql",
+      "sha256": "a0632a641c2e4b564a8bbd31c8aa78d08aea2e2d69f657ed11682e5af7da6aa9",
+      "bytes": 2554,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "db/migrations/006_nearby_places.sql",
+      "sha256": "b10806f82ba8652c964d33db8ee8f75c43390c7acba1f134918ba99d2e8f8dfb",
+      "bytes": 434,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "db/migrations/007_room_operations.sql",
+      "sha256": "6ac1c128acf2be8ea5fa6e28a89804b8a0f18de096ee9944c02f790012a3398d",
+      "bytes": 143,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "db/migrations/008_catalog_items.sql",
+      "sha256": "2c8606e572c4ba2b7808bd34c70a2749e2a354f81b36febc3c58edcb444e294d",
+      "bytes": 896,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "db/migrations/009_company_activity_type.sql",
+      "sha256": "6fcec11470ad12c0279c71c4909a5c832c4c979c3694c49a927593d363c8910d",
+      "bytes": 464,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "db/migrations/010_catalog_media.sql",
+      "sha256": "f7490d524798f119bb53b510490177a70cae3863139276a18061f06046ef3f2d",
+      "bytes": 209,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "db/migrations/011_platform_audit_indexes.sql",
+      "sha256": "a80e501bde28e32973118759be1e875c1fa3d5478521a5f8c7af5d41e3a3142d",
+      "bytes": 191,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "db/migrations/012_public_sitemap_indexes.sql",
+      "sha256": "5ce646dc9a09b6f5e7c039bf730a294f380bd30741ece8c3ee3fa89ef7b7d59f",
+      "bytes": 256,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "db/migrations/013_public_directory_search_indexes.sql",
+      "sha256": "2d9e0f8aae40936543267ecbb50442c4c13fb119fb7c5ee0466b6d6726f5c90e",
+      "bytes": 313,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "db/migrations/014_public_experience_search_indexes.sql",
+      "sha256": "f469d2f2aa89491391fbd2ac0ad5f6f5d40ede2a476f782cc6044167045bf4db",
+      "bytes": 200,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "db/migrations/015_public_hotel_order_index.sql",
+      "sha256": "9401faff4ae97c6ba10a86c3447cb437b1271be0c7465b203cc0fc0dd7456592",
+      "bytes": 149,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "db/migrations/016_public_catalog_api_indexes.sql",
+      "sha256": "4182d1ee21b6e4ddcc4cc678b4dc6d5dd7f99b2b98b08aa80eb9b5142d4f548f",
+      "bytes": 81,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "db/migrations/017_osm_request_limits_epoch_ms.sql",
+      "sha256": "814dd3fcff528586363f252ebe5d1e2dedcdb6b8625207c080fbf554ea8d8fcf",
+      "bytes": 159,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "db/migrations/018_guide_member_assignment.sql",
+      "sha256": "1e7908aae693d3ad49d2a188939ce9c21da7b981d15108cedfdcada713f7fb0b",
+      "bytes": 192,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "db/migrations/019_user_notifications.sql",
+      "sha256": "ecf400f7e512db220cfce90893ad49ecaadff2febb2c51f7ab28c18893ba597c",
+      "bytes": 589,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "db/migrations/020_booking_email_outbox.sql",
+      "sha256": "8af33d82a9b458dd3ed4ce9889983b4005ee3e45fac3d777956162fbb1d18ab5",
+      "bytes": 855,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "db/migrations/021_booking_email_worker_heartbeat.sql",
+      "sha256": "0325382236c4a8d63f9e71d655f3cd566b4f7ab0236a01424c765762fb4efed3",
+      "bytes": 222,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "db/migrations/022_booking_reminders.sql",
+      "sha256": "43a163d53b6278c7c13f5dd81b81a2ceaad4fbb4a81cd76faf33d4e129c76f2b",
+      "bytes": 429,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "db/postgres-migrations/001_public_text_trigram_indexes.sql",
+      "sha256": "2c4bb6643bb74ede88d89a84eb3ce2a4b31406eccc0531e597f981491bc43ae8",
+      "bytes": 1422,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "db/postgres-sql.ts",
+      "sha256": "354497a2e358f9f6e609352bfe04e6b3226fd4949f4d0e057a724697d2a239b4",
+      "bytes": 2189,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "Dockerfile",
+      "sha256": "6c11a8ba9d9f740577eda2b00c5bd75630b9b17c56fabbd1cc99a33cdc9f0145",
+      "bytes": 1538,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/ANALISE-E-ARQUITETURA.md",
+      "sha256": "df7613748309c83b86c42ff93ddcc9e282bed23d48b2a3528ae6ac73014d238e",
+      "bytes": 10435,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/Arquitetura_Stack_Hub_Inteligente_Turismo.pdf",
+      "sha256": "ec8410045532aef51a3d619a2ee346ecbb7b771f23bad81c721ba00c09e33dd9",
+      "bytes": 158129,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/ARQUITETURA-EVOLUTIVA.md",
+      "sha256": "1b1ef49ff8444b25afa81696a05b6fcc6c26f65f77773ee82805b543b49bc1ec",
+      "bytes": 31106,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/AUTENTICACAO.md",
+      "sha256": "31ec06278c529bf8f8c947c5af5c78028da7357279166fdc641bf84827cc8665",
+      "bytes": 2059,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/BACKUP-RECUPERACAO.md",
+      "sha256": "7be7f09d6e65a53e7c5c9f6aca4c5d3f07d5ba16765f195be0eec384cb2f54a4",
+      "bytes": 3649,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/Dataset_Cadastur.txt",
+      "sha256": "b21309acc15426f14d5ff80e7fa15efecdeab51ab2127938a61811910be4abee",
+      "bytes": 357,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/DEPLOY.md",
+      "sha256": "428a2b41c63608a6a5a20cd85647b5b4873e9cddac5de9789d05c76fa5e1458a",
+      "bytes": 33250,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/DIRETORIO-PUBLICO.md",
+      "sha256": "30e74ecced58750540710ba37950f7ce76841adca178592cb02c231f2419cc78",
+      "bytes": 14715,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/GEOCODIFICACAO-PROXIMIDADES.md",
+      "sha256": "a88d8f12f7f9aef764abe7f6c855ea8184f2de8e3c40f871d49255ba09ba59d1",
+      "bytes": 2493,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/Hoteis_Pousadas_Informações.txt",
+      "sha256": "a0859bebf895520282e4dc3845946de10ee58ea0be05f5ea567f2aa437eb3564",
+      "bytes": 824,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/IDENTIDADE.md",
+      "sha256": "2fd6f5a9085b8fbade6c549d92b93b3a7d1abbf9fc062ceeaee1230b6a1732d2",
+      "bytes": 1874,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/INTEGRACAO-CADASTUR.md",
+      "sha256": "4df1bd51f205c37062ee47be4cda39bc42b7695a089b3ca60aa4f232e695fa17",
+      "bytes": 15900,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/NAVEGACAO.md",
+      "sha256": "f4e6b6d7d67c2069b1ff13ff14a5a9a72306d1008fddbb90abe36c7843bb0084",
+      "bytes": 9512,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/ONBOARDING-EMPRESAS.md",
+      "sha256": "d0f3c945537310a5e17b16576258039b0e7d8a630b95da72b5503bbfd514d5d7",
+      "bytes": 4380,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/openapi.json",
+      "sha256": "edc404cdbf285a4880c3c4df5ad133c20d644ed5af9276d12f79c5400bc75851",
+      "bytes": 200642,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/Plano_Equipe_Hub_Inteligente_Turismo-1.pdf",
+      "sha256": "f439a4d31f098de1be90f52b54a88f1bb4b4cd4a6418f85f30ececd262fbb46e",
+      "bytes": 207474,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/PLANO-SIMPLIFICADO.md",
+      "sha256": "d5a100f283894d16b5d279dd5a4c143e7a3e013b694f9ca6e5279a39944ccb29",
+      "bytes": 7512,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/PLATAFORMA.md",
+      "sha256": "b2f98fe9c3f5f593c59337ed9f5e1ace150651a83d818a73ef25d5f64ab99c37",
+      "bytes": 26784,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/releases/0.10.0.md",
+      "sha256": "f16c3f1b2f780479e56bf9c14a9c264027e40054dceab2d051f5d29d189d83b9",
+      "bytes": 2041,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.11.0.md",
+      "sha256": "58f120102d7e0b11276a405901186be3395c592f7c5a2ec138e37f5a68ba8a7b",
+      "bytes": 3128,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.12.0.md",
+      "sha256": "5e14c9a65e50f6843905095595200f95ff95a0230dfdb08524b82b276d097700",
+      "bytes": 3666,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.12.1.md",
+      "sha256": "d12756a17fbd0955d50e678bca2ef6023f32954e74affee0c2e221624f1a6b1b",
+      "bytes": 36807,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.12.10.md",
+      "sha256": "fc44cb0eb3b301af3def07db3a14df4325c493fece9891d202d41d9cb123a7e4",
+      "bytes": 2615,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.12.11.md",
+      "sha256": "d4a626383f15683a456f05e301dc8163e60971f3bd086401c6137284a6e7e4cc",
+      "bytes": 1135,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.12.2.md",
+      "sha256": "6a6124ff23179c7c1bf8790717e05ae8abab9580ca751300690124f06f25fe0e",
+      "bytes": 2453,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.12.3.md",
+      "sha256": "23ae0c6a30006f9a293263a48dc2379b616d68b2d3348e413eaa35559582d7c2",
+      "bytes": 1862,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.12.4.md",
+      "sha256": "eb659464f83fe54210bbe799fde3dd1fca6590a61cef9624c33599bf70bb02c7",
+      "bytes": 2623,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.12.5.md",
+      "sha256": "6442a3ad8f20ae302b6db0ca621a545e4eea2af624e4567d163f1eb82357da6b",
+      "bytes": 1583,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.12.6.md",
+      "sha256": "5380de91494b7e6be12bc5716b9ccfe578a263efb707f7541317ca128144f07c",
+      "bytes": 1878,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.12.7.md",
+      "sha256": "eb4023db1f168d25262b7f660254c37137c2b4a053551a6e372414e77a342f48",
+      "bytes": 982,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.12.8.md",
+      "sha256": "63f8afd60b24ac8ad18eac0cc2947e558ecddc7de52f7a915ad12d63976e01e0",
+      "bytes": 3030,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.12.9.md",
+      "sha256": "4b96377611dcaa3e3985c5b3da4ee1584ea6b2d7b3ed1d538bd315977cfddc4a",
+      "bytes": 1457,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.6.0.md",
+      "sha256": "0ca931fd7423c94cd0dfdeedc3a0592d5ada26c0c13997556a28e4647b391372",
+      "bytes": 10520,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.6.1.md",
+      "sha256": "c3de964bd7d411fb7fdb194f8de5b0489d4811ed49639ab20ffdcfa2a56cfad4",
+      "bytes": 13706,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.6.2.md",
+      "sha256": "a871eb516fa09228b85491b8bae8cbccda880efc8e08782b4a3cd17be7c1952b",
+      "bytes": 7297,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.7.0.md",
+      "sha256": "50fd93b68bf843d373cc66c2662245deab3f8940474edc4d8b07c0fb02a474a4",
+      "bytes": 3987,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.8.0.md",
+      "sha256": "e933a0728bd99a217294f5f85cc1fa8b3df4016a52131bedece89c94b2ee3911",
+      "bytes": 3024,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/releases/0.9.0.md",
+      "sha256": "22841eb3933908df9345abfe9a48c780b077633c4d6c482c993c16494870dc9e",
+      "bytes": 2615,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "docs/RENDER.md",
+      "sha256": "9729953097a7a2c0906fa60c162db763388212512829d952bc972da56e0b1003",
+      "bytes": 3875,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/USO-LOCAL.md",
+      "sha256": "a59e7fbb250adbbef75b047a1523a9c7a6f5d573e9535c1f3a847c54013e4117",
+      "bytes": 10547,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/VERCEL.md",
+      "sha256": "1959e38183a076dfbb13d8cd2ac866c804584f428d51dc1d61292518807c4fe6",
+      "bytes": 5587,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/VERIFICACAO-SITES.md",
+      "sha256": "36e9254ad1462b7eb6f6205d546151e101fc3f652abfd3317be37c6a33c19fbb",
+      "bytes": 3680,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "docs/VERIFICACAO.md",
+      "sha256": "26504491b55c01d7a051efc5d8fde2d2fc2146dcff6dc646fe3a5b8734894103",
+      "bytes": 39243,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "eslint.config.mjs",
+      "sha256": "6b91c5ebd7b63718c7e6cb64a1a5d83f092ac39d3f359706bddf78da9f260df5",
+      "bytes": 952,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "hooks/use-mobile.ts",
+      "sha256": "ad0936f84f1df79d3697bfbff9c18f8ad58431c1cbaf2359c6a853b0fcc9f28b",
+      "bytes": 565,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "infra/apply-cadastur-maues-cleanup.ps1",
+      "sha256": "ceec6d1b943b9afd3dfc902d8947ba2f760630aacea38ac3b1892816ff7a8287",
+      "bytes": 17367,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/backup-postgres-active.sh",
+      "sha256": "32f47ec85d96a1d405eac70b463d41fdc6ae64b536d070ed9be03c51149b66e9",
+      "bytes": 4002,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/backup-postgres.sh",
+      "sha256": "e54070536415b7907a4dc7127e89285ebcb648adcf802fb314273007b6e56360",
+      "bytes": 3082,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/compose.vps.yaml",
+      "sha256": "89efa778bc9a8793f1bb9726e1c5709688503326b7dc659359517c8c2edad2a5",
+      "bytes": 4608,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/configure-vps-backups.ps1",
+      "sha256": "de8a69530f6de00eae1f62adabc725758bfb5d7533f41374004e6669aae36bb9",
+      "bytes": 3917,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/configure-vps-backups.sh",
+      "sha256": "8f3b28d0ec3d073527ecdfa7793634086dec7456ded5cd1f63a1dd2dbe719be4",
+      "bytes": 19565,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/export-vps-backup-to-local.ps1",
+      "sha256": "291631f4ec82b58c3f82b939333baf3f873f42a5d65ff7f46c8b3e686a55fb76",
+      "bytes": 13552,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/hub-backup.service",
+      "sha256": "33c4d4ee5ac1f72cc6c90f8c2cf6113dfb8029c610ffac0b1026f641b242093d",
+      "bytes": 322,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "infra/hub-backup.timer",
+      "sha256": "de820b79fd035be69e42fa2f8de67ed2b4d261801dc0153b5a66200d76c5458b",
+      "bytes": 167,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "infra/hub-postgres-backup.service",
+      "sha256": "7e246b824e66bd1026fbec7a7eae1bf92b86b0b920949a91eb295d2c1170a291",
+      "bytes": 339,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/hub-postgres-backup.timer",
+      "sha256": "14f4acf8d221b3ef017cf13fa2686407c1653c2926aa339c21da666bbe5b3e07",
+      "bytes": 187,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/hub-turismo.service",
+      "sha256": "a6d8e392becf198ac78b2e8690a784f58694d3cdfa06a787bcaac2a5c5417bc9",
+      "bytes": 382,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "infra/init-postgres-app-role.sh",
+      "sha256": "3c18364a92fb71b7b9c40e2705533005b9fa9810aa79d2c6f11afd15747ba054",
+      "bytes": 1325,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/inspect-vps-operations.ps1",
+      "sha256": "eb3511f6b7a377cc5151c333eec64e544d2ab140ee57b2b0e64a91d79152650b",
+      "bytes": 3256,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/inspect-vps-operations.sh",
+      "sha256": "785306962a57589b79303d9d68d6d2642352b4b267bc75c86ccaa4fc4b056848",
+      "bytes": 5143,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/migrate-postgres-app-role-bootstrap.sql",
+      "sha256": "b1f7889bd29192c01a4539c21d47ff17970a68552b38c6d9d7a3a94848140377",
+      "bytes": 2132,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/migrate-postgres-app-role-objects.sql",
+      "sha256": "b668ce2e7b434f94b4dc7695c2ad52916243eb317fca89cc02e16f486c8572d0",
+      "bytes": 2784,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/migrate-postgres-app-role.sh",
+      "sha256": "25024eec4228682db92775db6cb9e5fcbf3ac487b22b1fe4cb5a9807692bb5bc",
+      "bytes": 1898,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/nginx.conf",
+      "sha256": "90579fde6141955be2d504872ac95bbe16e19ce37ca774d87aecef58d0873ec1",
+      "bytes": 1079,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "infra/package-source-snapshot.ps1",
+      "sha256": "104b1043d9399cb28232b8762b459d734d731445222a204ffd4c2cb382d4ef7c",
+      "bytes": 11909,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "infra/package-vps-release-bundle.ps1",
+      "sha256": "1d9c4e71952740e50ccb3b506682fa723e746384fe6f5f9173d4a40671b5d976",
+      "bytes": 14940,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "infra/prepare-ssh.ps1",
+      "sha256": "ca5f2b6f2ac74d39836fc07de81bfb4f2d1b13f7c84fc41e9fbf5791c98df3c9",
+      "bytes": 8605,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/prune-cadastur-outside-maues.sql",
+      "sha256": "0418d63ea21d516054fc2c13428826aad1a7b092c598c9726aacc0420b8c4f9a",
+      "bytes": 4235,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/restore-postgres.sh",
+      "sha256": "114f371124a806be49d2ec001413980af2bd6e11f2156400b8b52acdba09a82d",
+      "bytes": 4651,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/ssh-config.example",
+      "sha256": "22ee871388e6bfa67cb38121bc0538bc6fa7c15bcb75a009b8298186c8e63391",
+      "bytes": 223,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/verify-vps-local-backup.ps1",
+      "sha256": "2b224032ab64d6552da66b9a86635bed1b447e2c73702689d598ef7b9424e5ab",
+      "bytes": 16077,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "infra/vps.env.example",
+      "sha256": "7ec5580799cf7fb18e0a0eb702aa2350576742409b16e176c5d5b50a9a3dc4da",
+      "bytes": 1457,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/auth-destination.ts",
+      "sha256": "005d47987ee145fa8d251d5c55d1e2746915c983024a26a8b13df48506c3f83a",
+      "bytes": 720,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/br-mobile.ts",
+      "sha256": "6bc986b100166973942bcdd04205519b169210bd2368cda7d5e549a80550f217",
+      "bytes": 1346,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/cadastur-schema.ts",
+      "sha256": "347ae147235cb15ad4bcdd971dd800754ace4cbd2146def3d36a179bb15230e8",
+      "bytes": 7132,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/catalog-content.ts",
+      "sha256": "38314a1280e09bdd0563d667e0d3c9b83eeca45e92b5915703441f92e77ccc88",
+      "bytes": 1143,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/contact-schema.ts",
+      "sha256": "19a2b174a6c56f2765b952183b272f2abb3f9a5f57a04000ebf886a5ca59b6e6",
+      "bytes": 1132,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/http-error.ts",
+      "sha256": "ccd259b27be2aff21d4608f284795c3de1101210cf8283763e96a458d03c46b6",
+      "bytes": 354,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/i18n/catalog-en.ts",
+      "sha256": "3d2f37c0fbc6cd0e0a197ca3e1143529178d7bf9ab494de69728f116841f7275",
+      "bytes": 48612,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/i18n/catalog-es.ts",
+      "sha256": "1a9a8522c4e19854d54b70069745762ed9efb50e3ca0bf4a2114e36dccafb246",
+      "bytes": 51467,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/i18n/catalog-pt.ts",
+      "sha256": "06626ead3304e4145815c8c0aeaae6270f838b0b960ab2aa5efa3e8fdc897014",
+      "bytes": 50998,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/i18n/interface-phrases.ts",
+      "sha256": "c2f5aa1397f9fcb3d158672d72ab8f423125889e197c2db419e8d9f65152e029",
+      "bytes": 47363,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/i18n/locales.ts",
+      "sha256": "c3cf922699e7684dd2333513bced0b8f4b713ebf500969ab9d2a11f87eb1b9db",
+      "bytes": 99,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/i18n/localized-tree.tsx",
+      "sha256": "8d826e8324d9a993b586115eae691ca5a1a17cc08b597ec5a1c4eed2dcbfc45f",
+      "bytes": 2191,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/i18n/messages.ts",
+      "sha256": "bfedffa34e3e31132ca9e2bf7ff8e5a590258736e0dab0a45627b15a61e22849",
+      "bytes": 2637,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/i18n/server.ts",
+      "sha256": "25685de8344857160c4f1bd852d1f24e25121352001d45e8f6026799ce6b3fa8",
+      "bytes": 271,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/lodging-highlights.ts",
+      "sha256": "500870ea652261541270e3cb317753c546c681aa768782cb8f58b7e94960dfe2",
+      "bytes": 1284,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/navigation-data.ts",
+      "sha256": "609732b5111c9486480cd01d41d6e36c596ec5fb026bd04cc856fdfe149ad549",
+      "bytes": 12472,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/navigation.ts",
+      "sha256": "a56fae5dc20c7c94d89f033951d6d8cdfee56b42830d9e1e3d7a072c98666386",
+      "bytes": 1492,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/nearby-geocoder.ts",
+      "sha256": "a6ac354e00dac8aab5a3ddf14b4355af5bd02b2b79e6fb3ee11bc2ebee524188",
+      "bytes": 5177,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/nearby-recommendations.ts",
+      "sha256": "df7c04431f2ce33902a884e39a703086c319bd0dd71f06ff1155f2c54d321978",
+      "bytes": 2370,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/normalize-label.ts",
+      "sha256": "efd9e801d6bf3306f5d41d30ee50f4efaf518326d8070131e6abcc959eec8030",
+      "bytes": 303,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/platform-navigation.ts",
+      "sha256": "7af79d3e840cd0a765d1c7666d7f12fa1343ec56aacdf70a74a815485481eed9",
+      "bytes": 2497,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/platform-schema.ts",
+      "sha256": "01b14f52e3b625dcf4b84c7430765844d650b4581b128dd6a0a06714eed0b118",
+      "bytes": 44,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/platform-schema/account.ts",
+      "sha256": "a213e7f643f840d26c962c4fa599af0d2af6d10ae9d0a8ae2481e1d73dc6b382",
+      "bytes": 1049,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/platform-schema/booking.ts",
+      "sha256": "ebbf49d9731438364f908ce6035ef0349187eb827ad5c6583229e7bdd94a006d",
+      "bytes": 1226,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/platform-schema/catalog.ts",
+      "sha256": "ee911a6f9c4ece41215050680d19313593836cc87fda4a7d65a2af65139080a0",
+      "bytes": 1703,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/platform-schema/company.ts",
+      "sha256": "3aff7f74d07223834d7ee10815fa674b2aba19863191bc395c2fc237a50525dc",
+      "bytes": 2918,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/platform-schema/format.ts",
+      "sha256": "fd24be85a49191a015802311c8163bce5b4a140305bd1c802d3de8edd30e718a",
+      "bytes": 699,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/platform-schema/index.ts",
+      "sha256": "7c4b87db01c2ad5866883c9197ccc1cef8c83df52b63407f88056e415a95c0ca",
+      "bytes": 181,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/platform-schema/inventory.ts",
+      "sha256": "32d45380c7f021b625095dc21676e338b039896c8c3386b203df99110df315ce",
+      "bytes": 1468,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/platform-schema/shared.ts",
+      "sha256": "b088b1ede6195d8dc4cc740c384874f1c2be078e570deb66e814a9bd941d12b0",
+      "bytes": 440,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "lib/profile-avatars.ts",
+      "sha256": "1293c1c890b04a19ba625148b54b2965a9d3d586b3a6dbfce2ed73ae8395944f",
+      "bytes": 1066,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/public-contacts.ts",
+      "sha256": "07b157fc63f4319ba4709aa6bf744cb1daa690f5e29df2f09e1cd68fb2205b6a",
+      "bytes": 1738,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/site-config.ts",
+      "sha256": "ab45360b91da33bd46c4c63515595ec5ed0728d5aaea340818bc5ee8610700ea",
+      "bytes": 72,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/stay-search.ts",
+      "sha256": "8967211fbe245574a4cb1c12350a113745f94d037d14869ed2e0b6ecf126b3f0",
+      "bytes": 1861,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/trusted-origins.ts",
+      "sha256": "6aeac09f0e191cba828eff44ef54c6a77d913f9438a87b1f7ffbf0d8f215aa94",
+      "bytes": 644,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "lib/utils.ts",
+      "sha256": "53f3d3d070f0a9082934da25b875f9499855c2b0693868dd28be8c23d8730f68",
+      "bytes": 177,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "next.config.ts",
+      "sha256": "7232e1e6f31b0ece3a525440e0221411c9f49e9b494b7aec0aeb9fc425c51c41",
+      "bytes": 1914,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "e43972bcc1173a3114aab2f5d9ff69bc845299df5fec31d24367bec74ff44898",
+      "bytes": 376438,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "package.json",
+      "sha256": "9a910ef91c52f53db01ecfb6ddfea860f5279b976c1f79953cf2f56b6f7b64fe",
+      "bytes": 4154,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "postcss.config.mjs",
+      "sha256": "dfac7ac2d86d326a0e5adb024e7943c181393ed17a5fcb8f0315b24c7da6ddde",
+      "bytes": 94,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "public/avatars/barro.svg",
+      "sha256": "d5e971ab690b9c12d31f24fb83cf43e274c39307610f290e406c711efa09c622",
+      "bytes": 796,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "public/avatars/brisa.svg",
+      "sha256": "923f580db90298b914859a2877a0a2da055a0295b8f49f5bdf5158157cdaa252",
+      "bytes": 801,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "public/avatars/folha.svg",
+      "sha256": "a3a13b3124a7b5d55bd656aacbf54e24db7c6d8be6219ad0971241863bce1551",
+      "bytes": 768,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "public/avatars/nuvem.svg",
+      "sha256": "1236b3b7f4d0ecda49a1bbebf407f0b2954a56d7ebea00a81b169ceeba07834f",
+      "bytes": 827,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "public/avatars/rio.svg",
+      "sha256": "b12a3ec61509425e4201673616f2e621197537e4c6482eff1f2c28f46dc55af8",
+      "bytes": 823,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "public/avatars/sol.svg",
+      "sha256": "8e832e6fb4aaab8813e77b5b9001ab861afe2826c912f05e2dc005bf89657523",
+      "bytes": 744,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "public/favicon.svg",
+      "sha256": "efb73f58c1ce9822cbcd6f6c4bb3b5be8eae6a45e2ad9466b6fff63ee383a295",
+      "bytes": 240,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "public/file.svg",
+      "sha256": "1e0ae4d1a1ddfa36752988647b731e4abf150c414d069ec83c96fb0aaeff0307",
+      "bytes": 392,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "public/globe.svg",
+      "sha256": "d051a8c47936990a9085693d307bb7cea1bc1b6d7ed956bcbaacf674f4ec96b9",
+      "bytes": 1036,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "public/images/amazonia.webp",
+      "sha256": "ce36488deb98b9f663b22f73f317f59a04930f70b4902e097e66473053c52493",
+      "bytes": 316944,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "public/images/navegacao/rios-e-ceus.webp",
+      "sha256": "459fa7a2c4d3308fe9322a8fedd1082b41268dcf8479c4d4618cd13b342a2199",
+      "bytes": 351604,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "public/images/navegacao/roteiro-folha-de-maues.png",
+      "sha256": "2624d0f44d398a6ed5a721a3f18da94730a951695cb6df92c77d00d8b00b859b",
+      "bytes": 2575446,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "public/images/navegacao/roteiro-navegacao-pp.png",
+      "sha256": "be52cc841ade07718bf9d93bb63b3df5f2d54d637914885ae8a7c1d5db744eca",
+      "bytes": 744591,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "public/window.svg",
+      "sha256": "decf1cf7bb22b5c99c4857cfcd5718ce5465c4454166317589c83fc73df74b66",
+      "bytes": 386,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "README.md",
+      "sha256": "fbfc7c0480930543d0e923c27dbbcb4b79a5dc707e60776224f37be3de26cedf",
+      "bytes": 13322,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/account-password.ts",
+      "sha256": "86ef6dd0967aadd3bc0df500ec82c7294bcc87956c501801523783daf696c51f",
+      "bytes": 1099,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/admin-create.ts",
+      "sha256": "c34ad6b1b49234050a25e384a7bcd11a457fc19ab91d091e52d3946844b05245",
+      "bytes": 1492,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/admin-credentials.ts",
+      "sha256": "21b871c7af6d9652239eb795747835bedfff0f64174e108f02fd2e5d54f8181c",
+      "bytes": 2204,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/admin-password.ts",
+      "sha256": "39f74638f55f4bed244f2ea46b8f7413dbdc6c7c1ea28bcbc9aa1cd6c470a2e1",
+      "bytes": 1132,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/backup.ts",
+      "sha256": "281b18739d1fab3c231478cc633cd1254c1e6b6384de8e7c28ab6f55b6cb5183",
+      "bytes": 3220,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/booking-notification-worker.ts",
+      "sha256": "02ea24eebe508637bee51e804f020872c6abf1478b14cc4e69432b497c054a1e",
+      "bytes": 4053,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "scripts/build.mjs",
+      "sha256": "ca098a1f5a29c525e1bae11f42a640d1475c4ce66daae160fc0a5bff66566f50",
+      "bytes": 9326,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/cadastur-sync.ts",
+      "sha256": "270738535075b520aa699da2d5f8395daf768e609aa36bc19d2ea633609b3961",
+      "bytes": 5221,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/catalog-media-manifest.ts",
+      "sha256": "320fbce542805d89f1c66f4a25145f7ccb56546061f6a55c954a27ba9c3ff567",
+      "bytes": 5212,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "scripts/check-architecture-boundaries.mjs",
+      "sha256": "c34e104bf5f1e77227e8a3cdee291d4b7b36935fa12350b04f9fdbaf7e5a0a8d",
+      "bytes": 5099,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "scripts/check-booking-worker-health.ts",
+      "sha256": "f3f904cc2b9cb5254f264ffe1a7d97c7c000e9c53bca4f891ff0de6dcc1fad75",
+      "bytes": 1407,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "scripts/check-runtime.mjs",
+      "sha256": "6c889102775f648e909f7b4342a43750691d79c5e8e3ef54d84dfd3f72f95f4a",
+      "bytes": 2696,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/check-version.mjs",
+      "sha256": "527456326f887be3ef0298228514932870cb286cf698bf18bfcfdc705b0879e1",
+      "bytes": 1473,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "scripts/check-vps-env.mjs",
+      "sha256": "1988acebb09ee3ab87d434a023ecbae61cf43ae654369a05258c578ec73fc53c",
+      "bytes": 6634,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "scripts/check-vps-release-version.mjs",
+      "sha256": "56132f72e46a71d175f9e7336a832d0984a02bc3f6b6db2a0236e5403975b18c",
+      "bytes": 647,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "scripts/compare-sqlite-snapshots.mjs",
+      "sha256": "0b0bf64e157bccf5b1e0f51cd6911703fbcb4136ec81021302b87408914c060b",
+      "bytes": 4876,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "scripts/deploy-vercel.mjs",
+      "sha256": "c96092a98f2f9e8a0b798bc6816f2e52fc2e130a663d5e05a7f269445389966b",
+      "bytes": 3926,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/migrate-postgres.ts",
+      "sha256": "8ea121b6f6ee5136b56bede7b4e68ee80529d71f0384dcbee7b9e30c8b34f317",
+      "bytes": 663,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/migrate.ts",
+      "sha256": "f2a76363a0c1c62e62b9f169dff392a1e96de104ca058cad1680ef5c45a58bc3",
+      "bytes": 376,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/password-prompt.ts",
+      "sha256": "3665de23cab2cc39e4ee8ae1e1eecc2c6625c76742c4007aee8e48cd9fddc996",
+      "bytes": 2270,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/prepare-standalone-runtime.mjs",
+      "sha256": "bfc6104c44a0752d120fe582a5cf3ac007cbad674ca3ef6af038b69a5b286cf4",
+      "bytes": 4707,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "scripts/preview-better-auth-migrations.ts",
+      "sha256": "0285634d576151e0cc97cbc1b4a9166ca2afab03179a4340e9b690f19be24144",
+      "bytes": 1547,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "scripts/restore.mjs",
+      "sha256": "ba1f532c7e4691a2edf7c7463ced98d1dd69a941ac0831743564bf8e89cc6439",
+      "bytes": 905,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/retry-failed-booking-email.ts",
+      "sha256": "175045d747578b4f6522ac943c038d57b143a371645ced0c8d845da1e3c8cd3a",
+      "bytes": 1288,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "scripts/setup.mjs",
+      "sha256": "960900c1bc59c097a001051c132332d100e4b71220dd502e21ad6964dc3febe6",
+      "bytes": 627,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/sqlite-postgres-transfer-media.ts",
+      "sha256": "0e080cd671b84b3aeef9521a701acc143f385517c19e2ae6f9caedfbe38ef9e1",
+      "bytes": 5696,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "scripts/start.mjs",
+      "sha256": "0dcd93e4174ee87b4f920f46c193ffd4292463a5eb56f415eb4456fbfd780091",
+      "bytes": 2187,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/transfer-sqlite-postgres.ts",
+      "sha256": "c9d71067a1b17d3e5806b57ef3a6effe44d86fb11c6590a67ee7d41a1d0f0165",
+      "bytes": 14171,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "scripts/verify-postgres-migration-ledger.ts",
+      "sha256": "720fbfa787a0950ac764b1ce91c07d53f6e1f4f1fbfdf5be2063bea145d5fa01",
+      "bytes": 2155,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "scripts/verify-vps-health.mjs",
+      "sha256": "5eb2e2ea4bc513778d7fb6feb7a95a1c7b670ba1d2cf2919f118f0489812c381",
+      "bytes": 2365,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "scripts/verify-vps-release-bundle.mjs",
+      "sha256": "8a30364e78ea460536666c26329ff1172702c7758cd5caf88487125deb908a9f",
+      "bytes": 13914,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "scripts/verify-vps-runtime-image.mjs",
+      "sha256": "9c59466bf9551d19c7b98705f2f2664292a8497762036e6453a1dce67e176ca1",
+      "bytes": 6146,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "server/account-email.ts",
+      "sha256": "85649191da6781f9767471ee535580692d18ec12b3cea89fe9deb82889a04156",
+      "bytes": 3009,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/account-service.ts",
+      "sha256": "a9eab405194b544c2f4384ab069ab9aa5d30dd61e789b4b3841d65c0ae655ca6",
+      "bytes": 1458,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/admin.ts",
+      "sha256": "9474701031bbbb6f51c9c1c85b77fd3fb555b9709544c31e8b717762623e7c4d",
+      "bytes": 790,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "server/audit-service.ts",
+      "sha256": "79f837ca634bf88a1ae542ba79563977402b99f9fd2192bf1ba2025e565d7248",
+      "bytes": 2171,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/auth-config.ts",
+      "sha256": "2ba8434b72756306bd559b7f9c251d68395353bc70bc6f6292b7cc3676eac417",
+      "bytes": 4806,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "server/auth.ts",
+      "sha256": "de966a52b019943cb8b937841202d52de0e279aa1f72eb72065ddad290a147cf",
+      "bytes": 328,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "server/authorization.ts",
+      "sha256": "ceb3dcdd0175d3b52d38f4582e55570a87a2de7c1d2d91b9a0aba5eb58d88d83",
+      "bytes": 283,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "server/booking-availability.ts",
+      "sha256": "41641b6454b7e28ec55df6ea07af7842644f7e9f7eab2e838dcfbf5562ff8fc4",
+      "bytes": 2230,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/booking-business-read-service.ts",
+      "sha256": "53905eb01f39fcb0552f0cabe5ce3ef706f4a511015e7e997a5bc305f37dd499",
+      "bytes": 4112,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/booking-customer-read-service.ts",
+      "sha256": "a24e97226f306d4958baf0483ee2d18f746934894827da6fdd5ab379bd56895b",
+      "bytes": 1222,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/booking-email-delivery-service.ts",
+      "sha256": "c95c47deedeefe507103f0725d69537f055432401ccdc645c7ecfe37b21d79c8",
+      "bytes": 4523,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/booking-email-operations-service.ts",
+      "sha256": "830609971d44d84ba2c04f8077de1bd9fbb9f828eee08ca41890317a4450faeb",
+      "bytes": 2592,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/booking-email-outbox.ts",
+      "sha256": "d9055adb4bc9cdbc7b298f17984bd8c56c2d010db01628a2e9b7fcf3e25dcdb5",
+      "bytes": 769,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/booking-email-queue-service.ts",
+      "sha256": "75678536b7b8e4074ce96ec78c23287fc0b94a491465728ad9190b55597a72a0",
+      "bytes": 1887,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/booking-email-worker-heartbeat.ts",
+      "sha256": "c0a83d2e7a5363a42e6aa1812e76b3ea4b481fbc5cf6e7586d9d3c4b9ba5bd7b",
+      "bytes": 2017,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/booking-email.ts",
+      "sha256": "beb7755a77312fc15806c9b1b7158a3079be1805275b48cd20faeac7ba988d2a",
+      "bytes": 3583,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/booking-lifecycle-service.ts",
+      "sha256": "51716e062b6bd6ea8321249f5ee11b5fb560122e288303732a8c91e247fc60bc",
+      "bytes": 4317,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/booking-query.ts",
+      "sha256": "e826bb527496c99e54398e662b085cefc752e06004cc61e9c39e053cd688c662",
+      "bytes": 423,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/booking-read-model.ts",
+      "sha256": "fb4a019b565d13ad5510ae032110e9d87699b8553786521f14fcdbfc8e0f1e1d",
+      "bytes": 2646,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/booking-read-service.ts",
+      "sha256": "1ddcfd81704fcad4827d80a2c36059695246abc01d767987d4d10e1ec5376b03",
+      "bytes": 394,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/booking-reminders.ts",
+      "sha256": "848d7a4152c081d30ff5e42affbaa21d6d70e018a09c79a1532a582deed73a56",
+      "bytes": 4463,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/booking-request-service.ts",
+      "sha256": "69690cc45e86c804a5ad0eaf6e68940cc531ceb5730cb9f2a4b2b8b3ee2c2fdf",
+      "bytes": 3784,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/booking-service.ts",
+      "sha256": "e70befaa9d5fef73c821c260d4922c41a2b3798e4565415e56606b1cbc54e5c2",
+      "bytes": 87,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "server/booking-stay-service.ts",
+      "sha256": "6d67805f6b30281049ed5129d2fdb47583aaed6f651d404a058f873b1958f791",
+      "bytes": 2614,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/booking-write-service.ts",
+      "sha256": "4ec79f14857819ad640f36f8d31d13e4d35714bbe31755d3b1d4efd2dc408a39",
+      "bytes": 154,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/business-panel-read-service.ts",
+      "sha256": "ec3db93a10f6d3995bda4df8ac98c2d8b80aef4ab7c8a77586d197e6aea0dbe6",
+      "bytes": 3196,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/cadastur/directory-service.ts",
+      "sha256": "32e5bd0ce92291ad77d8032b52e559216754d0e1ac731be3e441333bddaa874d",
+      "bytes": 3997,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/cadastur/file-worker.mjs",
+      "sha256": "ee4161617ea7b39f6b2523a52bb89290dd931042f2ea6bea7f169ca295a5f57e",
+      "bytes": 2696,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "server/cadastur/files.ts",
+      "sha256": "fa54d1cb98591156eaa5c215cdbb0a543ac01b25222d78291002193f84c08517",
+      "bytes": 2563,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "server/cadastur/import-commit-service.ts",
+      "sha256": "9403bd7e982733444b26da4348eedc2935a95d5d83ed2c7b519f93735c0cae13",
+      "bytes": 4026,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/cadastur/import-model.ts",
+      "sha256": "89a4152057689d9383bbc5401ca329fbe07883fa5100d1adaeae240cc93c5427",
+      "bytes": 316,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/cadastur/import-normalization.ts",
+      "sha256": "42ff8d04b8aa773d4210aaa16584e3a0b0fc760951c374717a9bcb3e7208148b",
+      "bytes": 5982,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/cadastur/import-service.ts",
+      "sha256": "b067a0ae5514651f0df6c30a4545185ca2600096e1d908a2ad953558927b0008",
+      "bytes": 4360,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/cadastur/public-directory-cache.ts",
+      "sha256": "0655dd3621c1f8a9e29780cb5501e9952924fec9bfff70e17cf937dfc4a60bc6",
+      "bytes": 1669,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/cadastur/public-directory-model.ts",
+      "sha256": "a52949c9d7c9b47df63e7c04bd2e46a3fb3c2dfd910f25dfdb69ec48d42318b5",
+      "bytes": 3943,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/cadastur/public-directory-search.ts",
+      "sha256": "ded0bc8c88875b73ba50bda759daf2a062c65df10eaec2fb04bce8fa5aed091c",
+      "bytes": 5527,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/cadastur/public-directory.ts",
+      "sha256": "99ad68210cfb2544664cbacc5913687fa365702d57db06bbb5a2e0adcaac76f8",
+      "bytes": 3447,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "server/cadastur/service.ts",
+      "sha256": "373ef0eed67ff7302cd2fd2c1fc2d963e5578a46a50530be04367161e1aff449",
+      "bytes": 152,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "server/cadastur/sources.ts",
+      "sha256": "2c888c379011b61faa29a0780067f3dbeee5bf8aec0b5e8939f452e61033fc93",
+      "bytes": 3961,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "server/catalog-content-model.ts",
+      "sha256": "b949d1485ffa48f58c6bc5384a0d19f80aadddcd36765f49ca8934052632f176",
+      "bytes": 582,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/catalog-content-read-service.ts",
+      "sha256": "5c7bccc3058d4ffefdcde290c9c69eb16f7db0168ee17224c63a58c9434b26d1",
+      "bytes": 4170,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/catalog-content-service.ts",
+      "sha256": "4f6fd172c2d1e82cccd23f83c7d0d993b5d66ec62822edfb71fd9ff6fc6e7857",
+      "bytes": 434,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "server/catalog-content-write-service.ts",
+      "sha256": "5e31f3c309d77c2048bace65bf23df1544f887a8e3288b078b7867360b7cc97b",
+      "bytes": 4320,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/catalog-experience-read-service.ts",
+      "sha256": "5c941b2a9ca88b18a17f92d06c03a4b490681dd749706f0f14e61625e0462429",
+      "bytes": 3873,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/catalog-hotel-read-service.ts",
+      "sha256": "adc554fb544effaacd7fe3243ee8ed91cd735a634f0a949b00089d6698bf97b6",
+      "bytes": 3122,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/catalog-public-content-service.ts",
+      "sha256": "6364f30e9c6457d4602108272a2e4e7b96e5aa3ad05e1ccda198a30ca6528989",
+      "bytes": 1479,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/catalog-read-model.ts",
+      "sha256": "9e11c71cfba80113fccf93baa91144c04b842138aafb6bdb85bc3fb04fe6f0db",
+      "bytes": 412,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/catalog-service.ts",
+      "sha256": "16f75e341884dd30844314d78dc2b93bb3d9ed2b8cb6596ddad711c13585d8c0",
+      "bytes": 1305,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "server/client-ip.ts",
+      "sha256": "53340185c142d3b509877042c0be8e3ca1061ec075348767624d716b75d181e6",
+      "bytes": 370,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "server/company-admin-read-service.ts",
+      "sha256": "197ba6f839442e3318f97c77381ed1fedeace3a8b5d87cc384104f4c01a33202",
+      "bytes": 2747,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/company-membership-read-service.ts",
+      "sha256": "46a79c5d3c823a07c523e2093d3f9e7bf0c5ae7a3e2b463bd331149c42e3bd00",
+      "bytes": 2528,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/company-membership-service.ts",
+      "sha256": "607f3f4a022c060a39242331971958663aff9d871179ea1461ee8fde294f9c85",
+      "bytes": 254,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/company-membership-write-service.ts",
+      "sha256": "be6eee95cd7044ab3d5639427e0e0b40b0e753adde87adaa78105fd8851ade2c",
+      "bytes": 2315,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/company-service.ts",
+      "sha256": "6abfea6b1334f868d68126ad9b2f6bbdcb938164a7d925303a57116a8717090d",
+      "bytes": 534,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "server/company-write-service.ts",
+      "sha256": "daf650e5496ea747c6bdd0c40b383e60a84779fad07c4de6ab169a5bffc461c3",
+      "bytes": 2069,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/contact-service.ts",
+      "sha256": "b74f3a9dcccf6ad26e689d2d79c4531e3ed9608ae09b8180d69415939be3e263",
+      "bytes": 3321,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "server/email-transport.ts",
+      "sha256": "a860d58cc53ff48ac5f7bd9a084c6bb8c40900b161cc44bc375358b7a1439ad2",
+      "bytes": 2330,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/email.ts",
+      "sha256": "5aa13be6da0f8792ba98e2261ef027fb6be4f47905391d2f2e0901ff5bff2faf",
+      "bytes": 296,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/experience-directory-model.ts",
+      "sha256": "fc0ee222c724f84421abe6a49ae11db28640934166add305cde803a2bd298c46",
+      "bytes": 3985,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/experience-directory-service.ts",
+      "sha256": "a081fd12d4f2567f0d22ba02dfa061ad5cffb618303bda3bc2280b920d3ef7e1",
+      "bytes": 6054,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/http.ts",
+      "sha256": "09187fd9de591dc3fa8eafc3678b4fadee97c26c88812ee4d9f5dbe5bd261475",
+      "bytes": 2615,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "server/inventory-experience-read-service.ts",
+      "sha256": "c9ed133a7ad559a501c2fb81a165a0b337d84c2fa782a837d436f7d5261ffeb7",
+      "bytes": 4288,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/inventory-experience-write-service.ts",
+      "sha256": "bfe456669c410d2f2674422f7b6bc283e6d8ed78864a918dc06630640659b28b",
+      "bytes": 4891,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/inventory-legacy-read-service.ts",
+      "sha256": "8e8ce16e46bca8da9adb3e1c2ca2dc84008a44efab573d316be29042f409de68",
+      "bytes": 2676,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/inventory-read-model.ts",
+      "sha256": "f1383e85d1b8e5548135a28b7479b8f042e087fdf5f719ee42323da1379718a9",
+      "bytes": 1302,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/inventory-read-service.ts",
+      "sha256": "d9ff48e77ede29ff1abc1e9f12d28cc44f99ab6e9568d6844510f1f897b2cfff",
+      "bytes": 3814,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/inventory-room-read-service.ts",
+      "sha256": "5906650f8aef7444a3bdeabbc05057a145ca125ca0eb6d6676342f17b91d9b8a",
+      "bytes": 2654,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/inventory-room-write-service.ts",
+      "sha256": "adb6322118ed2823871f6a71281b693bd260d531044e6cd41aad65d300ee6b0a",
+      "bytes": 3361,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/inventory-write-service.ts",
+      "sha256": "50e7166f6b82bc8cf9c47b1fb96f8d2427f268a21f599e8e85a430ec74e57f23",
+      "bytes": 182,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/jwt-identity.ts",
+      "sha256": "e0d57b01d4b7c8726b2bc2e99a9c312a420e0a277ae73b220b7f91ed63a0e97d",
+      "bytes": 1176,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "server/media-storage.ts",
+      "sha256": "28f7d1021037abc6bad5ab8b423a380bbf40bae3f8704fdc082fc28186082077",
+      "bytes": 3228,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "server/nearby-geocoder-model.json",
+      "sha256": "e4bb891011e2f3f206440712ce91da0499fb73b3e9936183da38519487fd4d2f",
+      "bytes": 796,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "server/nearby-recommendations.ts",
+      "sha256": "fb0dc9c1c472a46dd569075e1761551b47a73055570991ca4557c1402387dc7f",
+      "bytes": 4051,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "server/nearby/cache.ts",
+      "sha256": "490f8e4c27e08a48df13acd0cf5081d17817e1debbb8555db44d77e1cdb1e8ad",
+      "bytes": 3097,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/nearby/openstreetmap-request-limits.ts",
+      "sha256": "4cd9e3f8c25daa9de91f1389a9b10f1e6fa7ea2dc771900a7833ed27eaa71149",
+      "bytes": 1831,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/nearby/openstreetmap.ts",
+      "sha256": "d05f46376189011c655fdbe52e8e10346a34e87f4d4c56ed1c2efe92e94fd8c8",
+      "bytes": 6348,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/nearby/provider.ts",
+      "sha256": "0263da56cc45c4a2d324eaa1bc2d58e893eccdfe5582a4c61fdfe474c1116aa3",
+      "bytes": 713,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/nearby/recommendation-builder.ts",
+      "sha256": "dca031b45774ea61aca9bcb0ddee0670d757975b5c04caa7ce732e7da24d0ce0",
+      "bytes": 4002,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/notification-model.ts",
+      "sha256": "f79f2e558c3eca06d86237d49d34d77663541000b66018d25c5de256bbc89ecf",
+      "bytes": 642,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/notification-read-service.ts",
+      "sha256": "0ab80e737f9f7034b331781779ac8e6572e3ca355fee26707a0eab5291b3238c",
+      "bytes": 3082,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/notification-service.ts",
+      "sha256": "7bf511cebd3d49a52d9cc99461d1d681b453d71a3abb17a6657d429947a91519",
+      "bytes": 445,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/notification-write-service.ts",
+      "sha256": "70541e804667849e458fc7cb9e244162290c746b1aebf5d4d1f462f1f3c17575",
+      "bytes": 3213,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/platform-access.ts",
+      "sha256": "c97bab0472f1956fd1cde5b32f2eae57b4c26211f9fd5701edb69eed2fd736bd",
+      "bytes": 417,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "server/platform-authorization.ts",
+      "sha256": "1f6e733f088490c83307d8a5fcb9a0c22a5fe64618cefaff4460b413d99471d7",
+      "bytes": 3734,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/platform-bookings-api.ts",
+      "sha256": "007389d287e8f4ff41b43d885ce715953025253042548390dce256e79b136a20",
+      "bytes": 2106,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/platform-catalog-api.ts",
+      "sha256": "e556ceecefaef29008c93977d97e20d04fb1a6a82c7ba7292260b8fd6814505c",
+      "bytes": 1419,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/platform-companies-api.ts",
+      "sha256": "d81f431772190761d25de788af84083f40578e88124d4ccf75c12cc7dc8dbaab",
+      "bytes": 3139,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/platform-company-read-service.ts",
+      "sha256": "6f32398e3ab6bf7140669dbde8ffd8ff6bfb35bac3e6759d9045239078cdfeaa",
+      "bytes": 5453,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/platform-dashboard-service.ts",
+      "sha256": "d2225b42a80ae6bf9b9f949d4573fc32f5fd2404f09bc1ddf88f35ee1ac59443",
+      "bytes": 2127,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/platform-inventory-api.ts",
+      "sha256": "3e81f5880cb96c910d0f963806f585705a9c923189967a0cb2d1e543aeeb720a",
+      "bytes": 1602,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/platform-models.ts",
+      "sha256": "c1822d342a03a3390e0c0d162851c4c73dce9ad9b53239a025ba9742c1f83436",
+      "bytes": 2080,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "server/platform-notifications-api.ts",
+      "sha256": "99bc98250badbfef6442141c602d4b7adcb80f83037a303d3087f4f791889ef1",
+      "bytes": 1357,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "server/platform-session.ts",
+      "sha256": "3b49a6d984cc6b5c19867c44bcf98d9d45cb0ad92db460c70639b520f0126819",
+      "bytes": 902,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "server/platform-store.ts",
+      "sha256": "86d0b5211ed75f8273b1e27b6a2321709da605895f8e76fc0729619894cb35e1",
+      "bytes": 837,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "server/turnstile.ts",
+      "sha256": "0c3e28be88ba88a8530031103ff457e65dfcb264f36186c001558ed837bcb095",
+      "bytes": 1146,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "tests/admin-credentials.test.ts",
+      "sha256": "2bd62099173926a66fd9f8e0dc9aaebb81af91661d80332601ee777ff7e9b0c2",
+      "bytes": 3567,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "tests/booking-email-outbox.test.ts",
+      "sha256": "b3b250b6f1e5a24c62e6473b06b2be8f516892a633db7663fddc887ab5a9a9bb",
+      "bytes": 13744,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "tests/booking-reminders.test.ts",
+      "sha256": "2ae95d76d18be9cf08a51ed943c950fee19b0addf0d7c3ecae1f6843aceaba45",
+      "bytes": 9405,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "tests/cadastur-http.ts",
+      "sha256": "19f1ba506755c6180877d44300486d5dae98e8b0636c6207cafb167e034dd462",
+      "bytes": 5265,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "tests/cadastur.test.ts",
+      "sha256": "f569ea70b2eee7379abc773d9c4ad8cec27745c179e3fdfb8a3c8b35562da625",
+      "bytes": 19941,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "tests/contact.test.ts",
+      "sha256": "8551e320a8b01d63de8a1fed2f496477e5d70f0f4f8c70f61f07c503ccb47e4d",
+      "bytes": 6824,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "tests/fixtures/cadastur-ficticio.xlsx",
+      "sha256": "1e9b4b6324c5481b89576eb012583bce1226b519b30ded4720e4fd3a9af3966c",
+      "bytes": 5538,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "tests/integration.ts",
+      "sha256": "425d7e6dc8790c21084f18a049e605a6781747beb61e9d5ce1ee02690d808239",
+      "bytes": 11384,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "tests/navigation.test.ts",
+      "sha256": "9a3389cf8209cd88d5d86699fc176b00f13bfa1e9a26b9c533f928eb96080f36",
+      "bytes": 3954,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "tests/operations.test.ts",
+      "sha256": "677673ce28d358a02593080dd50a6ed294753121173c8ddafd9dda88a8ad0385",
+      "bytes": 13375,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "tests/password-prompt.test.ts",
+      "sha256": "441f120e97d2ab62d7fb34ccbdcb73bb0449ed30662646e102285f7ec9de2fb2",
+      "bytes": 2770,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "tests/platform-http.ts",
+      "sha256": "f95337a2bc3b747da72731264c16c6b2180c763de582d8ac0710f9c594c8a629",
+      "bytes": 22047,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "tests/platform.test.ts",
+      "sha256": "3e8a575360c5b7587557c066381f171c694ae7b52abfeca15a3690cacd42f283",
+      "bytes": 23271,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "tests/postgres-backup.test.ts",
+      "sha256": "ff0824052655b9dbdb41026b5f80756ffb496b0f228640189ff7cd2d57d380ef",
+      "bytes": 5865,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "tests/postgres-data-transfer.test.ts",
+      "sha256": "bde0b39306bf20316f604a121126ba6fee4eb45990c9193c0fc66755c5540121",
+      "bytes": 16998,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "tests/postgres-platform-concurrency.test.ts",
+      "sha256": "c55219ebddf2aefe0913e887195fc7aebb872b657d99f4df3618b6b804ddb642",
+      "bytes": 20250,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "tests/preview-server.mjs",
+      "sha256": "12b64ecf56ab78459573b29ec0fb4d62431ddf611163e36186f232de416b4ef5",
+      "bytes": 4903,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "tests/vps-environment.test.ts",
+      "sha256": "4ea3085c11bfa334c59dcea86f141ef131a088b4ccdd175ccb41b0d049587cc1",
+      "bytes": 3532,
+      "gitStatus": "??",
+      "gitStatusLabel": "untracked",
+      "gitTracked": false
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "70d3c1d85c76b942a51c24ca6ecdf7ede326a3d9ed0cb6369a253c45e6b445e9",
+      "bytes": 736,
+      "gitStatus": " M",
+      "gitStatusLabel": "modified",
+      "gitTracked": true
+    },
+    {
+      "path": "vendor/shadcn-tailwind-4.13.0.css",
+      "sha256": "bc7d83425702955b4cb67cb14ede9d603f9d912376d57a2d81d661094d2a782a",
+      "bytes": 16041,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "vendor/shadcn-tailwind-4.13.0.LICENSE.md",
+      "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f",
+      "bytes": 1063,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    },
+    {
+      "path": "vercel.json",
+      "sha256": "93e39a57ad9627b9a9d0e0b2641dd8528d4f3e6c465894af5b4c7d315eaf31e5",
+      "bytes": 148,
+      "gitStatus": "  ",
+      "gitStatusLabel": "tracked",
+      "gitTracked": true
+    }
+  ]
+}
