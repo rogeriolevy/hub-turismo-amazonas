@@ -2,7 +2,8 @@
 import { useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { bookingSchema, todayInManaus } from "@/lib/platform-schema";
+import { bookingSchema } from "@/lib/platform-schema/booking";
+import { todayInManaus } from "@/lib/platform-schema/format";
 import { useLanguage } from "@/components/site/language-provider";
 export function BookingForm({
   kind,

@@ -1,4 +1,4 @@
-import { ProviderDirectory } from "@/components/platform/provider-directory";
+import { ProviderDirectory } from "@/components/platform/directory/provider-listing";
 import type { DirectorySearch } from "@/server/cadastur/public-directory";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Gastronomia", alternates: { canonical: "/gastronomia" } };

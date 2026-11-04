@@ -1,5 +1,6 @@
 import { getAuth } from "@/server/auth";
 import { getClientIp } from "@/server/client-ip";
+import { isEmailDeliveryConfigured } from "@/server/email";
 import { errorResponse, HttpError, readJson } from "@/server/http";
 import {
   captchaRequired,
@@ -13,11 +14,34 @@ async function handle(request: Request) {
     const path = new URL(request.url).pathname;
     const allowed =
       request.method === "POST"
-        ? ["/api/auth/sign-in/email", "/api/auth/sign-out"]
-        : ["/api/auth/get-session", "/api/auth/token", "/api/auth/jwks"];
+        ? [
+            "/api/auth/sign-in/email",
+            "/api/auth/sign-out",
+            "/api/auth/request-password-reset",
+            "/api/auth/reset-password",
+            "/api/auth/send-verification-email",
+          ]
+        : ["/api/auth/get-session", "/api/auth/token", "/api/auth/jwks", "/api/auth/verify-email"];
     if (!allowed.includes(path)) throw new HttpError(404, "NOT_FOUND", "Recurso não disponível.");
-    if (path === "/api/auth/sign-in/email" && captchaRequired() && !isTurnstileConfigured())
+    if (
+      [
+        "/api/auth/sign-in/email",
+        "/api/auth/request-password-reset",
+        "/api/auth/send-verification-email",
+      ].includes(path) &&
+      captchaRequired() &&
+      !isTurnstileConfigured()
+    )
       throw new HttpError(503, "CAPTCHA_CONFIGURATION", captchaUnavailableMessage());
+    if (
+      ["/api/auth/request-password-reset", "/api/auth/send-verification-email"].includes(path) &&
+      !isEmailDeliveryConfigured()
+    )
+      throw new HttpError(
+        503,
+        "EMAIL_CONFIGURATION",
+        "O envio de e-mail ainda não está configurado.",
+      );
     const headers = new Headers(request.headers);
     headers.set("x-hub-client-ip", getClientIp(request.headers));
     const body = request.method === "POST" ? JSON.stringify(await readJson(request)) : undefined;

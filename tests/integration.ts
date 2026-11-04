@@ -46,7 +46,7 @@ const server = spawn(
     ? ["tests/preview-server.mjs"]
     : ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", "3100"],
   {
-    env: { ...process.env, NODE_ENV: "production" },
+    env: { ...process.env, NODE_ENV: "production", TZ: "Pacific/Kiritimati" },
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
   },

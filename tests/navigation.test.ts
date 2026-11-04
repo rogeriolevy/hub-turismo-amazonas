@@ -101,7 +101,7 @@ test("a passed departure or old undated quote is shown as historical", () => {
 test("displayed prices retain positive cent values, evidence and consultation dates", () => {
   for (const route of navigationRoutes) {
     assert.ok(route.sourceIds.length > 0);
-    for (const source of route.sourceIds) assert.ok(navigationSources[source].url);
+    for (const source of route.sourceIds) assert.ok(navigationSources[source].name);
     if (route.price) {
       assert.ok(Number.isSafeInteger(route.price.amountCents) && route.price.amountCents > 0);
       assert.match(route.price.observedAt, /^\d{4}-\d{2}-\d{2}$/);

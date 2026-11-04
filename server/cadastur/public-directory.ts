@@ -1,117 +1,44 @@
 import type { DatabaseExecutor } from "../../db/index.ts";
-import {
-  normalizeLabel,
-  cadasturSources,
-  type CadasturCategory,
-  type RegistryData,
-} from "../../lib/cadastur-schema.ts";
-import type { CatalogCategory, CatalogItem } from "../../lib/catalog-content.ts";
+import { cadasturSources, type CadasturCategory } from "../../lib/cadastur-schema.ts";
 import {
   publicCatalogItem,
   publicCatalogItems,
   publicCatalogOverlay,
   publicCatalogOverlays,
-} from "../catalog-content-service.ts";
-import { publicWebsite } from "../../lib/public-contacts.ts";
+} from "../catalog-public-content-service.ts";
 import { many, one } from "../platform-store.ts";
+import { cachedPublicDirectory } from "./public-directory-cache.ts";
+import {
+  fromCadastur,
+  fromHub,
+  priority,
+  withEditorialContent,
+  publicCadasturProjection,
+  publicCadasturVisibility,
+  directoryCategories,
+  type CadasturPublicProvider,
+  type DirectoryCategory,
+} from "./public-directory-model.ts";
 
-export type PublicProvider = Omit<
-  RegistryData,
-  "external_id" | "registry_status" | "valid_until"
-> & {
-  id: string;
-  category: CatalogCategory;
-  period: string;
-  summary: string;
-  description: string;
-  details: string;
-  images: string[];
-  source: "cadastur" | "hub";
-  editorial: boolean;
-};
-type CadasturPublicProvider = Omit<
+export {
+  directoryCategories,
+  fromHub,
+  providerFromDirectoryRow,
+  regionCities,
+} from "./public-directory-model.ts";
+export type {
+  DirectoryCategory,
+  PublicDirectoryRow,
   PublicProvider,
-  "summary" | "description" | "details" | "images" | "source" | "editorial"
->;
-export const directoryCategories = [
-  "hospedagens",
-  "gastronomia",
-  "guias",
-  "agencias",
-  "servicos",
-] as const;
-export type DirectoryCategory = (typeof directoryCategories)[number];
-export const regionCities = ["Maués", "Parintins", "Boa Vista do Ramos"];
-const projection =
-  "id,category,name,uf,city,subtype,period,phone,email,address,website,languages,units,beds";
-const visible = "published=1 AND review_status='reviewed' AND uf='AM'";
-const priority = (city: string) => {
-  const index = regionCities.findIndex((name) => normalizeLabel(name) === normalizeLabel(city));
-  return index < 0 ? 3 : index;
-};
-
-function fromCadastur(entry: CadasturPublicProvider): PublicProvider {
-  return {
-    ...entry,
-    website: publicWebsite(entry.website),
-    summary: "",
-    description: "",
-    details: "",
-    images: [],
-    source: "cadastur",
-    editorial: false,
-  };
-}
-
-export function fromHub(item: CatalogItem): PublicProvider {
-  return {
-    id: item.id,
-    category: item.category,
-    name: item.name,
-    uf: "AM",
-    city: item.city,
-    subtype: item.subtype,
-    period: "Conteúdo Hub",
-    phone: item.phone,
-    email: item.email,
-    address: item.address,
-    website: publicWebsite(item.website),
-    languages: "",
-    units: null,
-    beds: null,
-    summary: item.summary,
-    description: item.description,
-    details: item.details,
-    images: item.image_urls,
-    source: "hub",
-    editorial: true,
-  };
-}
-
-function withEditorialContent(entry: PublicProvider, item?: CatalogItem): PublicProvider {
-  if (!item) return entry;
-  return {
-    ...entry,
-    name: item.name || entry.name,
-    city: item.city || entry.city,
-    subtype: item.subtype || entry.subtype,
-    phone: item.phone || entry.phone,
-    email: item.email || entry.email,
-    address: item.address || entry.address,
-    website: publicWebsite(item.website) || entry.website,
-    summary: item.summary,
-    description: item.description,
-    details: item.details,
-    images: item.image_urls,
-    editorial: true,
-  };
-}
+} from "./public-directory-model.ts";
+export { publicProviderSearchCte, searchProviders } from "./public-directory-search.ts";
+export type { DirectorySearch } from "./public-directory-search.ts";
 
 export async function publicCadasturProviders(db: DatabaseExecutor, category: DirectoryCategory) {
   return (
     await many<CadasturPublicProvider>(
       db,
-      `SELECT ${projection} FROM cadastur_entries WHERE ${visible} AND category=?`,
+      `SELECT ${publicCadasturProjection} FROM cadastur_entries WHERE ${publicCadasturVisibility} AND category=?`,
       category,
     )
   )
@@ -125,28 +52,40 @@ export async function publicCadasturProviders(db: DatabaseExecutor, category: Di
 }
 
 export async function publicProviders(db: DatabaseExecutor, category: DirectoryCategory) {
-  const [overlays, providers, items] = await Promise.all([
-    publicCatalogOverlays(db, category),
-    publicCadasturProviders(db, category),
-    publicCatalogItems(db, category),
-  ]);
-  const overlayMap = new Map(overlays.map((item) => [item.source_entry_id!, item]));
-  return [
-    ...providers.map((entry) => withEditorialContent(entry, overlayMap.get(entry.id))),
-    ...items.map(fromHub),
-  ].sort(
-    (a, b) =>
-      priority(a.city) - priority(b.city) ||
-      a.name.localeCompare(b.name, "pt-BR") ||
-      a.id.localeCompare(b.id),
+  return cachedPublicDirectory(db, `providers:${category}`, async () => {
+    const [overlays, providers, items] = await Promise.all([
+      publicCatalogOverlays(db, category),
+      publicCadasturProviders(db, category),
+      publicCatalogItems(db, category),
+    ]);
+    const overlayMap = new Map(overlays.map((item) => [item.source_entry_id!, item]));
+    return [
+      ...providers.map((entry) => withEditorialContent(entry, overlayMap.get(entry.id))),
+      ...items.map(fromHub),
+    ].sort(
+      (a, b) =>
+        priority(a.city) - priority(b.city) ||
+        a.name.localeCompare(b.name, "pt-BR") ||
+        a.id.localeCompare(b.id),
+    );
+  });
+}
+
+export async function publicCadasturPaths(db: DatabaseExecutor) {
+  const placeholders = directoryCategories.map(() => "?").join(",");
+  const entries = await many<{ id: string }>(
+    db,
+    `SELECT id FROM cadastur_entries WHERE ${publicCadasturVisibility} AND category IN (${placeholders})`,
+    ...directoryCategories,
   );
+  return entries.map((entry) => "/prestadores/" + entry.id);
 }
 
 export async function publicProvider(db: DatabaseExecutor, id: string) {
   if (!/^[a-f0-9-]{36}$/i.test(id)) return null;
   const entry = await one<CadasturPublicProvider>(
     db,
-    `SELECT ${projection} FROM cadastur_entries WHERE ${visible} AND id=?`,
+    `SELECT ${publicCadasturProjection} FROM cadastur_entries WHERE ${publicCadasturVisibility} AND id=?`,
     id,
   );
   if (entry && directoryCategories.includes(entry.category as DirectoryCategory))
@@ -158,59 +97,6 @@ export async function publicProvider(db: DatabaseExecutor, id: string) {
   return item ? fromHub(item) : null;
 }
 
-export type DirectorySearch = {
-  q?: string | string[];
-  cidade?: string | string[];
-  tipo?: string | string[];
-  pagina?: string | string[];
-  entrada?: string | string[];
-  saida?: string | string[];
-  pessoas?: string | string[];
-};
-export async function searchProviders(
-  db: DatabaseExecutor,
-  category: DirectoryCategory,
-  input: DirectorySearch = {},
-) {
-  const q = typeof input.q === "string" ? input.q.trim().slice(0, 100) : "";
-  const city = typeof input.cidade === "string" ? input.cidade.trim().slice(0, 100) : "";
-  const requestedType = typeof input.tipo === "string" ? input.tipo.trim().slice(0, 100) : "";
-  const all = await publicProviders(db, category);
-  const cities = [...new Set(all.map((r) => r.city))].sort(
-    (a, b) => priority(a) - priority(b) || a.localeCompare(b, "pt-BR"),
-  );
-  const types = [...new Set(all.map((r) => r.subtype.trim()).filter(Boolean))].sort((a, b) =>
-    a.localeCompare(b, "pt-BR"),
-  );
-  const type =
-    types.find((candidate) => normalizeLabel(candidate) === normalizeLabel(requestedType)) ??
-    requestedType;
-  const found = all.filter(
-    (r) =>
-      (!city || normalizeLabel(city) === normalizeLabel(r.city)) &&
-      (!type || normalizeLabel(type) === normalizeLabel(r.subtype)) &&
-      (!q ||
-        normalizeLabel(
-          `${r.name} ${r.city} ${r.subtype} ${r.summary} ${r.description} ${r.details}`,
-        ).includes(normalizeLabel(q))),
-  );
-  const pages = Math.max(1, Math.ceil(found.length / 24));
-  const requested =
-    typeof input.pagina === "string" && /^\d{1,6}$/.test(input.pagina) ? Number(input.pagina) : 1;
-  const page = Math.max(1, Math.min(pages, requested));
-  return {
-    entries: found.slice((page - 1) * 24, page * 24),
-    total: found.length,
-    allTotal: all.length,
-    cities,
-    types,
-    q,
-    city,
-    type,
-    page,
-    pages,
-  };
-}
 export function providerSource(category: CadasturCategory) {
   return "https://dados.turismo.gov.br/dataset/" + cadasturSources[category].dataset;
 }

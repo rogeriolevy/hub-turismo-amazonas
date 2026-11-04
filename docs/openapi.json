@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Hub Turismo Amazonas API",
-    "version": "3.1.0",
-    "description": "Plataforma local Node.js/SQLite. Reservas por aprovação, sem pagamentos. POSTs exigem Origin igual à origem configurada e JSON limitado a 12000 bytes. Contas básicas não têm confirmação automática de e-mail. Importação Cadastur exclusiva do administrador: CSV/XLSX até 20 MB, prévia e revisão; Contatos comerciais opcionais e publicação administrativa explícita no diretório do Amazonas; não cria contas."
+    "version": "3.2.0",
+    "description": "Plataforma Node.js/Next.js com SQLite local e PostgreSQL como alvo da VPS. Reservas por aprovação, sem pagamentos. POSTs exigem Origin igual à origem configurada e JSON limitado a 12000 bytes. Confirmação e recuperação de contas funcionam quando SMTP está configurado; REQUIRE_EMAIL_VERIFICATION permanece opcional. Importação Cadastur exclusiva do administrador: CSV/XLSX até 20 MB, prévia e revisão; contatos comerciais opcionais e publicação administrativa explícita no diretório do Amazonas; não cria contas."
   },
   "servers": [
     {
@@ -123,13 +123,39 @@
     },
     "/api/health": {
       "get": {
-        "summary": "Saúde do banco",
+        "summary": "Saúde do banco e mecanismo de armazenamento",
         "responses": {
           "200": {
-            "description": "status: ok"
+            "description": "Banco disponível e mecanismo confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["status", "version", "database"],
+                  "properties": {
+                    "status": { "const": "ok" },
+                    "version": { "type": "string" },
+                    "database": { "enum": ["postgresql", "sqlite"] }
+                  }
+                }
+              }
+            }
           },
           "503": {
-            "description": "status: unavailable"
+            "description": "Banco indisponível ou backend diferente do exigido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["status", "version", "database"],
+                  "properties": {
+                    "status": { "const": "unavailable" },
+                    "version": { "type": "string" },
+                    "database": { "enum": ["postgresql", "sqlite", "unknown"] }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -208,6 +234,182 @@
         }
       }
     },
+    "/api/auth/request-password-reset": {
+      "post": {
+        "summary": "Solicitar redefinição de senha",
+        "description": "SMTP precisa estar configurado. A resposta é genérica para não revelar se o e-mail existe. Exige Origin igual a SITE_URL; quando Turnstile estiver ativo, envie x-captcha-response. Limite de 5 solicitações por hora.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["email"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  },
+                  "redirectTo": {
+                    "type": "string",
+                    "default": "/redefinir-senha"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Solicitação recebida, sem confirmação da existência da conta"
+          },
+          "400": {
+            "description": "Dados inválidos ou proteção antirobô recusada"
+          },
+          "403": {
+            "description": "Origem inválida"
+          },
+          "429": {
+            "description": "Limite de solicitações atingido"
+          },
+          "500": {
+            "description": "Falha ao entregar o e-mail"
+          },
+          "503": {
+            "description": "SMTP ou proteção antirobô não configurados"
+          }
+        }
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "summary": "Redefinir senha com token",
+        "description": "O token enviado por e-mail expira em 30 minutos. Senhas têm de 12 a 128 caracteres; as sessões anteriores são revogadas. Exige Origin igual a SITE_URL.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["newPassword", "token"],
+                "properties": {
+                  "newPassword": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 128
+                  },
+                  "token": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Senha alterada; sessões anteriores encerradas"
+          },
+          "400": {
+            "description": "Token inválido ou expirado"
+          },
+          "403": {
+            "description": "Origem inválida"
+          },
+          "429": {
+            "description": "Limite de solicitações atingido"
+          }
+        }
+      }
+    },
+    "/api/auth/send-verification-email": {
+      "post": {
+        "summary": "Enviar confirmação de e-mail",
+        "description": "SMTP precisa estar configurado. A resposta não revela se a conta existe ou já está confirmada. Exige Origin igual a SITE_URL; quando Turnstile estiver ativo, envie x-captcha-response. Limite de 5 solicitações por hora.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["email"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  },
+                  "callbackURL": {
+                    "type": "string",
+                    "default": "/entrar?email-verificado=1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Solicitação recebida, sem confirmação da existência da conta"
+          },
+          "400": {
+            "description": "Dados inválidos, e-mail diferente da sessão ou proteção antirobô recusada"
+          },
+          "403": {
+            "description": "Origem inválida"
+          },
+          "429": {
+            "description": "Limite de solicitações atingido"
+          },
+          "500": {
+            "description": "Falha ao entregar o e-mail"
+          },
+          "503": {
+            "description": "SMTP ou proteção antirobô não configurados"
+          }
+        }
+      }
+    },
+    "/api/auth/verify-email": {
+      "get": {
+        "summary": "Confirmar endereço de e-mail",
+        "description": "Endpoint chamado pelo link assinado enviado por e-mail; o token é de uso único e redireciona para callbackURL após a confirmação.",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "callbackURL",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirecionamento após confirmação ou erro do token"
+          },
+          "400": {
+            "description": "Token ausente ou inválido"
+          },
+          "401": {
+            "description": "Token inválido ou expirado sem URL de retorno"
+          }
+        }
+      }
+    },
     "/api/auth/get-session": {
       "get": {
         "responses": {
@@ -222,24 +424,14 @@
     "/api/catalogo/hospedagens": {
       "get": {
         "summary": "Listar hospedagens",
-        "description": "Somente empresas e ofertas publicadas. Sem paginação nesta fase.",
+        "description": "Somente empresas e ofertas publicadas. Sem page, mantém a resposta completa. Com page, retorna até 24 registros e metadados de paginação.",
         "responses": {
           "200": {
             "description": "Sucesso",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Company"
-                      }
-                    }
-                  },
-                  "required": ["data"]
+                  "$ref": "#/components/schemas/CompanyListResponse"
                 }
               }
             }
@@ -353,6 +545,17 @@
               "type": "string"
             },
             "description": "Busca por nome/cidade. O servidor considera os primeiros 100 caracteres."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 999999,
+              "default": 1
+            },
+            "description": "Opcional. Quando informado, ativa a paginação no banco com até 24 itens por página e inclui meta na resposta."
           }
         ]
       }
@@ -360,24 +563,14 @@
     "/api/catalogo/passeios": {
       "get": {
         "summary": "Listar passeios",
-        "description": "Somente empresas e ofertas publicadas. Sem paginação nesta fase.",
+        "description": "Somente empresas e ofertas publicadas. Sem page, mantém a resposta completa. Com page, retorna até 24 registros e metadados de paginação.",
         "responses": {
           "200": {
             "description": "Sucesso",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Tour"
-                      }
-                    }
-                  },
-                  "required": ["data"]
+                  "$ref": "#/components/schemas/TourListResponse"
                 }
               }
             }
@@ -491,6 +684,17 @@
               "type": "string"
             },
             "description": "Busca por nome/cidade. O servidor considera os primeiros 100 caracteres."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 999999,
+              "default": 1
+            },
+            "description": "Opcional. Quando informado, ativa a paginação no banco com até 24 itens por página e inclui meta na resposta."
           }
         ]
       }
@@ -912,7 +1116,7 @@
     "/api/plataforma/empresas": {
       "get": {
         "summary": "Empresas acessíveis",
-        "description": "Administrador: todas. Equipe: empresas vinculadas não suspensas. Turista: lista vazia.",
+        "description": "Sem page: administrador recebe todas, equipe recebe empresas vinculadas não suspensas e turista recebe lista vazia. Com page, retorna até 20 empresas acessíveis e metadados.",
         "responses": {
           "200": {
             "description": "Sucesso",
@@ -927,6 +1131,9 @@
                       "items": {
                         "$ref": "#/components/schemas/Company"
                       }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginationMetadata"
                     }
                   },
                   "required": ["data"]
@@ -1041,6 +1248,18 @@
           },
           {
             "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
           }
         ]
       },
@@ -1208,7 +1427,7 @@
     "/api/plataforma/acessos": {
       "get": {
         "summary": "Vínculos empresariais",
-        "description": "Somente administrador do sistema.",
+        "description": "Somente administrador do sistema. Sem page, preserva a lista completa; com page, retorna 20 vínculos e metadados de paginação.",
         "responses": {
           "200": {
             "description": "Sucesso",
@@ -1223,6 +1442,9 @@
                       "items": {
                         "$ref": "#/components/schemas/Member"
                       }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginationMetadata"
                     }
                   },
                   "required": ["data"]
@@ -1337,6 +1559,17 @@
           },
           {
             "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ]
       },
@@ -1504,7 +1737,7 @@
     "/api/plataforma/inventario": {
       "get": {
         "summary": "Inventário da empresa",
-        "description": "Exige vínculo com a empresa ou administração.",
+        "description": "Exige vínculo com a empresa ou administração. Sem parâmetros de página, preserva o inventário completo. Se qualquer parâmetro de página for informado, todas as listas retornam até 20 itens; cada página pode ser controlada individualmente e os totais vêm em meta.",
         "responses": {
           "200": {
             "description": "Sucesso",
@@ -1516,6 +1749,25 @@
                   "properties": {
                     "data": {
                       "$ref": "#/components/schemas/Inventory"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "rooms": {
+                          "$ref": "#/components/schemas/PaginationMetadata"
+                        },
+                        "guides": {
+                          "$ref": "#/components/schemas/PaginationMetadata"
+                        },
+                        "tours": {
+                          "$ref": "#/components/schemas/PaginationMetadata"
+                        },
+                        "departures": {
+                          "$ref": "#/components/schemas/PaginationMetadata"
+                        }
+                      },
+                      "required": ["rooms", "guides", "tours", "departures"]
                     }
                   },
                   "required": ["data"]
@@ -1641,14 +1893,154 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "quartosPage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "guiasPage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "passeiosPage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "saidasPage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ]
+      }
+    },
+    "/api/plataforma/notificacoes": {
+      "get": {
+        "summary": "Listar notificações da conta",
+        "description": "Sem page, mantém o retorno legado de até 100 notificações. Com page, retorna 20 itens e metadados. Em ambos os casos, os avisos e a contagem não lida pertencem exclusivamente ao usuário autenticado.",
+        "security": [{ "Session": [] }, { "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notificações e contagem de não lidas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    { "$ref": "#/components/schemas/NotificationInbox" },
+                    { "$ref": "#/components/schemas/NotificationInboxPage" }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DomainError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plataforma/notificacoes/lida": {
+      "post": {
+        "summary": "Marcar notificação como lida",
+        "description": "Só altera uma notificação pertencente ao usuário autenticado.",
+        "security": [{ "Session": [] }, { "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MarkNotificationReadInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Estado de leitura atualizado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MarkNotificationReadResult" }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DomainError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plataforma/notificacoes/ler-todas": {
+      "post": {
+        "summary": "Marcar todas as notificações como lidas",
+        "description": "Atualiza somente as notificações não lidas do usuário autenticado.",
+        "security": [{ "Session": [] }, { "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "additionalProperties": false }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Quantidade atualizada",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MarkAllNotificationsReadResult" }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DomainError" }
+              }
+            }
+          }
+        }
       }
     },
     "/api/plataforma/minhas-reservas": {
       "get": {
         "summary": "Minhas solicitações",
-        "description": "Somente reservas pertencentes à conta autenticada.",
+        "description": "Somente reservas pertencentes à conta autenticada. Sem page, preserva o retorno completo; com page, retorna 20 itens e metadados de paginação.",
         "responses": {
           "200": {
             "description": "Sucesso",
@@ -1663,6 +2055,29 @@
                       "items": {
                         "$ref": "#/components/schemas/Booking"
                       }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "page": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "pageSize": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalPages": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages"]
                     }
                   },
                   "required": ["data"]
@@ -1777,6 +2192,17 @@
           },
           {
             "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
           }
         ]
       }
@@ -1784,7 +2210,7 @@
     "/api/plataforma/reservas": {
       "get": {
         "summary": "Solicitações da empresa",
-        "description": "Exige vínculo com a empresa ou administração.",
+        "description": "Exige vínculo com a empresa ou administração. Sem page, preserva o retorno completo; com page, retorna 20 itens e metadados de paginação.",
         "responses": {
           "200": {
             "description": "Sucesso",
@@ -1799,6 +2225,29 @@
                       "items": {
                         "$ref": "#/components/schemas/Booking"
                       }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "page": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "pageSize": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalPages": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages"]
                     }
                   },
                   "required": ["data"]
@@ -1923,6 +2372,15 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
             }
           }
         ]
@@ -4236,6 +4694,121 @@
       }
     },
     "/api/plataforma/conteudos": {
+      "get": {
+        "summary": "Consultar conteúdo editorial por categoria",
+        "description": "Somente administrador. Retorna até 20 cadastros ordenados por atualização, metadados de paginação e contagens por categoria. A categoria padrão é hospedagens.",
+        "security": [
+          {
+            "AdminSession": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "categoria",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hospedagens",
+                "guias",
+                "gastronomia",
+                "transportes",
+                "agencias",
+                "servicos"
+              ],
+              "default": "hospedagens"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "maximum": 10000
+            }
+          },
+          {
+            "name": "cadastur",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 128
+            },
+            "description": "Inclui separadamente o complemento editorial ligado a este registro, quando existente."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conteúdo paginado e contagens por categoria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CatalogItem"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginationMetadata"
+                    },
+                    "counts": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "total": {
+                            "type": "integer"
+                          },
+                          "published": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": ["total", "published"]
+                      }
+                    },
+                    "sourceItem": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/CatalogItem"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": ["data", "meta", "counts", "sourceItem"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "422": {
+            "description": "Categoria ou página inválida"
+          },
+          "503": {
+            "description": "Indisponibilidade"
+          }
+        }
+      },
       "post": {
         "summary": "Criar ou atualizar conteúdo do catálogo",
         "description": "Somente administrador. Exige Origin e JSON. A categoria não pode ser alterada após criação; publicação é explícita.",
@@ -4384,8 +4957,8 @@
     },
     "/api/proximidades": {
       "get": {
-        "summary": "Sugestões próximas a uma hospedagem",
-        "description": "Público. Consulta dados comerciais da hospedagem a Nominatim e Overpass quando o cache expira. Raio de 2 km; respostas prontas usam cache compartilhável por até uma hora.",
+        "summary": "Recomendações de proximidade",
+        "description": "Público. Para uma hospedagem publicada, consulta coordenadas pelo Nominatim e locais próximos pelo Overpass, mantendo cache e limites de chamadas no banco. Também retorna buscas de fallback para abrir no Google Maps. Resultados temporariamente indisponíveis não são armazenados em cache; os demais podem ser compartilhados por uma hora.",
         "parameters": [
           {
             "name": "id",
@@ -4408,7 +4981,20 @@
         ],
         "responses": {
           "200": {
-            "description": "Sugestões ou estado de indisponibilidade; inclui data.status, data.places e data.hotelLocation."
+            "description": "Inclui data.provider=openstreetmap para os locais listados e data.mapsProvider=google_maps para os links de busca, além de status, distâncias aproximadas, atribuição e localização quando confirmada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["data"],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/NearbyRecommendations"
+                    }
+                  }
+                }
+              }
+            }
           },
           "400": {
             "description": "Identificador ou origem inválida"
@@ -4417,7 +5003,7 @@
             "description": "Hospedagem não publicada"
           },
           "503": {
-            "description": "Dependência externa temporariamente indisponível"
+            "description": "Indisponibilidade interna"
           }
         }
       }
@@ -4451,6 +5037,279 @@
         "responses": {
           "200": {
             "description": "JSON Web Key Set público"
+          }
+        }
+      }
+    },
+    "/api/plataforma/opcoes-empresas": {
+      "get": {
+        "summary": "Buscar opções de empresa",
+        "description": "Retorna opções acessíveis ao usuário autenticado, com busca por nome ou município e paginação de 20 resultados. O identificador selected mantém a opção escolhida mesmo fora da página atual.",
+        "security": [
+          {
+            "Session": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "name": "selected",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["hotel", "operator"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Opções de empresa e metadados da busca",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "value": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "label": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["value", "label"]
+                      }
+                    },
+                    "selected": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "value": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "label": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["value", "label"]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginationMetadata"
+                    }
+                  },
+                  "required": ["data", "selected", "meta"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Parâmetros inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plataforma/opcoes-guias": {
+      "get": {
+        "summary": "Buscar opções de guia",
+        "description": "Retorna perfis de guia com busca por nome do guia, empresa ou município e paginação de 20 resultados. O identificador selected mantém a opção escolhida mesmo fora da página atual. Restrito à administração da plataforma.",
+        "security": [
+          {
+            "Session": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
+            }
+          },
+          {
+            "name": "selected",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Opções de guia e metadados da busca",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "value": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "label": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["value", "label"]
+                      }
+                    },
+                    "selected": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "value": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "label": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["value", "label"]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginationMetadata"
+                    }
+                  },
+                  "required": ["data", "selected", "meta"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão ausente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Parâmetros inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Indisponibilidade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainError"
+                }
+              }
+            }
           }
         }
       }
@@ -4587,6 +5446,11 @@
           "role": {
             "type": "string",
             "enum": ["hotel_manager", "hotel_staff", "operator", "guide"]
+          },
+          "guide_id": {
+            "type": ["string", "null"],
+            "format": "uuid",
+            "description": "Perfil público vinculado; obrigatório quando role=guide e deve pertencer à mesma operadora."
           }
         },
         "required": ["company_id", "email", "role"]
@@ -5320,6 +6184,10 @@
             "type": "string",
             "enum": ["hotel_manager", "hotel_staff", "operator", "guide"]
           },
+          "guide_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
           "name": {
             "type": "string"
           },
@@ -5330,9 +6198,125 @@
           },
           "company_name": {
             "type": "string"
+          },
+          "guide_name": {
+            "type": ["string", "null"]
           }
         },
-        "required": ["company_id", "user_id", "role", "name", "email", "company_name"]
+        "required": [
+          "company_id",
+          "user_id",
+          "role",
+          "guide_id",
+          "name",
+          "email",
+          "company_name",
+          "guide_name"
+        ]
+      },
+      "NotificationInbox": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "maxItems": 100,
+            "items": { "$ref": "#/components/schemas/UserNotification" }
+          },
+          "unreadCount": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["data", "unreadCount"]
+      },
+      "NotificationInboxPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "maxItems": 20,
+            "items": { "$ref": "#/components/schemas/UserNotification" }
+          },
+          "unreadCount": { "type": "integer", "minimum": 0 },
+          "meta": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "page": { "type": "integer", "minimum": 1 },
+              "pageSize": { "type": "integer", "const": 20 },
+              "total": { "type": "integer", "minimum": 0 },
+              "totalPages": { "type": "integer", "minimum": 1 }
+            },
+            "required": ["page", "pageSize", "total", "totalPages"]
+          }
+        },
+        "required": ["data", "unreadCount", "meta"]
+      },
+      "UserNotification": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "event": {
+            "type": "string",
+            "enum": [
+              "booking.requested",
+              "booking.confirmed",
+              "booking.declined",
+              "booking.cancelled",
+              "booking.reminder"
+            ]
+          },
+          "company_id": { "type": "string", "format": "uuid" },
+          "company_kind": { "type": "string", "enum": ["hotel", "operator"] },
+          "booking_id": { "type": "string", "format": "uuid" },
+          "booking_kind": { "type": "string", "enum": ["hotel", "tour"] },
+          "created_at": { "type": "string", "format": "date-time" },
+          "read_at": { "type": ["string", "null"], "format": "date-time" }
+        },
+        "required": [
+          "id",
+          "event",
+          "company_id",
+          "company_kind",
+          "booking_id",
+          "booking_kind",
+          "created_at",
+          "read_at"
+        ]
+      },
+      "MarkNotificationReadInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "notification_id": { "type": "string", "format": "uuid" }
+        },
+        "required": ["notification_id"]
+      },
+      "MarkNotificationReadResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": { "updated": { "type": "boolean" } },
+            "required": ["updated"]
+          }
+        },
+        "required": ["data"]
+      },
+      "MarkAllNotificationsReadResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": { "updated": { "type": "integer", "minimum": 0 } },
+            "required": ["updated"]
+          }
+        },
+        "required": ["data"]
       },
       "Booking": {
         "type": "object",
@@ -5419,6 +6403,95 @@
           }
         },
         "required": ["id", "kind", "status", "total_cents", "guests", "company_id"]
+      },
+      "PaginationMetadata": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalPages": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": ["page", "pageSize", "total", "totalPages"]
+      },
+      "CompanyListResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Company"
+                }
+              }
+            },
+            "required": ["data"]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Company"
+                }
+              },
+              "meta": {
+                "$ref": "#/components/schemas/PaginationMetadata"
+              }
+            },
+            "required": ["data", "meta"]
+          }
+        ]
+      },
+      "TourListResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Tour"
+                }
+              }
+            },
+            "required": ["data"]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Tour"
+                }
+              },
+              "meta": {
+                "$ref": "#/components/schemas/PaginationMetadata"
+              }
+            },
+            "required": ["data", "meta"]
+          }
+        ]
       },
       "Inventory": {
         "type": "object",
@@ -5739,8 +6812,54 @@
       },
       "NearbyRecommendations": {
         "type": "object",
-        "required": ["status", "places", "radiusMeters", "updatedAt", "stale", "hotelLocation"],
+        "required": [
+          "provider",
+          "mapsProvider",
+          "reference",
+          "hotelMapsUrl",
+          "searches",
+          "status",
+          "places",
+          "radiusMeters",
+          "updatedAt",
+          "stale",
+          "hotelLocation"
+        ],
         "properties": {
+          "provider": {
+            "type": "string",
+            "const": "openstreetmap",
+            "description": "Fonte dos estabelecimentos listados."
+          },
+          "mapsProvider": {
+            "type": "string",
+            "const": "google_maps",
+            "description": "Serviço que abre os links de busca e navegação."
+          },
+          "reference": {
+            "type": "string"
+          },
+          "hotelMapsUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "searches": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["category", "googleMapsUrl"],
+              "properties": {
+                "category": {
+                  "type": "string",
+                  "enum": ["restaurant", "snack", "bar", "gym"]
+                },
+                "googleMapsUrl": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              }
+            }
+          },
           "status": {
             "type": "string",
             "enum": ["ready", "location_missing", "temporarily_unavailable"]

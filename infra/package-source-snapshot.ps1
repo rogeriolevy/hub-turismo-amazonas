@@ -200,15 +200,40 @@ try {
     if ($archiveEntries.Count -ne $expectedEntries.Count -or @($archiveEntries | Where-Object { $_ -notin $expectedEntries }).Count -gt 0) {
       throw "O ZIP de fontes não corresponde à lista do manifesto."
     }
+    $manifestItem = Get-Item -LiteralPath $manifestPath
+    $manifestHash = (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $verifiedArchiveEntries = 0
     foreach ($entry in $zipFile.Entries | Where-Object { -not $_.FullName.EndsWith('/') }) {
       $path = $entry.FullName.Replace('\', '/')
       if ($path -eq "SOURCE-MANIFEST.json") {
-        continue
+        $expectedHash = $manifestHash
+        $expectedBytes = $manifestItem.Length
+      } else {
+        $expectedFile = $sourceFiles | Where-Object { $_.path -eq $path } | Select-Object -First 1
+        if (-not $expectedFile) {
+          throw "Entrada ZIP não descrita no manifesto: $path"
+        }
+        $expectedHash = [string]$expectedFile.sha256
+        $expectedBytes = [long]$expectedFile.bytes
       }
-      $expectedFile = $sourceFiles | Where-Object { $_.path -eq $path } | Select-Object -First 1
-      if (-not $expectedFile -or $entry.Length -ne $expectedFile.bytes) {
+      if ($entry.Length -ne $expectedBytes) {
         throw "Entrada ZIP ausente ou com tamanho divergente: $path"
       }
+      $entryStream = $entry.Open()
+      $entrySha256 = [System.Security.Cryptography.SHA256]::Create()
+      try {
+        $entryHash = [BitConverter]::ToString($entrySha256.ComputeHash($entryStream)).Replace('-', '').ToLowerInvariant()
+      } finally {
+        $entrySha256.Dispose()
+        $entryStream.Dispose()
+      }
+      if ($entryHash -ne $expectedHash) {
+        throw "SHA-256 da entrada ZIP diverge do manifesto: $path"
+      }
+      $verifiedArchiveEntries++
+    }
+    if ($verifiedArchiveEntries -ne $expectedEntries.Count) {
+      throw "A quantidade de entradas ZIP verificadas diverge da lista do manifesto."
     }
   } finally {
     $zipFile.Dispose()
@@ -227,6 +252,7 @@ try {
     ManifestPath    = Join-Path $finalSource "SOURCE-MANIFEST.json"
     Archive         = $finalArchive
     ArchiveSha256   = $archiveHash
+    ArchiveEntriesVerified = $verifiedArchiveEntries
     SourceFiles     = $sourceFiles.Count
     GitHead         = $gitHead
     GitStatusLines  = $gitStatusLines.Count

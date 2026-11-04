@@ -14,7 +14,8 @@ import {
 import { categorySchema, importOptionsSchema, MAX_FILE_BYTES } from "@/lib/cadastur-schema";
 import { listResources, downloadResource, sourceInfo } from "@/server/cadastur/sources";
 import { parseCadasturFile } from "@/server/cadastur/files";
-import { createPreview, commitImport, reviewEntry, listDirectory } from "@/server/cadastur/service";
+import { createPreview, commitImport } from "@/server/cadastur/import-service";
+import { reviewEntry, listDirectory } from "@/server/cadastur/directory-service";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ action: string }> };

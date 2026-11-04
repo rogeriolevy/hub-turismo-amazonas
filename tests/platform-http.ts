@@ -124,6 +124,17 @@ export async function verifyPlatformHttp(
   const companyHtml = await companyPage.text();
   assert.match(companyHtml, /Nome fantasia \(opcional\)/);
   assert.match(companyHtml, /<summary><span>Pousada de demonstração/);
+  const emailOperationsPage = await fetch(base + "/painel/plataforma/notificacoes-email", {
+    headers: { cookie: root },
+  });
+  assert.equal(emailOperationsPage.status, 200);
+  const emailOperationsHtml = await emailOperationsPage.text();
+  assert.match(emailOperationsHtml, /Entrega de e-mails de reserva/);
+  const visitorEmailOperationsPage = await fetch(base + "/painel/plataforma/notificacoes-email", {
+    headers: { cookie: visitor },
+  });
+  assert.equal(visitorEmailOperationsPage.status, 200);
+  assert.doesNotMatch(await visitorEmailOperationsPage.text(), /Entrega de e-mails de reserva/);
   const second = (
     await data(
       await post(
@@ -265,6 +276,197 @@ export async function verifyPlatformHttp(
     ).id,
     booking,
   );
+  const bookingFixture = db
+    .prepare(
+      "SELECT user_id,company_id,kind,room_id,departure_id,check_in,check_out,customer_name,customer_email,total_cents FROM bookings WHERE id=?",
+    )
+    .get(booking) as {
+    user_id: string;
+    company_id: string;
+    kind: string;
+    room_id: string | null;
+    departure_id: string | null;
+    check_in: string | null;
+    check_out: string | null;
+    customer_name: string;
+    customer_email: string;
+    total_cents: number;
+  };
+  const managerId = db.prepare('SELECT id FROM "user" WHERE email=?').get("other@example.test") as {
+    id: string;
+  };
+  const insertBooking = db.prepare(
+    "INSERT INTO bookings (id,request_key,fingerprint,user_id,company_id,kind,room_id,departure_id,check_in,check_out,guests,customer_name,customer_email,notes,total_cents,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+  );
+  const insertNotification = db.prepare(
+    "INSERT INTO user_notifications (id,user_id,company_id,booking_id,event,created_at,read_at) VALUES (?,?,?,?,?,?,NULL)",
+  );
+  const fixtureBookingIds: string[] = [];
+  for (let index = 0; index < 20; index++) {
+    const fixtureBookingId = randomUUID();
+    fixtureBookingIds.push(fixtureBookingId);
+    const oldTimestamp = `2000-01-${String(index + 1).padStart(2, "0")}T12:00:00.000Z`;
+    insertBooking.run(
+      fixtureBookingId,
+      randomUUID(),
+      randomUUID().replaceAll("-", ""),
+      bookingFixture.user_id,
+      bookingFixture.company_id,
+      bookingFixture.kind,
+      bookingFixture.room_id,
+      bookingFixture.departure_id,
+      bookingFixture.check_in,
+      bookingFixture.check_out,
+      2,
+      bookingFixture.customer_name,
+      bookingFixture.customer_email,
+      "Reserva fictícia para validar paginação de notificações.",
+      bookingFixture.total_cents,
+      "pending",
+      oldTimestamp,
+      oldTimestamp,
+    );
+    insertNotification.run(
+      randomUUID(),
+      managerId.id,
+      hotel,
+      fixtureBookingId,
+      "booking.requested",
+      oldTimestamp,
+    );
+  }
+  const legacyNotificationsResponse = await fetch(base + "/api/plataforma/notificacoes", {
+    headers: { cookie: manager },
+  });
+  assert.equal(legacyNotificationsResponse.status, 200);
+  const legacyNotifications = await legacyNotificationsResponse.json();
+  assert.equal(legacyNotifications.data.length, 21);
+  assert.equal(legacyNotifications.unreadCount, 21);
+  assert.equal(legacyNotifications.meta, undefined);
+  assert.ok(
+    legacyNotifications.data.some(
+      (notification: { booking_id: string; event: string }) =>
+        notification.booking_id === booking && notification.event === "booking.requested",
+    ),
+  );
+  const firstNotificationPageResponse = await fetch(base + "/api/plataforma/notificacoes?page=1", {
+    headers: { cookie: manager },
+  });
+  assert.equal(firstNotificationPageResponse.status, 200);
+  const firstNotificationPage = await firstNotificationPageResponse.json();
+  assert.equal(firstNotificationPage.data.length, 20);
+  assert.equal(firstNotificationPage.unreadCount, 21);
+  assert.deepEqual(firstNotificationPage.meta, {
+    page: 1,
+    pageSize: 20,
+    total: 21,
+    totalPages: 2,
+  });
+  const invalidNotificationPageResponse = await fetch(
+    base + "/api/plataforma/notificacoes?page=abc",
+    { headers: { cookie: manager } },
+  );
+  const invalidNotificationPage = await invalidNotificationPageResponse.json();
+  assert.equal(invalidNotificationPageResponse.status, 200);
+  assert.equal(invalidNotificationPage.meta.page, 1);
+  assert.equal(invalidNotificationPage.meta.total, 21);
+  const secondNotificationPageResponse = await fetch(base + "/api/plataforma/notificacoes?page=2", {
+    headers: { cookie: manager },
+  });
+  const secondNotificationPage = await secondNotificationPageResponse.json();
+  assert.equal(secondNotificationPage.data.length, 1);
+  assert.equal(secondNotificationPage.unreadCount, 21);
+  assert.equal(secondNotificationPage.meta.page, 2);
+  const highNotificationPageResponse = await fetch(base + "/api/plataforma/notificacoes?page=999", {
+    headers: { cookie: manager },
+  });
+  const highNotificationPage = await highNotificationPageResponse.json();
+  assert.equal(highNotificationPageResponse.status, 200);
+  assert.equal(highNotificationPage.data.length, 1);
+  assert.equal(highNotificationPage.meta.page, 2);
+  const bookingNotification = legacyNotifications.data.find(
+    (notification: { booking_id: string; event: string }) =>
+      notification.booking_id === booking && notification.event === "booking.requested",
+  );
+  assert.ok(bookingNotification);
+  const markReadResponse = await post(
+    "/api/plataforma/notificacoes/lida",
+    { notification_id: bookingNotification.id },
+    manager,
+  );
+  assert.equal(markReadResponse.status, 200);
+  assert.equal((await markReadResponse.json()).data.updated, true);
+  const markAllResponse = await post("/api/plataforma/notificacoes/ler-todas", {}, manager);
+  assert.equal(markAllResponse.status, 200);
+  assert.equal((await markAllResponse.json()).data.updated, 20);
+  const afterMarkAllResponse = await fetch(base + "/api/plataforma/notificacoes?page=1", {
+    headers: { cookie: manager },
+  });
+  assert.equal((await afterMarkAllResponse.json()).unreadCount, 0);
+  const isolatedNotificationsResponse = await fetch(base + "/api/plataforma/notificacoes", {
+    headers: { cookie: root },
+  });
+  const isolatedNotifications = await isolatedNotificationsResponse.json();
+  assert.equal(isolatedNotificationsResponse.status, 200);
+  assert.equal(isolatedNotifications.data.length, 0);
+  assert.equal(isolatedNotifications.unreadCount, 0);
+  const isolatedNotificationPageResponse = await fetch(
+    base + "/api/plataforma/notificacoes?page=1",
+    { headers: { cookie: root } },
+  );
+  const isolatedNotificationPage = await isolatedNotificationPageResponse.json();
+  assert.equal(isolatedNotificationPageResponse.status, 200);
+  assert.deepEqual(isolatedNotificationPage.meta, {
+    page: 1,
+    pageSize: 20,
+    total: 0,
+    totalPages: 1,
+  });
+  assert.equal(isolatedNotificationPage.data.length, 0);
+  db.prepare("UPDATE user_notifications SET created_at=? WHERE id=?").run(
+    "2026-01-01T03:00:00.000Z",
+    bookingNotification.id,
+  );
+  const managerInboxResponse = await fetch(base + "/minha-conta/notificacoes", {
+    headers: { cookie: manager },
+  });
+  assert.equal(managerInboxResponse.status, 200);
+  const managerInboxHtml = await managerInboxResponse.text();
+  assert.ok(managerInboxHtml.includes(`&amp;reserva=${booking}`));
+  assert.ok(managerInboxHtml.includes("Nova solicitação de reserva"));
+  assert.ok(managerInboxHtml.includes("31 de dez. de 2025, 23:00"));
+  const englishLocaleResponse = await post("/api/preferences/locale", { locale: "en" }, manager);
+  assert.equal(englishLocaleResponse.status, 200);
+  const englishCookie = `${manager}; ${cookieFrom(englishLocaleResponse)}`;
+  const englishInboxResponse = await fetch(base + "/minha-conta/notificacoes", {
+    headers: { cookie: englishCookie },
+  });
+  const englishInboxHtml = await englishInboxResponse.text();
+  assert.equal(englishInboxResponse.status, 200);
+  assert.ok(englishInboxHtml.includes("New booking request"));
+  assert.ok(englishInboxHtml.includes("Dec 31, 2025, 11:00 PM"));
+  const spanishLocaleResponse = await post("/api/preferences/locale", { locale: "es" }, manager);
+  assert.equal(spanishLocaleResponse.status, 200);
+  const spanishCookie = `${manager}; ${cookieFrom(spanishLocaleResponse)}`;
+  const spanishInboxResponse = await fetch(base + "/minha-conta/notificacoes", {
+    headers: { cookie: spanishCookie },
+  });
+  const spanishInboxHtml = await spanishInboxResponse.text();
+  assert.equal(spanishInboxResponse.status, 200);
+  assert.ok(spanishInboxHtml.includes("Nueva solicitud de reserva"));
+  assert.ok(spanishInboxHtml.includes("31 dic 2025, 23:00"));
+  const managerBookingPage = await fetch(
+    base + `/painel/hotel/reservas?empresa=${hotel}&reserva=${booking}`,
+    { headers: { cookie: manager } },
+  );
+  assert.equal(managerBookingPage.status, 200);
+  const managerBookingHtml = await managerBookingPage.text();
+  assert.ok(managerBookingHtml.includes(booking.slice(0, 8)));
+  assert.ok(managerBookingHtml.includes("Reserva solicitada"));
+  for (const fixtureBookingId of fixtureBookingIds) {
+    db.prepare("DELETE FROM user_notifications WHERE booking_id=?").run(fixtureBookingId);
+    db.prepare("DELETE FROM bookings WHERE id=?").run(fixtureBookingId);
+  }
   assert.equal(
     (
       await post(
@@ -282,6 +484,32 @@ export async function verifyPlatformHttp(
       manager,
     ),
   );
+  const customerNotificationsResponse = await fetch(base + "/api/plataforma/notificacoes?page=1", {
+    headers: { cookie: visitor },
+  });
+  const customerNotifications = await customerNotificationsResponse.json();
+  assert.equal(customerNotificationsResponse.status, 200);
+  assert.ok(
+    customerNotifications.data.some(
+      (notification: { booking_id: string; event: string }) =>
+        notification.booking_id === booking && notification.event === "booking.confirmed",
+    ),
+  );
+  const customerInboxResponse = await fetch(base + "/minha-conta/notificacoes", {
+    headers: { cookie: visitor },
+  });
+  assert.equal(customerInboxResponse.status, 200);
+  assert.ok(
+    (await customerInboxResponse.text()).includes(`/minha-conta/reservas?reserva=${booking}`),
+  );
+  const customerBookingPage = await fetch(base + `/minha-conta/reservas?reserva=${booking}`, {
+    headers: { cookie: visitor },
+  });
+  assert.equal(customerBookingPage.status, 200);
+  const customerBookingHtml = await customerBookingPage.text();
+  assert.ok(customerBookingHtml.includes(booking.slice(0, 8)));
+  assert.ok(customerBookingHtml.includes("Reserva solicitada"));
+  assert.ok(customerBookingHtml.includes("Reserva confirmada"));
   assert.equal((await post("/api/plataforma/cancelar", { booking_id: booking }, root)).status, 404);
   await data(await post("/api/plataforma/cancelar", { booking_id: booking }, visitor));
   const excursion = (
@@ -312,6 +540,7 @@ export async function verifyPlatformHttp(
     "/painel/plataforma",
     "/painel/plataforma/empresas",
     "/painel/plataforma/acessos",
+    "/painel/plataforma/notificacoes-email",
     "/painel/hotel?empresa=" + hotel,
     "/painel/hotel/quartos?empresa=" + hotel,
     "/painel/hotel/reservas?empresa=" + hotel,

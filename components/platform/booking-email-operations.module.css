@@ -1,0 +1,61 @@
+.statusGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 22px 0 34px;
+}
+
+.statusCard {
+  display: flex;
+  min-width: 0;
+  min-height: 112px;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #d6e2d8;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.statusCard dt {
+  color: #617366;
+  font-size: 12px;
+}
+
+.statusCard dd {
+  margin: 0;
+  color: #173c32;
+  font-size: 30px;
+  font-weight: 650;
+}
+
+.channelState {
+  margin: 18px 0 8px;
+  color: #173c32;
+  font-weight: 650;
+}
+
+.operationalNote {
+  margin: 0 0 26px;
+  color: #5d6e62;
+  line-height: 1.6;
+}
+
+.sectionHeading {
+  margin: 0 0 14px;
+  color: #173c32;
+  font-size: 20px;
+}
+
+@media (max-width: 760px) {
+  .statusGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .statusGrid {
+    grid-template-columns: 1fr;
+  }
+}

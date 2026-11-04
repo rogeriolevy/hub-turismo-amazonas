@@ -402,6 +402,14 @@
   font-size: 13px;
   max-width: 730px;
 }
+.nav-parintins-direction {
+  margin-top: 24px;
+}
+.nav-parintins-direction h3 {
+  margin: 0 0 10px;
+  color: #194735;
+  font-size: 18px;
+}
 .nav-table-controls {
   display: flex;
   flex-wrap: wrap;

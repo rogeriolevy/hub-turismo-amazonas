@@ -4,7 +4,7 @@ import {
   companyActivityKinds,
   companyActivityLabels,
   companyActivityTypes,
-} from "@/lib/platform-schema";
+} from "@/lib/platform-schema/company";
 const name: Field = { name: "name", label: "Nome", maxLength: 100 };
 const slug: Field = {
   name: "slug",
@@ -110,7 +110,7 @@ export function TourEditor({
 }: {
   companyId: string;
   tour?: Tour;
-  guides: Guide[];
+  guides: Pick<Guide, "id" | "name">[];
 }) {
   return (
     <ActionForm
@@ -157,7 +157,7 @@ export function DepartureEditor({
   departure,
 }: {
   companyId: string;
-  tours: Tour[];
+  tours: Pick<Tour, "id" | "name">[];
   departure?: Departure;
 }) {
   return (

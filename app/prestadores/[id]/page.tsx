@@ -1,4 +1,4 @@
-import { ProviderDetail } from "@/components/platform/provider-directory";
+import { ProviderDetail } from "@/components/platform/directory/provider-detail";
 import { getDatabase } from "@/db";
 import { publicProvider } from "@/server/cadastur/public-directory";
 export const dynamic = "force-dynamic";

@@ -2,11 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, ChevronDown, Compass, MapPin, BedDouble } from "lucide-react";
 import { getLocale } from "@/lib/i18n/server";
 import { translate, translateText, type Locale, type MessageKey } from "@/lib/i18n/messages";
-import {
-  LocalizedEmptyState,
-  LocalizedPageIntro,
-  LocalizedPortalNotice,
-} from "./shared-views";
+import { LocalizedEmptyState, LocalizedPageIntro, LocalizedPortalNotice } from "./shared-views";
 export type ModuleLink = { href: string; label: string; description: string };
 export const publicModules: ModuleLink[] = [
   { href: "/", label: "Institucional", description: "Conheça a Hub e nossa proposta." },
@@ -83,7 +79,9 @@ export async function PageIntro({
   description: string;
 }) {
   const locale = await getLocale();
-  return <LocalizedPageIntro locale={locale} eyebrow={eyebrow} title={title} description={description} />;
+  return (
+    <LocalizedPageIntro locale={locale} eyebrow={eyebrow} title={title} description={description} />
+  );
 }
 export async function EmptyState({
   title,
@@ -93,7 +91,11 @@ export async function EmptyState({
   children: React.ReactNode;
 }) {
   const locale = await getLocale();
-  return <LocalizedEmptyState locale={locale} title={title}>{children}</LocalizedEmptyState>;
+  return (
+    <LocalizedEmptyState locale={locale} title={title}>
+      {children}
+    </LocalizedEmptyState>
+  );
 }
 export async function CatalogCard({
   href,

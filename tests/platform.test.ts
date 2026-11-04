@@ -8,6 +8,7 @@ import {
   saveMember,
   removeMember,
   saveRoom,
+  setRoomOperationalStatus,
   saveTour,
   saveGuide,
   saveDeparture,
@@ -16,11 +17,16 @@ import {
 } from "../server/company-service.ts";
 import { companiesFor, companyAccess } from "../server/platform-access.ts";
 import {
+  companyGuideDeparturesPage,
+  companyInventoryPage,
+} from "../server/inventory-read-service.ts";
+import {
   requestBooking,
   decideBooking,
   cancelBooking,
   myBookings,
   businessBookings,
+  businessBookingsPage,
   recordStay,
 } from "../server/booking-service.ts";
 import {
@@ -329,6 +335,149 @@ test("tenant permissions are isolated, role grants are admin-only, and revocatio
     f.db.close();
   }
 });
+test("hotel staff can operate rooms and reservations but cannot edit room inventory", async () => {
+  const f = await fixture();
+  try {
+    await saveMember(f.db, f.root, {
+      company_id: f.hotel,
+      email: f.outsider.email,
+      role: "hotel_staff",
+    });
+    await assert.rejects(
+      saveRoom(f.db, f.outsider, {
+        id: f.room,
+        company_id: f.hotel,
+        code: "01",
+        name: "Alteração pela equipe",
+        capacity: 2,
+        price_cents: 25000,
+        active: true,
+      }),
+      denied(403),
+    );
+    const booking = (await requestBooking(f.db, f.tourist, f.hotelRequest, randomUUID())).id;
+    await decideBooking(f.db, f.outsider, {
+      company_id: f.hotel,
+      booking_id: booking,
+      decision: "confirmed",
+    });
+    assert.equal((await businessBookingsPage(f.db, f.outsider, f.hotel)).items[0].id, booking);
+    await setRoomOperationalStatus(f.db, f.outsider, {
+      company_id: f.hotel,
+      room_id: f.room,
+      operational_status: "maintenance",
+    });
+  } finally {
+    f.db.close();
+  }
+});
+
+test("guide accounts can read only their assigned departures and cannot operate the operator", async () => {
+  const f = await fixture();
+  try {
+    const ownGuide = (
+      await saveGuide(f.db, f.root, {
+        company_id: f.operator,
+        slug: "guia-proprio",
+        name: "Guia próprio",
+        bio: "Cadastro fictício para validar escopo de agenda.",
+        languages: "Português",
+        published: true,
+      })
+    ).id;
+    const otherGuide = (
+      await saveGuide(f.db, f.root, {
+        company_id: f.operator,
+        slug: "outro-guia",
+        name: "Outro guia",
+        bio: "Cadastro fictício para validar isolamento de agenda.",
+        languages: "Português",
+        published: true,
+      })
+    ).id;
+    await saveTour(f.db, f.root, {
+      id: f.tour,
+      company_id: f.operator,
+      slug: "passeio-teste",
+      name: "Passeio de teste",
+      description: "Experiência fictícia para teste de capacidade.",
+      city: "Maués",
+      duration_minutes: 120,
+      price_cents: 10000,
+      guide_id: ownGuide,
+      published: true,
+    });
+    const otherTour = (
+      await saveTour(f.db, f.root, {
+        company_id: f.operator,
+        slug: "passeio-de-outro-guia",
+        name: "Passeio de outro guia",
+        description: "Experiência fictícia fora do escopo da conta.",
+        city: "Maués",
+        duration_minutes: 90,
+        price_cents: 8000,
+        guide_id: otherGuide,
+        published: true,
+      })
+    ).id;
+    const otherDeparture = (
+      await saveDeparture(f.db, f.root, {
+        company_id: f.operator,
+        tour_id: otherTour,
+        starts_at: new Date(Date.now() + 9 * 86400000).toISOString(),
+        capacity: 8,
+        active: true,
+      })
+    ).id;
+    await saveMember(f.db, f.root, {
+      company_id: f.operator,
+      email: f.outsider.email,
+      role: "guide",
+      guide_id: ownGuide,
+    });
+
+    const schedule = await companyGuideDeparturesPage(f.db, f.outsider, f.operator);
+    assert.deepEqual(
+      schedule.items.map((item) => item.id),
+      [f.departure],
+    );
+    const legacyInventory = await companyInventory(f.db, f.outsider, f.operator);
+    assert.deepEqual(
+      legacyInventory.departures.map((item) => item.id),
+      [f.departure],
+    );
+    assert.deepEqual(legacyInventory.tours, []);
+    const pagedInventory = await companyInventoryPage(f.db, f.outsider, f.operator, {});
+    assert.deepEqual(
+      pagedInventory.data.departures.map((item) => item.id),
+      [f.departure],
+    );
+    assert.equal(pagedInventory.meta.departures.total, 1);
+    await assert.rejects(businessBookings(f.db, f.outsider, f.operator), denied(403));
+    await assert.rejects(
+      saveDeparture(f.db, f.outsider, {
+        company_id: f.operator,
+        tour_id: f.tour,
+        starts_at: new Date(Date.now() + 10 * 86400000).toISOString(),
+        capacity: 5,
+        active: true,
+      }),
+      denied(403),
+    );
+    await assert.rejects(
+      saveMember(f.db, f.root, {
+        company_id: f.operator,
+        email: f.tourist.email,
+        role: "guide",
+      }),
+      denied(422),
+    );
+    assert.notEqual(f.departure, otherDeparture);
+  } finally {
+    f.db.close();
+  }
+});
+
 test("resource identifiers cannot move inventory between tenants", async () => {
   const f = await fixture();
   try {

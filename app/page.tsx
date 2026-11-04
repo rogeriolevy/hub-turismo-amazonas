@@ -39,7 +39,7 @@ export default async function Home() {
   const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   return (
     <>
-      <Header />
+      <Header variant="institutional" />
       <main id="conteudo" tabIndex={-1}>
         <section className="hero" aria-labelledby="hero-title">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -201,7 +201,7 @@ export default async function Home() {
           </div>
         </section>
       </main>
-      <Footer />
+      <Footer variant="institutional" />
     </>
   );
 }

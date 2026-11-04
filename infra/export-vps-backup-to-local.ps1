@@ -1,7 +1,6 @@
 [CmdletBinding()]
 param(
-  [Parameter(Mandatory = $true)]
-  [string]$SyncDirectory
+  [string]$BackupDirectory = (Join-Path $env:LOCALAPPDATA "HubTurismo\Backups")
 )
 
 $ErrorActionPreference = "Stop"
@@ -12,11 +11,41 @@ $temporaryRoot = [System.IO.Path]::GetFullPath($env:TEMP)
 $ssh = (Get-Command ssh.exe -ErrorAction Stop).Source
 $scp = (Get-Command scp.exe -ErrorAction Stop).Source
 
-if (-not (Test-Path -LiteralPath $SyncDirectory -PathType Container)) {
-  throw "A pasta sincronizada precisa existir antes da exportação: $SyncDirectory"
+$backupParent = Split-Path -Parent ([System.IO.Path]::GetFullPath($BackupDirectory))
+if (-not (Test-Path -LiteralPath $backupParent -PathType Container)) {
+  [System.IO.Directory]::CreateDirectory($backupParent) | Out-Null
 }
-$syncRoot = (Resolve-Path -LiteralPath $SyncDirectory -ErrorAction Stop).Path
-$receiptDirectory = Join-Path $repositoryRoot "tmp\offsite-backup-receipts"
+if (-not (Test-Path -LiteralPath $BackupDirectory -PathType Container)) {
+  [System.IO.Directory]::CreateDirectory($BackupDirectory) | Out-Null
+}
+$backupRoot = (Resolve-Path -LiteralPath $BackupDirectory -ErrorAction Stop).Path
+$localAppRoot = Join-Path $env:LOCALAPPDATA "HubTurismo"
+$receiptDirectory = Join-Path $localAppRoot "BackupReceipts"
+if (-not (Test-Path -LiteralPath $receiptDirectory -PathType Container)) {
+  [System.IO.Directory]::CreateDirectory($receiptDirectory) | Out-Null
+}
+$receiptDirectory = (Resolve-Path -LiteralPath $receiptDirectory -ErrorAction Stop).Path
+
+function Set-PrivateDirectoryAcl {
+  param([Parameter(Mandatory = $true)][string]$Path)
+  $identitySid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+  $icacls = (Get-Command icacls.exe -ErrorAction Stop).Source
+  $aclArguments = @(
+    $Path,
+    "/inheritance:r",
+    "/grant:r",
+    ("*{0}:(OI)(CI)F" -f $identitySid),
+    "*S-1-5-18:(OI)(CI)F",
+    "*S-1-5-32-544:(OI)(CI)F"
+  )
+  & $icacls @aclArguments | Out-Null
+  if ($LASTEXITCODE -ne 0) {
+    throw "Não foi possível restringir as permissões da pasta de backup: $Path"
+  }
+}
+
+Set-PrivateDirectoryAcl -Path $backupRoot
+Set-PrivateDirectoryAcl -Path $receiptDirectory
 
 function Test-PathWithinDirectory {
   param(
@@ -33,11 +62,21 @@ function Test-PathWithinDirectory {
   return $candidateFullPath.StartsWith($directoryPrefix, [System.StringComparison]::OrdinalIgnoreCase)
 }
 
-if (Test-PathWithinDirectory -CandidatePath $receiptDirectory -DirectoryPath $syncRoot) {
-  throw "A pasta de sincronização contém o recibo independente; escolha uma pasta mais específica para manter o recibo fora dela."
+if (Test-PathWithinDirectory -CandidatePath $backupRoot -DirectoryPath $repositoryRoot) {
+  throw "A cópia local precisa ficar fora do repositório: $backupRoot"
 }
-if (Test-PathWithinDirectory -CandidatePath $temporaryRoot -DirectoryPath $syncRoot) {
-  throw "A pasta temporária local está dentro da pasta sincronizada; escolha outra pasta de sincronização."
+if (Test-PathWithinDirectory -CandidatePath $backupRoot -DirectoryPath $temporaryRoot) {
+  throw "A pasta de backup não pode estar dentro da área temporária do Windows."
+}
+if ((Test-PathWithinDirectory -CandidatePath $receiptDirectory -DirectoryPath $backupRoot) -or
+    (Test-PathWithinDirectory -CandidatePath $backupRoot -DirectoryPath $receiptDirectory)) {
+  throw "O recibo independente precisa permanecer fora da pasta dos dumps."
+}
+foreach ($protectedRoot in @($backupRoot, $receiptDirectory)) {
+  $protectedItem = Get-Item -LiteralPath $protectedRoot -Force
+  if (($protectedItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+    throw "As pastas locais de backup e recibo não podem ser links ou junctions: $protectedRoot"
+  }
 }
 
 function Invoke-OpenSsh {
@@ -143,7 +182,7 @@ $remoteMetadataLines = Invoke-OpenSsh -Executable $ssh -Arguments @("-T", "-o", 
 $remoteMetadata = (@($remoteMetadataLines | ForEach-Object { $_.ToString() }) -join "").Trim()
 $metadataParts = $remoteMetadata -split "\|"
 if ($metadataParts.Count -ne 3) {
-  throw "A VPS não retornou os metadados esperados do dump; nenhum arquivo foi publicado na pasta sincronizada."
+  throw "A VPS não retornou os metadados esperados do dump; nenhum arquivo local foi publicado."
 }
 $backupFileName = $metadataParts[0]
 $remoteHash = $metadataParts[1].ToLowerInvariant()
@@ -158,8 +197,8 @@ if ($remoteHash -notmatch '^[a-f0-9]{64}$' -or
   throw "Os metadados do backup na VPS são inválidos; nenhum arquivo foi publicado."
 }
 $baseName = [System.IO.Path]::GetFileNameWithoutExtension($backupFileName)
-$finalDirectory = Join-Path $syncRoot $baseName
-$temporarySyncDirectory = Join-Path $syncRoot (".$baseName.partial-" + [guid]::NewGuid().ToString("N"))
+$finalDirectory = Join-Path $backupRoot $baseName
+$temporarySyncDirectory = Join-Path $backupRoot (".$baseName.partial-" + [guid]::NewGuid().ToString("N"))
 $receiptPath = Join-Path $receiptDirectory ($backupFileName + ".json")
 if (Test-Path -LiteralPath $finalDirectory) {
   throw "O destino já existe; nada foi sobrescrito: $finalDirectory"
@@ -168,11 +207,12 @@ if (Test-Path -LiteralPath $receiptPath) {
   throw "O recibo já existe; nada foi sobrescrito: $receiptPath"
 }
 
-$localTransferDirectory = Join-Path $temporaryRoot ("hub-offsite-export-" + [guid]::NewGuid().ToString("N"))
+$localTransferDirectory = Join-Path $temporaryRoot ("hub-local-backup-export-" + [guid]::NewGuid().ToString("N"))
 $receiptCreated = $false
 $published = $false
 $temporarySyncCreated = $false
 [System.IO.Directory]::CreateDirectory($localTransferDirectory) | Out-Null
+Set-PrivateDirectoryAcl -Path $localTransferDirectory
 try {
   $localDump = Join-Path $localTransferDirectory $backupFileName
   $localSidecar = $localDump + ".sha256"
@@ -194,6 +234,7 @@ try {
   }
 
   [System.IO.Directory]::CreateDirectory($temporarySyncDirectory) | Out-Null
+  Set-PrivateDirectoryAcl -Path $temporarySyncDirectory
   $temporarySyncCreated = $true
   $stagedDump = Join-Path $temporarySyncDirectory $backupFileName
   $stagedSidecar = $stagedDump + ".sha256"
@@ -224,11 +265,12 @@ try {
     throw "A cópia final não passou pela verificação; ela e o recibo foram preservados para revisão."
   }
 
-  Write-Output "BACKUP_FILE=$publishedDump"
-  Write-Output "BACKUP_SHA256=$remoteHash"
+  Write-Output "LOCAL_BACKUP_FILE=$publishedDump"
+  Write-Output "LOCAL_BACKUP_SHA256=$remoteHash"
   Write-Output "BACKUP_SIZE_BYTES=$remoteSize"
   Write-Output "RECEIPT_FILE=$receiptPath"
-  Write-Output "SYNC_CONFIRMATION_REQUIRED=aguarde o cliente e confirme a sincronização antes de baixar uma cópia nova pelo portal."
+  Write-Output "LOCAL_BACKUP_LOCATION=$backupRoot"
+  Write-Output "LOCAL_BACKUP_COPY=complete"
 } finally {
   if ($temporarySyncCreated -and (Test-Path -LiteralPath $temporarySyncDirectory -PathType Container)) {
     foreach ($stagedPath in @((Join-Path $temporarySyncDirectory $backupFileName), (Join-Path $temporarySyncDirectory ($backupFileName + ".sha256")))) {

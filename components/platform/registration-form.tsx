@@ -1,15 +1,17 @@
 "use client";
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { registrationSchema } from "@/lib/platform-schema";
+import { registrationSchema } from "@/lib/platform-schema/account";
 import { useLanguage } from "@/components/site/language-provider";
 import { TurnstileChallenge } from "@/components/site/turnstile-challenge";
 export function RegistrationForm({
   onCreated,
+  emailDeliveryEnabled = false,
   turnstileSiteKey,
   captchaRequired,
 }: {
   onCreated?: () => void;
+  emailDeliveryEnabled?: boolean;
   turnstileSiteKey: string;
   captchaRequired: boolean;
 }) {
@@ -87,7 +89,11 @@ export function RegistrationForm({
     return (
       <div className="portal-empty" role="status">
         <h2>{t("auth.accountCreated")}</h2>
-        <p>{t("auth.accountCreatedHelp")}</p>
+        <p>
+          {emailDeliveryEnabled
+            ? t("auth.accountCreatedVerificationHelp")
+            : t("auth.accountCreatedHelp")}
+        </p>
         <Link href="/entrar" className="button button-dark">
           {t("auth.loginToAccount")}
         </Link>

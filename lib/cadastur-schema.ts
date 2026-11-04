@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { normalizeLabel } from "./normalize-label.ts";
+
+export { normalizeLabel };
 
 export const cadasturSources = {
   hospedagens: { label: "Hospedagens", dataset: "meios-de-hospedagem" },
@@ -149,6 +152,8 @@ export type RegistryEntry = RegistryData & {
   review_status: "pending" | "reviewed";
   imported_at: string;
   published: number;
+  company_name: string | null;
+  guide_name: string | null;
 };
 export type ImportHistory = {
   id: string;
@@ -159,12 +164,6 @@ export type ImportHistory = {
   summary: string;
 };
 export const MAX_FILE_BYTES = 20 * 1024 * 1024;
-export const normalizeLabel = (value: string) =>
-  value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
 export const isSensitiveColumn = (header: string) =>
   /cpf|email|telefone|nascimento|sanguineo|documentodeidentificacao|endere|responsavel/.test(
     normalizeLabel(header),

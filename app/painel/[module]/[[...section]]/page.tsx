@@ -1,262 +1,54 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
-import {
-  ArrowRight,
-  ArrowUpRight,
-  BedDouble,
-  Building2,
-  CalendarCheck2,
-  ClipboardCheck,
-  Files,
-  Globe2,
-  MessageSquareText,
-  ShieldCheck,
-  UsersRound,
-  Wrench,
-  type LucideIcon,
-} from "lucide-react";
-import styles from "./admin-dashboard.module.css";
 import { Header, Footer } from "@/components/site/navigation";
 import { PanelShell } from "@/components/platform/panel-shell";
-import { PageIntro, EmptyState, PortalNotice, type ModuleLink } from "@/components/platform/shared";
-import {
-  CompanyEditor,
-  RoomEditor,
-  TourEditor,
-  GuideEditor,
-  DepartureEditor,
-} from "@/components/platform/panel-forms";
-import { ActionForm } from "@/components/platform/action-form";
-import { BookingList } from "@/components/platform/booking-list";
-import { HotelOperationSummary, RoomStatusBoard } from "@/components/platform/room-status-board";
+import { EmptyState, type ModuleLink } from "@/components/platform/shared";
+import { BookingManagement } from "@/components/platform/booking-management";
+import { HotelOverview } from "@/components/platform/hotel/overview";
+import { RoomManagement } from "@/components/platform/hotel/room-management";
+import { StayManagement } from "@/components/platform/hotel/stay-management";
+import { ExperiencesOverview } from "@/components/platform/experiences/overview";
+import { TourGuideManagement } from "@/components/platform/experiences/tour-guide-management";
+import { DepartureManagement } from "@/components/platform/experiences/departure-management";
+import { GuideSchedule } from "@/components/platform/experiences/guide-schedule";
+import { CompanyManagement } from "@/components/platform/administration/company-management";
+import { AccessManagement } from "@/components/platform/administration/access-management";
+import { AdministrationOverview } from "./_components/administration/overview";
 import { CadasturPanel } from "@/components/platform/cadastur-panel";
 import { CatalogContentPanel } from "@/components/platform/catalog-content-panel";
-import {
-  catalogCategories,
-  type CatalogCategory,
-  type CatalogSourceEntry,
-} from "@/lib/catalog-content";
-import { listCatalogItems } from "@/server/catalog-content-service";
-import { listDirectory } from "@/server/cadastur/service";
+import { AuditLogPanel } from "@/components/platform/audit-log-panel";
+import { BookingEmailOperations } from "@/components/platform/booking-email-operations";
+import { catalogContentManagementPage } from "@/server/catalog-content-service";
+import { listDirectory } from "@/server/cadastur/directory-service";
 import { pageActor } from "@/server/platform-session";
-import { companiesFor, isPlatformAdmin } from "@/server/platform-access";
-import { companyInventory, listMembers } from "@/server/company-service";
-import { businessBookings } from "@/server/booking-service";
-import { one, many } from "@/server/platform-store";
+import {
+  companiesPageFor,
+  companyMember,
+  companyRole as getCompanyRole,
+  firstCompanyForKind,
+  isPlatformAdmin,
+} from "@/server/platform-access";
+import { companyCounts } from "@/server/company-service";
+import { listMembersPage } from "@/server/company-membership-service";
+import { platformDashboardSummary } from "@/server/platform-dashboard-service";
+import { bookingEmailOperationsSummary } from "@/server/booking-email-operations-service";
+import { companyForPanel, companyGuideDeparturesPage } from "@/server/inventory-read-service";
+import { businessPanelReadData } from "@/server/business-panel-read-service";
+import { listAuditEntries } from "@/server/audit-service";
+import { HttpError } from "@/server/http";
 import { getDatabase } from "@/db";
 import {
-  roles,
-  money,
-  displayTime,
-  displayDate,
-  companyDisplayName,
-  companyActivityLabels,
-  todayInManaus,
-} from "@/lib/platform-schema";
-import { avatarKeyFromImage, defaultAvatarForUser, profileAvatarUrl } from "@/lib/profile-avatars";
+  isPanelArea,
+  isPanelSection,
+  panelAreas,
+  panelSectionAlias,
+} from "@/lib/platform-navigation";
+import { companyDisplayName } from "@/lib/platform-schema/company";
 import { getLocale } from "@/lib/i18n/server";
-import { translate, translateText, type Locale } from "@/lib/i18n/messages";
+import { translate } from "@/lib/i18n/messages";
+import { unreadNotificationCount } from "@/server/notification-service";
 export const metadata = { title: "Painel de operação", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
-
-type AdminDashboardProps = {
-  locale: Locale;
-  actor: { id: string; name: string; email: string; image?: string | null };
-  companyCount: number;
-  publishedCount: number;
-  memberCount: number;
-  pendingCadastur: number;
-  contactCount: number;
-};
-
-function AdminDashboard({
-  locale,
-  actor,
-  companyCount,
-  publishedCount,
-  memberCount,
-  pendingCadastur,
-  contactCount,
-}: AdminDashboardProps) {
-  const t = (key: Parameters<typeof translate>[1], values?: Record<string, string | number>) =>
-    translate(locale, key, values);
-  const avatar = avatarKeyFromImage(actor.image) ?? defaultAvatarForUser(actor.id);
-  const firstName = actor.name.trim().split(/\s+/)[0] || "administrador";
-  const metrics: {
-    label: string;
-    value: number;
-    detail: string;
-    icon: LucideIcon;
-    href: string;
-  }[] = [
-    {
-      label: t("admin.companies"),
-      value: companyCount,
-      detail: t("admin.published", { count: publishedCount }),
-      icon: Building2,
-      href: "/painel/plataforma/empresas",
-    },
-    {
-      label: t("admin.members"),
-      value: memberCount,
-      detail: t("admin.membersDetail"),
-      icon: UsersRound,
-      href: "/painel/plataforma/acessos",
-    },
-    {
-      label: t("admin.cadastur"),
-      value: pendingCadastur,
-      detail: t("admin.cadasturDetail"),
-      icon: ClipboardCheck,
-      href: "/painel/plataforma/cadastur",
-    },
-    {
-      label: t("admin.contacts"),
-      value: contactCount,
-      detail: t("admin.contactsDetail"),
-      icon: MessageSquareText,
-      href: "/painel/contato",
-    },
-  ];
-  const actions: {
-    title: string;
-    description: string;
-    href: string;
-    label: string;
-    icon: LucideIcon;
-  }[] = [
-    {
-      title: t("admin.companiesTitle"),
-      description: t("admin.companiesDescription"),
-      href: "/painel/plataforma/empresas",
-      label: t("admin.manageCompanies"),
-      icon: Building2,
-    },
-    {
-      title: t("admin.membersTitle"),
-      description: t("admin.membersDescription"),
-      href: "/painel/plataforma/acessos",
-      label: t("admin.manageMembers"),
-      icon: ShieldCheck,
-    },
-    {
-      title: t("admin.directoryTitle"),
-      description: t("admin.directoryDescription"),
-      href: "/painel/plataforma/cadastur",
-      label: t("admin.openDirectory"),
-      icon: ClipboardCheck,
-    },
-    {
-      title: t("admin.contentTitle"),
-      description: t("admin.contentDescription"),
-      href: "/painel/plataforma/conteudos",
-      label: t("admin.manageContent"),
-      icon: Files,
-    },
-    {
-      title: t("admin.contactsTitle"),
-      description: t("admin.contactsDescription"),
-      href: "/painel/contato",
-      label: t("admin.viewMessages"),
-      icon: MessageSquareText,
-    },
-  ];
-
-  return (
-    <div className={styles.dashboard}>
-      <section
-        className={`${styles.welcome} ${styles.motion}`}
-        aria-labelledby="admin-dashboard-title"
-      >
-        <div className={styles.welcomeProfile}>
-          <div className={styles.avatarFrame}>
-            <Image
-              src={profileAvatarUrl(avatar)}
-              alt={`Avatar de ${actor.name}`}
-              width={88}
-              height={88}
-              priority
-            />
-          </div>
-          <div className={styles.welcomeCopy}>
-            <p className={styles.eyebrow}>{t("admin.panel")}</p>
-            <h1 id="admin-dashboard-title">{t("admin.greeting", { name: firstName })}</h1>
-            <p>{t("admin.description")}</p>
-            <span>{actor.email}</span>
-          </div>
-        </div>
-        <div className={styles.welcomeActions}>
-          <Link href="/minha-conta?editar=perfil">
-            {t("admin.profile")} <ArrowUpRight size={15} aria-hidden="true" />
-          </Link>
-          <Link href="/">
-            <Globe2 size={16} aria-hidden="true" /> {t("admin.viewSite")}
-          </Link>
-        </div>
-      </section>
-
-      <section className={styles.metrics} aria-label={t("admin.summary")}>
-        {metrics.map(({ label, value, detail, icon: Icon, href }, index) => (
-          <Link
-            className={`${styles.metric} ${styles.motion}`}
-            href={href}
-            key={label}
-            style={{ animationDelay: `${Math.min(index * 65, 260)}ms` }}
-          >
-            <span className={styles.metricHeading}>
-              <span className={styles.metricIcon}>
-                <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
-              </span>
-              {label}
-            </span>
-            <strong>{value}</strong>
-            <span className={styles.metricDetail}>
-              {detail} <ArrowRight size={14} aria-hidden="true" />
-            </span>
-          </Link>
-        ))}
-      </section>
-
-      <section className={styles.actionsSection} aria-labelledby="admin-actions-title">
-        <div className={styles.sectionHeading}>
-          <div>
-            <p className={styles.sectionKicker}>{t("admin.controlCenter")}</p>
-            <h2 id="admin-actions-title">{t("admin.accesses")}</h2>
-          </div>
-          <p>{t("admin.accessesDescription")}</p>
-        </div>
-        <div className={styles.actions}>
-          {actions.map(({ title, description, href, label, icon: Icon }, index) => (
-            <Link
-              className={`${styles.actionCard} ${styles.motion}`}
-              href={href}
-              key={title}
-              style={{ animationDelay: `${Math.min(index * 65, 260)}ms` }}
-            >
-              <span className={styles.actionIcon}>
-                <Icon size={22} strokeWidth={1.8} aria-hidden="true" />
-              </span>
-              <ArrowUpRight className={styles.actionArrow} size={18} aria-hidden="true" />
-              <h3>{title}</h3>
-              <p>{description}</p>
-              <span className={styles.actionLink}>
-                {label} <ArrowRight size={14} aria-hidden="true" />
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <div className={styles.footerNote}>
-        <span className={styles.footerIcon}>
-          <ShieldCheck size={19} aria-hidden="true" />
-        </span>
-        <p>{t("admin.permissionNotice")}</p>
-      </div>
-    </div>
-  );
-}
 
 async function Denied() {
   const locale = await getLocale();
@@ -281,47 +73,73 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ module: string; section?: string[] }>;
-  searchParams: Promise<{ empresa?: string; categoria?: string; cadastur?: string }>;
+  searchParams: Promise<{
+    empresa?: string;
+    categoria?: string;
+    cadastur?: string;
+    page?: string;
+    roomPage?: string;
+    tourPage?: string;
+    guidePage?: string;
+    departurePage?: string;
+    reserva?: string;
+    memberPage?: string;
+    companyPage?: string;
+  }>;
 }) {
   const route = await params;
   const locale = await getLocale();
-  if (!["hotel", "passeios", "plataforma"].includes(route.module)) notFound();
-  const area = route.module as "hotel" | "passeios" | "plataforma",
+  if (!isPanelArea(route.module)) notFound();
+  const area = route.module,
     section = route.section?.join("/") || "";
   const query = await searchParams;
-  if (area === "passeios" && (section === "guias" || section === "passeios")) {
+  const canonicalSection = panelSectionAlias(area, section);
+  if (canonicalSection) {
     const companyQuery =
       typeof query.empresa === "string" ? `?empresa=${encodeURIComponent(query.empresa)}` : "";
-    redirect(`/painel/passeios/experiencias${companyQuery}`);
+    redirect(`/painel/${area}/${canonicalSection}${companyQuery}`);
   }
-  const allowed =
-    area === "hotel"
-      ? ["", "quartos", "reservas", "fnrh"]
-      : area === "passeios"
-        ? ["", "experiencias", "agenda", "vagas", "reservas"]
-        : ["", "empresas", "acessos", "cadastur", "conteudos"];
-  if (!allowed.includes(section)) notFound();
+  if (!isPanelSection(area, section)) notFound();
   const actor = await pageActor("/painel/" + area),
     db = getDatabase(),
-    admin = isPlatformAdmin(actor),
-    allCompanies = await companiesFor(db, actor);
-  const companies = allCompanies.filter((c) =>
-    area === "hotel" ? c.kind === "hotel" : c.kind === "operator",
-  );
+    admin = isPlatformAdmin(actor);
+  const unreadNotifications = await unreadNotificationCount(db, actor);
+  const [firstHotel, firstOperator] =
+    area === "plataforma"
+      ? [undefined, undefined]
+      : await Promise.all([
+          firstCompanyForKind(db, actor, "hotel"),
+          firstCompanyForKind(db, actor, "operator"),
+        ]);
   if (area === "plataforma" && !admin) return <Denied />;
-  if (area !== "plataforma" && !admin && !companies.length) return <Denied />;
   const requested = query.empresa;
-  const companyId = typeof requested === "string" ? requested : companies[0]?.id;
-  if (area !== "plataforma" && companyId && !companies.some((c) => c.id === companyId))
-    return <Denied />;
+  const companyKind = panelAreas[area].companyKind ?? "operator";
+  const firstCompany =
+    companyKind === "hotel" ? firstHotel : companyKind === "operator" ? firstOperator : undefined;
+  const hasCompanies = Boolean(firstCompany);
+  const companyId = typeof requested === "string" ? requested : firstCompany?.id;
+  if (area !== "plataforma" && !admin && !hasCompanies) return <Denied />;
+  let selectedCompany: Awaited<ReturnType<typeof companyForPanel>> | undefined;
+  let memberRole: "hotel_manager" | "hotel_staff" | "operator" | "guide" | null = null;
+  if (area !== "plataforma" && companyId) {
+    try {
+      selectedCompany = await companyForPanel(db, actor, companyId, companyKind);
+      memberRole = await getCompanyRole(db, actor, companyId);
+    } catch (error) {
+      if (error instanceof HttpError && (error.status === 403 || error.status === 404))
+        return <Denied />;
+      throw error;
+    }
+  }
+  if (memberRole === "guide" && (area !== "passeios" || section !== "")) return <Denied />;
   const modules: ModuleLink[] = [];
-  if (admin || allCompanies.some((c) => c.kind === "hotel"))
+  if (admin || firstHotel)
     modules.push({
       href: "/painel/hotel",
       label: "Painel hoteleiro",
       description: "Quartos, reservas e estadias.",
     });
-  if (admin || allCompanies.some((c) => c.kind === "operator"))
+  if (admin || firstOperator)
     modules.push({
       href: "/painel/passeios",
       label: "Painel de experiências",
@@ -335,194 +153,56 @@ export default async function Page({
     });
   let content: React.ReactNode;
   if (area === "plataforma") {
-    const members = await listMembers(db, actor);
-    if (section === "cadastur") {
-      const [initial, guides] = await Promise.all([
-        listDirectory(db, actor, { category: "hospedagens" }),
-        many<{ id: string; name: string }>(db, "SELECT id,name FROM guides ORDER BY name"),
-      ]);
-      content = (
-        <CadasturPanel
-          initial={initial}
-          locale={locale}
-          companies={allCompanies
-            .filter((c) => c.kind === "hotel")
-            .map((c) => ({ id: c.id, name: companyDisplayName(c) }))}
-          guides={guides}
-        />
-      );
+    const [membersPage, companiesPage, companySummary, dashboardSummary] = await Promise.all([
+      section === "acessos"
+        ? listMembersPage(db, actor, query.memberPage)
+        : Promise.resolve(undefined),
+      section === "empresas"
+        ? companiesPageFor(db, actor, query.companyPage)
+        : Promise.resolve(undefined),
+      section === "acessos" ? companyCounts(db, actor) : Promise.resolve(undefined),
+      section === "" ? platformDashboardSummary(db, actor) : Promise.resolve(undefined),
+    ]);
+    if (section === "auditoria") {
+      const data = await listAuditEntries(db, actor, {
+        companyId: typeof query.empresa === "string" ? query.empresa : undefined,
+        page: query.page,
+      });
+      content = <AuditLogPanel data={data} />;
+    } else if (section === "notificacoes-email") {
+      const data = await bookingEmailOperationsSummary(db, actor);
+      content = <BookingEmailOperations data={data} locale={locale} />;
+    } else if (section === "cadastur") {
+      const initial = await listDirectory(db, actor, { category: "hospedagens" });
+      content = <CadasturPanel initial={initial} locale={locale} />;
     } else if (section === "conteudos") {
-      const category = catalogCategories.includes(query.categoria as CatalogCategory)
-        ? (query.categoria as CatalogCategory)
-        : "hospedagens";
-      const sourceRow = query.cadastur
-        ? await one<CatalogSourceEntry & { category: string }>(
-            db,
-            "SELECT id,category,name,city,subtype,phone,email,address,website FROM cadastur_entries WHERE id=?",
-            query.cadastur,
-          )
-        : undefined;
-      const sourceEntry: CatalogSourceEntry | undefined =
-        sourceRow?.category === category
-          ? {
-              id: sourceRow.id,
-              category,
-              name: sourceRow.name,
-              city: sourceRow.city,
-              subtype: sourceRow.subtype,
-              phone: sourceRow.phone,
-              email: sourceRow.email,
-              address: sourceRow.address,
-              website: sourceRow.website,
-            }
-          : undefined;
-      content = (
-        <CatalogContentPanel
-          category={category}
-          items={await listCatalogItems(db, actor)}
-          sourceEntry={sourceEntry}
-        />
-      );
+      const catalogPage = await catalogContentManagementPage(db, actor, query);
+      content = <CatalogContentPanel {...catalogPage} />;
     } else if (section === "empresas")
-      content = (
-        <>
-          <PageIntro
-            eyebrow={translateText(locale, "REDE HUB")}
-            title="Empresas"
-            description="Cadastre hospedagens, operadores de passeios, navegação fluvial e transporte aéreo."
-          />
-          <details className="editor-card" open={!allCompanies.length}>
-            <summary>{translateText(locale, "Cadastrar uma empresa")}</summary>
-            <CompanyEditor />
-          </details>
-          <div className="editor-list">
-            {allCompanies.map((company) => (
-              <details className="editor-card" key={company.id}>
-                <summary>
-                  <span>
-                    {companyDisplayName(company)}
-                    <small>
-                      {companyActivityLabels[company.activity_type]} · {company.city}
-                    </small>
-                  </span>
-                  <span className="status-pill">
-                    {translateText(
-                      locale,
-                      company.status === "published"
-                        ? "Publicado"
-                        : company.status === "draft"
-                          ? "Rascunho"
-                          : "Suspenso",
-                    )}
-                  </span>
-                </summary>
-                <CompanyEditor company={company} />
-              </details>
-            ))}
-          </div>
-        </>
-      );
+      content = <CompanyManagement companiesPage={companiesPage!} locale={locale} />;
     else if (section === "acessos")
       content = (
-        <>
-          <PageIntro
-            eyebrow={translateText(locale, "CONTAS E SEGURANÇA")}
-            title={translateText(locale, "Pessoas certas. Acessos definidos.")}
-            description="A pessoa cria sua conta primeiro. Depois, vincule o e-mail a uma empresa e ao perfil de trabalho."
-          />
-          <PortalNotice>
-            O cadastro ainda não confirma o e-mail por mensagem. Antes de conceder acesso, confirme
-            diretamente com a pessoa que ela criou e controla essa conta.
-          </PortalNotice>
-          {allCompanies.length ? (
-            <details className="editor-card" open>
-              <summary>{translateText(locale, "Conceder ou alterar acesso")}</summary>
-              <ActionForm
-                action="acessos"
-                reset
-                fields={[
-                  {
-                    name: "company_id",
-                    label: translateText(locale, "Empresa"),
-                    type: "select",
-                    options: allCompanies.map((c) => ({
-                      value: c.id,
-                      label: companyDisplayName(c),
-                    })),
-                  },
-                  {
-                    name: "email",
-                    label: translateText(locale, "E-mail da conta cadastrada"),
-                    type: "email",
-                    maxLength: 254,
-                  },
-                  {
-                    name: "role",
-                    label: translateText(locale, "Perfil"),
-                    type: "select",
-                    options: Object.entries(roles).map(([value, label]) => ({ value, label })),
-                  },
-                ]}
-                label={translateText(locale, "Salvar permissão")}
-              />
-            </details>
-          ) : (
-            <EmptyState title={translateText(locale, "Cadastre uma empresa primeiro.")}>
-              <Link href="/painel/plataforma/empresas">
-                {translateText(locale, "Ir para empresas →")}
-              </Link>
-            </EmptyState>
-          )}
-          <div className="resource-list">
-            {members.map((member) => (
-              <article key={member.company_id + member.user_id}>
-                <div>
-                  <h3>{member.name}</h3>
-                  <p>{member.email}</p>
-                  <p>
-                    {member.company_name} · {roles[member.role]}
-                  </p>
-                </div>
-                <ActionForm
-                  action="revogar-acesso"
-                  fixed={{ company_id: member.company_id, user_id: member.user_id }}
-                  label={translateText(locale, "Remover acesso")}
-                />
-              </article>
-            ))}
-          </div>
-          <PortalNotice>
-            O administrador do sistema é definido na configuração segura da instalação. Este
-            formulário concede apenas perfis de empresa; as permissões são conferidas no servidor em
-            cada operação.
-          </PortalNotice>
-        </>
-      );
-    else {
-      const publishedCount = allCompanies.filter(
-        (company) => company.status === "published",
-      ).length;
-      const [contactCountRow, pendingCadasturRow] = await Promise.all([
-        one<{ n: number }>(db, "SELECT CAST(COUNT(*) AS INTEGER) n FROM contacts"),
-        one<{ n: number }>(
-          db,
-          "SELECT CAST(COUNT(*) AS INTEGER) n FROM cadastur_entries WHERE review_status='pending'",
-        ),
-      ]);
-      const contactCount = contactCountRow?.n ?? 0;
-      const pendingCadastur = pendingCadasturRow?.n ?? 0;
-      content = (
-        <AdminDashboard
+        <AccessManagement
+          membersPage={membersPage!}
+          companyCount={companySummary?.total ?? 0}
           locale={locale}
-          actor={actor}
-          companyCount={allCompanies.length}
-          publishedCount={publishedCount}
-          memberCount={members.length}
-          pendingCadastur={pendingCadastur}
-          contactCount={contactCount}
         />
       );
-    }
+    else if (section === "") {
+      if (!dashboardSummary) notFound();
+      content = (
+        <AdministrationOverview
+          locale={locale}
+          actor={actor}
+          companyCount={dashboardSummary.companyCount}
+          publishedCount={dashboardSummary.publishedCount}
+          memberCount={dashboardSummary.memberCount}
+          pendingCadastur={dashboardSummary.pendingCadastur}
+          contactCount={dashboardSummary.contactCount}
+          bookingRows={dashboardSummary.bookingRows}
+        />
+      );
+    } else notFound();
   } else if (!companyId) {
     content = (
       <EmptyState
@@ -539,355 +219,152 @@ export default async function Page({
       </EmptyState>
     );
   } else {
-    const [inventory, bookings] = await Promise.all([
-      companyInventory(db, actor, companyId),
-      businessBookings(db, actor, companyId),
-    ]);
-    const company = inventory.company;
-    if (section === "quartos")
+    const company = selectedCompany!;
+    const guideMember = memberRole === "guide" ? await companyMember(db, actor, companyId) : null;
+    const guideSchedule =
+      memberRole === "guide" && guideMember?.guide_id
+        ? await companyGuideDeparturesPage(db, actor, companyId, query.departurePage)
+        : undefined;
+    const businessData =
+      memberRole === "guide"
+        ? undefined
+        : await businessPanelReadData(db, actor, area, section, companyId, {
+            ...query,
+            bookingId: typeof query.reserva === "string" ? query.reserva : undefined,
+          });
+    const {
+      bookingPage,
+      stayPage,
+      bookingSummary,
+      attentionBookings,
+      roomsPage,
+      roomSummary,
+      guidesPage,
+      guideOptions,
+      toursPage,
+      tourOptions,
+      departuresPage,
+      operatorSummary,
+    } = businessData ?? {};
+    const rooms = roomsPage?.items ?? [];
+    const pageUrl = (
+      targetSection: string,
+      pageKey: string,
+      page: number,
+      preserve: Record<string, string | undefined> = {},
+    ) => {
+      const params = new URLSearchParams({ empresa: companyId });
+      for (const [key, value] of Object.entries(preserve)) if (value) params.set(key, value);
+      params.set(pageKey, String(page));
+      const pathname = `/painel/${area}${targetSection ? `/${targetSection}` : ""}`;
+      return `${pathname}?${params.toString()}`;
+    };
+    if (memberRole === "guide")
+      content = guideSchedule ? (
+        <GuideSchedule
+          companyName={companyDisplayName(company)}
+          departuresPage={guideSchedule}
+          hrefForPage={(page) => pageUrl("", "departurePage", page)}
+        />
+      ) : (
+        <EmptyState title="Acesso aguardando configuração">
+          <p>A administração precisa vincular sua conta ao cadastro correto de guia.</p>
+        </EmptyState>
+      );
+    else if (section === "quartos")
       content = (
-        <>
-          <PageIntro
-            eyebrow={companyDisplayName(company)}
-            title="Quartos"
-            description="Cada registro representa um quarto físico. A aprovação de reservas respeita os períodos já confirmados."
-          />
-          <RoomStatusBoard companyId={companyId} rooms={inventory.rooms} />
-          <details className="editor-card">
-            <summary>Cadastrar quarto</summary>
-            <RoomEditor companyId={companyId} />
-          </details>
-          <div className="editor-list">
-            {inventory.rooms.map((room) => (
-              <details className="editor-card" key={room.id}>
-                <summary>
-                  <span>
-                    {room.code} · {room.name}
-                    <small>
-                      Até {room.capacity} pessoas · {money(room.price_cents)} / noite
-                    </small>
-                  </span>
-                  <span className="status-pill">{room.active ? "Ativo" : "Indisponível"}</span>
-                </summary>
-                <RoomEditor companyId={companyId} room={room} />
-              </details>
-            ))}
-          </div>
-        </>
+        <RoomManagement
+          companyId={companyId}
+          companyName={companyDisplayName(company)}
+          roomsPage={roomsPage!}
+          canManageInventory={admin || memberRole === "hotel_manager"}
+        />
       );
     else if (section === "reservas" || section === "vagas")
       content = (
-        <>
-          <PageIntro
-            eyebrow={companyDisplayName(company)}
-            title={area === "hotel" ? "Reservas" : "Vagas e solicitações"}
-            description={
-              area === "hotel"
-                ? "Aprove solicitações e registre check-in e check-out diretamente na reserva, conforme o período da estadia."
-                : "Analise os pedidos. A disponibilidade é conferida novamente no momento da aprovação."
-            }
-          />
-          {section === "vagas" && (
-            <div className="resource-list">
-              {inventory.departures.map((d) => (
-                <article key={d.id}>
-                  <div>
-                    <h3>{d.tour_name}</h3>
-                    <p>{displayTime(d.starts_at)}</p>
-                  </div>
-                  <strong>
-                    {d.capacity - (d.reserved || 0)} de {d.capacity} vagas livres
-                  </strong>
-                </article>
-              ))}
-            </div>
-          )}
-          <BookingList bookings={bookings} business />
-        </>
+        <BookingManagement
+          area={area === "hotel" ? "hotel" : "passeios"}
+          section={section}
+          companyName={companyDisplayName(company)}
+          bookingPage={bookingPage!}
+          bookingHrefForPage={(page) =>
+            pageUrl(section, "page", page, {
+              departurePage: section === "vagas" ? query.departurePage : undefined,
+            })
+          }
+          departuresPage={departuresPage}
+          departureHrefForPage={
+            section === "vagas"
+              ? (page) => pageUrl("vagas", "departurePage", page, { page: query.page })
+              : undefined
+          }
+        />
       );
     else if (section === "fnrh") {
-      const today = todayInManaus();
       content = (
-        <>
-          <PageIntro
-            eyebrow={companyDisplayName(company)}
-            title="FNRH · Registro de estadias"
-            description="Organize chegadas e saídas vinculadas às reservas confirmadas. O registro também pode ser iniciado na lista de reservas."
-          />
-          <PortalNotice>
-            Registro local de estadia. Esta versão não preenche nem transmite a FNRH oficial e não
-            substitui o procedimento governamental. A integração oficial será uma etapa própria.
-          </PortalNotice>
-          {!bookings.some((b) => b.status === "confirmed") ? (
-            <EmptyState title="Nenhuma estadia confirmada.">
-              <p>Aprove uma solicitação em Reservas para registrar a chegada.</p>
-            </EmptyState>
-          ) : (
-            <div className="editor-list">
-              {bookings
-                .filter((b) => b.status === "confirmed")
-                .map((b) => (
-                  <article className="reservation-card" key={b.id}>
-                    <h2>{b.customer_name}</h2>
-                    <p>
-                      {b.item_name} · {displayDate(b.check_in!)} → {displayDate(b.check_out!)}
-                    </p>
-                    {b.checked_in_at ? (
-                      <>
-                        <p>
-                          Entrada: {displayTime(b.checked_in_at)} · Origem: {b.origin_city},{" "}
-                          {b.country}
-                        </p>
-                        {b.checked_out_at ? (
-                          <p>Saída: {displayTime(b.checked_out_at)}</p>
-                        ) : (
-                          <ActionForm
-                            action="estadia"
-                            fixed={{ company_id: companyId, booking_id: b.id, action: "checkout" }}
-                            label="Registrar check-out"
-                          />
-                        )}
-                      </>
-                    ) : b.check_in! <= today && today < b.check_out! ? (
-                      <ActionForm
-                        action="estadia"
-                        fixed={{ company_id: companyId, booking_id: b.id, action: "checkin" }}
-                        initial={{ country: "Brasil" }}
-                        fields={[
-                          { name: "country", label: "País de origem", maxLength: 80 },
-                          { name: "origin_city", label: "Cidade de origem", maxLength: 100 },
-                        ]}
-                        label="Registrar check-in"
-                      />
-                    ) : (
-                      <p>
-                        O check-in poderá ser registrado entre {displayDate(b.check_in!)} e{" "}
-                        {displayDate(b.check_out!)}.
-                      </p>
-                    )}
-                  </article>
-                ))}
-            </div>
-          )}
-        </>
+        <StayManagement
+          companyId={companyId}
+          companyName={companyDisplayName(company)}
+          stayPage={stayPage!}
+        />
       );
     } else if (section === "experiencias")
       content = (
-        <>
-          <PageIntro
-            eyebrow={companyDisplayName(company)}
-            title="Experiências"
-            description="Cadastre passeios e roteiros, e apresente os profissionais que os conduzem."
-          />
-          <h2 className="subheading">Passeios e roteiros</h2>
-          <details className="editor-card">
-            <summary>Cadastrar passeio ou roteiro</summary>
-            <TourEditor companyId={companyId} guides={inventory.guides} />
-          </details>
-          {inventory.tours.map((tour) => (
-            <details className="editor-card" key={tour.id}>
-              <summary>
-                <span>
-                  {tour.name}
-                  <small>
-                    {tour.city} · {tour.duration_minutes} min · {money(tour.price_cents)}
-                  </small>
-                </span>
-                <span>{tour.published ? "Publicado" : "Rascunho"}</span>
-              </summary>
-              <TourEditor companyId={companyId} guides={inventory.guides} tour={tour} />
-            </details>
-          ))}
-          <h2 className="subheading">Guias de turismo</h2>
-          <details className="editor-card">
-            <summary>Cadastrar guia</summary>
-            <GuideEditor companyId={companyId} />
-          </details>
-          {inventory.guides.map((guide) => (
-            <details className="editor-card" key={guide.id}>
-              <summary>
-                <span>
-                  {guide.name}
-                  <small>{guide.languages}</small>
-                </span>
-                <span>{guide.published ? "Publicado" : "Rascunho"}</span>
-              </summary>
-              <GuideEditor companyId={companyId} guide={guide} />
-            </details>
-          ))}
-        </>
+        <TourGuideManagement
+          companyId={companyId}
+          companyName={companyDisplayName(company)}
+          toursPage={toursPage!}
+          guidesPage={guidesPage!}
+          guideOptions={guideOptions ?? []}
+          tourHrefForPage={(page) =>
+            pageUrl("experiencias", "tourPage", page, { guidePage: query.guidePage })
+          }
+          guideHrefForPage={(page) =>
+            pageUrl("experiencias", "guidePage", page, { tourPage: query.tourPage })
+          }
+        />
       );
     else if (section === "agenda")
       content = (
-        <>
-          <PageIntro
-            eyebrow={companyDisplayName(company)}
-            title="Agenda de saídas"
-            description="Horários no fuso de Manaus. Controle a capacidade de cada saída."
-          />
-          {inventory.tours.length ? (
-            <details className="editor-card">
-              <summary>Criar saída</summary>
-              <DepartureEditor companyId={companyId} tours={inventory.tours} />
-            </details>
-          ) : (
-            <PortalNotice>Cadastre um passeio antes de abrir a agenda.</PortalNotice>
-          )}
-          {inventory.departures.map((d) => (
-            <details className="editor-card" key={d.id}>
-              <summary>
-                <span>
-                  {d.tour_name}
-                  <small>
-                    {displayTime(d.starts_at)} · {d.reserved || 0}/{d.capacity} vagas confirmadas
-                  </small>
-                </span>
-                <span>{d.active ? "Aberta" : "Fechada"}</span>
-              </summary>
-              <DepartureEditor companyId={companyId} tours={inventory.tours} departure={d} />
-            </details>
-          ))}
-        </>
+        <DepartureManagement
+          companyId={companyId}
+          companyName={companyDisplayName(company)}
+          departuresPage={departuresPage!}
+          tourOptions={tourOptions ?? []}
+          hrefForPage={(page) => pageUrl("agenda", "departurePage", page)}
+        />
       );
     else if (area === "hotel") {
-      const today = todayInManaus();
-      const pendingBookings = bookings.filter((booking) => booking.status === "pending");
-      const confirmedBookings = bookings.filter((booking) => booking.status === "confirmed");
-      const occupiedRooms = inventory.rooms.filter((room) => room.current_guest).length;
-      const readyRooms = inventory.rooms.filter(
-        (room) => room.operational_status === "ready" && !room.current_guest,
-      ).length;
-      const roomsToPrepare = inventory.rooms.filter(
-        (room) =>
-          room.operational_status === "cleaning" || room.operational_status === "maintenance",
-      ).length;
-      const arrivalsToday = confirmedBookings.filter(
-        (booking) => booking.check_in === today && !booking.checked_in_at,
-      ).length;
-      const departuresToday = confirmedBookings.filter(
-        (booking) => booking.check_out === today && !booking.checked_out_at,
-      ).length;
-      const actionableBookings = bookings.filter(
-        (booking) =>
-          booking.status === "pending" ||
-          (booking.status === "confirmed" &&
-            ((booking.checked_in_at && !booking.checked_out_at) ||
-              (booking.check_in === today && !booking.checked_in_at))),
-      );
       content = (
-        <>
-          <PageIntro
-            eyebrow="OPERAÇÃO HOTELEIRA"
-            title={companyDisplayName(company)}
-            description={`${company.city} · ${company.status === "published" ? "Publicado no catálogo" : "Fora do catálogo público"}`}
-          />
-          <HotelOperationSummary
-            arrivals={arrivalsToday}
-            departures={departuresToday}
-            pendingBookings={pendingBookings.length}
-            roomsToPrepare={roomsToPrepare}
-          />
-          <div className="hotel-operations-metrics" aria-label="Resumo de quartos e reservas">
-            <Link
-              className="hotel-operations-metric"
-              href={`/painel/hotel/quartos?empresa=${companyId}`}
-            >
-              <span className="hotel-operations-metric-icon">
-                <BedDouble size={18} aria-hidden="true" />
-              </span>
-              <span>Quartos prontos</span>
-              <strong>{readyRooms}</strong>
-              <span>Conferir acomodações →</span>
-            </Link>
-            <Link
-              className="hotel-operations-metric"
-              href={`/painel/hotel/fnrh?empresa=${companyId}`}
-            >
-              <span className="hotel-operations-metric-icon">
-                <UsersRound size={18} aria-hidden="true" />
-              </span>
-              <span>Hóspedes hospedados</span>
-              <strong>{occupiedRooms}</strong>
-              <span>Estadias com check-in →</span>
-            </Link>
-            <Link
-              className="hotel-operations-metric"
-              href={`/painel/hotel/quartos?empresa=${companyId}`}
-            >
-              <span className="hotel-operations-metric-icon">
-                <Wrench size={18} aria-hidden="true" />
-              </span>
-              <span>Limpeza ou manutenção</span>
-              <strong>{roomsToPrepare}</strong>
-              <span>Atualizar situação →</span>
-            </Link>
-            <Link
-              className="hotel-operations-metric"
-              href={`/painel/hotel/reservas?empresa=${companyId}`}
-            >
-              <span className="hotel-operations-metric-icon">
-                <CalendarCheck2 size={18} aria-hidden="true" />
-              </span>
-              <span>Solicitações pendentes</span>
-              <strong>{pendingBookings.length}</strong>
-              <span>Aguardando análise →</span>
-            </Link>
-          </div>
-          <RoomStatusBoard companyId={companyId} rooms={inventory.rooms} />
-          <h2 className="subheading">Precisam da sua atenção</h2>
-          <BookingList bookings={actionableBookings.slice(0, 5)} business />
-        </>
+        <HotelOverview
+          company={company}
+          companyId={companyId}
+          bookingSummary={bookingSummary!}
+          roomSummary={roomSummary!}
+          rooms={rooms}
+          roomsPage={roomsPage}
+          attentionBookings={attentionBookings ?? []}
+        />
       );
     } else
       content = (
-        <>
-          <PageIntro
-            eyebrow="OPERAÇÃO DE EXPERIÊNCIAS"
-            title={companyDisplayName(company)}
-            description={
-              company.city +
-              " · " +
-              (company.status === "published"
-                ? "Publicado no catálogo"
-                : "Fora do catálogo público")
-            }
-          />
-          <div className="account-grid">
-            <div className="metric-card">
-              <span>Passeios e roteiros</span>
-              <strong>{inventory.tours.length}</strong>
-              <span>Experiências publicáveis</span>
-            </div>
-            <div className="metric-card">
-              <span>Guias cadastrados</span>
-              <strong>{inventory.guides.length}</strong>
-              <span>Profissionais da equipe</span>
-            </div>
-            <div className="metric-card">
-              <span>Solicitações pendentes</span>
-              <strong>{bookings.filter((b) => b.status === "pending").length}</strong>
-              <span>Aguardando a sua análise</span>
-            </div>
-            <div className="metric-card">
-              <span>Reservas confirmadas</span>
-              <strong>{bookings.filter((b) => b.status === "confirmed").length}</strong>
-              <span>Todos os períodos</span>
-            </div>
-          </div>
-          <h2 className="subheading">Precisam da sua atenção</h2>
-          <BookingList
-            bookings={bookings.filter((b) => b.status === "pending").slice(0, 5)}
-            business
-          />
-        </>
+        <ExperiencesOverview
+          company={company}
+          operatorSummary={operatorSummary!}
+          bookingSummary={bookingSummary!}
+          attentionBookings={attentionBookings ?? []}
+        />
       );
   }
   return (
     <PanelShell
       module={area}
       section={section}
-      companies={companies}
+      hasCompanies={area !== "plataforma" && hasCompanies}
       companyId={companyId}
+      companyKind={area !== "plataforma" ? companyKind : undefined}
+      guideMode={memberRole === "guide"}
+      unreadNotifications={unreadNotifications}
       modules={modules}
     >
       {content}

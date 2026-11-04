@@ -1,36 +1,43 @@
-# Backup externo e recuperação
+# Backup local e recuperação
 
-Este procedimento prepara uma cópia do backup PostgreSQL local da VPS para uma pasta sincronizada escolhida pelo operador e comprova a restauração de um novo download em um banco isolado. Ele não configura uma conta Drive/OneDrive, não usa APIs ou credenciais de nuvem, não muda o banco de produção e não publica releases.
+Este fluxo copia o dump PostgreSQL da VPS para uma pasta protegida neste computador usando SSH. O SHA-256 é comparado na origem e na cópia local; em seguida, a cópia é enviada a uma área temporária da VPS e restaurada em um banco isolado. Nenhum dado de produção é alterado pelo ensaio. A pasta padrão é `%LOCALAPPDATA%\HubTurismo\Backups`; recibos independentes ficam em `%LOCALAPPDATA%\HubTurismo\BackupReceipts`. O backup não é enviado a Drive, OneDrive ou outro serviço.
 
-## Preparar a cópia
+## Copiar da VPS para este computador
 
-1. Quando houver uma pasta privada sincronizada disponível, confirme que o SSH configurado continua funcionando com ssh hub-turismo-vps "id". A conta deve ser hub.
-2. No PowerShell aberto na raiz do repositório, rode:
+1. Confirme o alias SSH e a conta operacional:
 
-        .\infra\export-vps-backup-to-sync.ps1 -SyncDirectory 'C:\caminho\da\pasta\sincronizada'
+        ssh hub-turismo-vps "id"
 
-3. O script baixa o dump mais recente e seu manifesto .sha256 da VPS, confirma o SHA-256 na origem e na estação e publica ambos em uma nova subpasta da pasta escolhida. O recibo independente fica em tmp\offsite-backup-receipts\, fora da pasta sincronizada. Destinos e recibos existentes não são sobrescritos.
-4. Aguarde o cliente Drive/OneDrive indicar que os arquivos foram sincronizados. A mensagem SYNC_CONFIRMATION_REQUIRED é um checkpoint, não uma confirmação automática do serviço.
+   A saída deve identificar a conta `hub`.
+2. No PowerShell, na raiz do repositório, execute:
 
-O dump contém dados de produção, inclusive dados pessoais. Use somente uma pasta privada sob controle do operador e não envie esses arquivos por mensagem.
+        .\infra\export-vps-backup-to-local.ps1
 
-## Baixar e ensaiar a recuperação
+   Para escolher outra pasta local, defina `$backupRoot = 'D:\HubBackups'` e use `-BackupDirectory $backupRoot` nos dois scripts. A pasta não pode ficar dentro do repositório ou da área temporária do Windows.
+3. O script localiza o dump mais recente na VPS, verifica o manifesto SHA-256, baixa o dump e o manifesto por SCP e confere novamente o hash. Ele publica cada cópia em uma pasta nova, protege as permissões locais para a conta atual, SYSTEM e administradores, e recusa sobrescrever um destino ou recibo existente. Guarde os caminhos `LOCAL_BACKUP_FILE` e `RECEIPT_FILE` exibidos.
 
-1. Pelo portal web do serviço escolhido, baixe o dump e o arquivo .sha256 para um diretório local separado da pasta sincronizada. Mantenha o nome original de ambos.
-2. Revise que o portal mostra a sincronização concluída. Execute `infra/verify-vps-offsite-backup.ps1` no PowerShell, informando o caminho da cópia recém-baixada, a mesma pasta sincronizada usada na exportação e o recibo da etapa anterior. O verificador recusa cópias ou recibos que ainda estejam dentro da pasta sincronizada:
+O dump contém dados de produção, inclusive dados pessoais. Mantenha a cópia e o computador protegidos e não envie esses arquivos por mensagem.
 
-        .\infra\verify-vps-offsite-backup.ps1 -DownloadedBackupPath 'C:\caminho\Downloads\hub-AAAA...dump' -SyncDirectory 'C:\caminho\da\pasta\sincronizada' -ReceiptPath '.\tmp\offsite-backup-receipts\hub-AAAA...dump.json' -ConfirmFreshDownload
+## Ensaiar a restauração isolada
 
-3. O verificador compara os bytes baixados com o SHA-256 do recibo independente e do manifesto. Depois envia a cópia a um staging único em /var/tmp, valida o formato PostgreSQL pelo restorer existente e restaura para um banco temporário novo hub_restore_offsite_....
-4. O script consulta somente as contagens agregadas de usuários, reservas, lembretes e entradas Cadastur. Depois remove somente o banco temporário que criou e os arquivos do próprio staging. Confira no resultado RESTORE_DATABASE_CLEANUP=ok, REMOTE_STAGING_CLEANUP=ok e as quatro contagens. Se a limpeza do banco falhar, a saída identifica o nome do banco temporário para revisão; não remova outro banco.
-5. Guarde como evidência o nome e tamanho do dump, o SHA-256, o horário, as contagens agregadas e o resultado da limpeza. Não registre nomes de pessoas, dados de reservas, credenciais ou conteúdo de vps.env.
+Execute no mesmo PowerShell, usando os caminhos retornados pela exportação:
 
-Se a cópia nova, o sidecar, o recibo ou o indicador de sincronização não estiver disponível, interrompa o procedimento e mantenha BACK-01 pendente. Não considere o arquivo local na pasta sincronizada como prova de cópia externa e não publique uma release até o ensaio independente passar.
+        $backupRoot = Join-Path $env:LOCALAPPDATA 'HubTurismo\Backups'
+        $dump = Join-Path $backupRoot 'hub-AAAA...\hub-AAAA...dump'
+        $receipt = Join-Path $env:LOCALAPPDATA 'HubTurismo\BackupReceipts\hub-AAAA...dump.json'
+        .\infra\verify-vps-local-backup.ps1 -DownloadedBackupPath $dump -ReceiptPath $receipt -BackupDirectory $backupRoot -ConfirmLocalBackup
+
+O verificador exige que o dump esteja na pasta local protegida, compara o SHA-256 do arquivo com o manifesto `.sha256` e o recibo independente, envia a cópia a um staging único em `/var/tmp` por SSH e usa `infra/restore-postgres.sh` para restaurar em um banco temporário novo `hub_restore_local_...`. O staging e o banco temporário são removidos ao final.
+
+Revise no resultado as contagens agregadas de usuários, reservas, lembretes e entradas Cadastur. Para concluir, devem aparecer `LOCAL_BACKUP_VERIFICATION=passed`, `RESTORE_DATABASE_CLEANUP=ok`, `REMOTE_STAGING_CLEANUP=ok` e as quatro contagens. Guarde o nome do dump, SHA-256 e resultado agregado; não registre nomes de pessoas, detalhes de reservas, credenciais ou conteúdo de `vps.env`.
+
+Se o SSH, o hash, o restore ou a limpeza falhar, mantenha os arquivos locais e interrompa qualquer limpeza de dados ou publicação. Esta cópia protege contra perda apenas da VPS enquanto o arquivo permanecer íntegro neste computador; mantenha também a retenção diária já configurada na VPS.
 
 ## Limites de segurança
 
 - O backup diário e sua retenção local na VPS permanecem sob o mecanismo atual.
-- Nenhum arquivo em infra/vps.env é lido pelo computador local ou impresso nos relatórios.
-- A restauração recusa o banco de produção e qualquer destino já existente.
-- Falhas preservam o dump externo e limitam a limpeza aos arquivos e ao banco identificados pela execução.
-- A origem histórica data/hub.sqlite não participa deste fluxo.
+- Nenhum arquivo em `infra/vps.env` é lido pelo computador local ou impresso nos relatórios.
+- O ensaio restaura somente em um banco novo, nunca em produção.
+- Falhas preservam o dump local e limitam a limpeza aos arquivos e ao banco identificados pela execução.
+- A origem histórica `data/hub.sqlite` não participa deste fluxo.
+- Publicações futuras continuam sendo construídas e ativadas na VPS por SSH; não se inicia Docker na estação local.

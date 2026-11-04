@@ -3,7 +3,7 @@ import { Header, Footer } from "@/components/site/navigation";
 export default function NotFound() {
   return (
     <>
-      <Header />
+      <Header variant="institutional" />
       <main id="conteudo" tabIndex={-1} className="container prose">
         <p className="eyebrow">PÁGINA NÃO ENCONTRADA</p>
         <h1>Vamos encontrar outro caminho.</h1>
@@ -12,7 +12,7 @@ export default function NotFound() {
           Voltar ao início
         </a>
       </main>
-      <Footer />
+      <Footer variant="institutional" />
     </>
   );
 }

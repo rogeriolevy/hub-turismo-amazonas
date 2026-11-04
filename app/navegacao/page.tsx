@@ -2,10 +2,10 @@ import Image from "next/image";
 import { ArrowDown, ArrowUpRight, Ship, Plane } from "lucide-react";
 import { Header, Footer } from "@/components/site/navigation";
 import { NavigationExplorer } from "@/components/platform/navigation-explorer";
-import { HubContentGrid } from "@/components/platform/provider-directory";
+import { HubContentGrid } from "@/components/platform/directory/provider-card";
 import { getDatabase } from "@/db";
-import { publicCatalogItems } from "@/server/catalog-content-service";
-import { todayInManaus } from "@/lib/platform-schema";
+import { publicCatalogItems } from "@/server/catalog-public-content-service";
+import { todayInManaus } from "@/lib/platform-schema/format";
 import "./navigation.css";
 import { getLocale } from "@/lib/i18n/server";
 import { translate } from "@/lib/i18n/messages";
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Navegação e transporte no Amazonas",
   description:
-    "Planeje sua viagem por Maués, Manaus, Parintins e Boa Vista do Ramos. Roteiros de embarcações, referências de passagens aéreas e fluviais, contatos e pacotes.",
+    "Planeje viagens entre Maués, Manaus, Parintins e Boa Vista do Ramos: roteiros fluviais, horários Maués ↔ Parintins, referências aéreas, contatos e pacotes.",
   alternates: { canonical: "/navegacao" },
 };
 
@@ -88,6 +88,7 @@ export default async function NavigationPage({
             <div className="container">
               <a href="#passagens">{t("navigation.ticketsRoutes")}</a>
               <a href="#horarios">{t("navigation.timesContacts")}</a>
+              <a href="#horarios-parintins">Maués ↔ Parintins</a>
               <a href="#pacotes">{t("navigation.packages")}</a>
             </div>
           </nav>

@@ -1,21 +1,8 @@
 import { trustedSiteOrigins } from "../lib/trusted-origins.ts";
+import { HttpError } from "../lib/http-error.ts";
 
-export class HttpError extends Error {
-  status: number;
-  code: string;
-  fields?: Record<string, string[] | undefined>;
-  constructor(
-    status: number,
-    code: string,
-    message: string,
-    fields?: Record<string, string[] | undefined>,
-  ) {
-    super(message);
-    this.status = status;
-    this.code = code;
-    this.fields = fields;
-  }
-}
+export { HttpError } from "../lib/http-error.ts";
+
 export function json(data: unknown, status = 200, headers: Record<string, string> = {}) {
   return Response.json(data, {
     status,

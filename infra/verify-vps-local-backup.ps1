@@ -3,26 +3,23 @@ param(
   [Parameter(Mandatory = $true)]
   [string]$DownloadedBackupPath,
   [Parameter(Mandatory = $true)]
-  [string]$SyncDirectory,
-  [Parameter(Mandatory = $true)]
   [string]$ReceiptPath,
-  [switch]$ConfirmFreshDownload
+  [string]$BackupDirectory = (Join-Path $env:LOCALAPPDATA "HubTurismo\Backups"),
+  [switch]$ConfirmLocalBackup
 )
 
 $ErrorActionPreference = "Stop"
 $sshAlias = "hub-turismo-vps"
 $repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
-$receiptDirectory = Join-Path $repositoryRoot "tmp\offsite-backup-receipts"
 $temporaryRoot = [System.IO.Path]::GetFullPath($env:TEMP)
 $ssh = (Get-Command ssh.exe -ErrorAction Stop).Source
 $scp = (Get-Command scp.exe -ErrorAction Stop).Source
+$localAppRoot = Join-Path $env:LOCALAPPDATA "HubTurismo"
+$backupRoot = (Resolve-Path -LiteralPath $BackupDirectory -ErrorAction Stop).Path
+$receiptDirectory = (Resolve-Path -LiteralPath (Join-Path $localAppRoot "BackupReceipts") -ErrorAction Stop).Path
 
-if (-not (Test-Path -LiteralPath $SyncDirectory -PathType Container)) {
-  throw "A pasta sincronizada precisa existir para confirmar que o download foi salvo fora dela: $SyncDirectory"
-}
-$syncRoot = (Resolve-Path -LiteralPath $SyncDirectory -ErrorAction Stop).Path
-if (-not $ConfirmFreshDownload) {
-  throw "Confirme o download novo pelo portal acrescentando -ConfirmFreshDownload. Um arquivo na pasta sincronizada não comprova a recuperação externa."
+if (-not $ConfirmLocalBackup) {
+  throw "Confirme que a cópia local foi recebida por SSH e está armazenada neste computador acrescentando -ConfirmLocalBackup."
 }
 if (-not (Test-Path -LiteralPath $DownloadedBackupPath -PathType Leaf)) {
   throw "A cópia recém-baixada não foi encontrada: $DownloadedBackupPath"
@@ -46,18 +43,24 @@ function Test-PathWithinDirectory {
   $directoryPrefix = $directoryFullPath + [System.IO.Path]::DirectorySeparatorChar
   return $candidateFullPath.StartsWith($directoryPrefix, [System.StringComparison]::OrdinalIgnoreCase)
 }
-if (Test-PathWithinDirectory -CandidatePath $downloadedBackup -DirectoryPath $syncRoot) {
-  throw "A cópia precisa estar fora da pasta sincronizada; use o arquivo obtido em um novo download do portal."
+if (-not (Test-PathWithinDirectory -CandidatePath $downloadedBackup -DirectoryPath $backupRoot)) {
+  throw "A cópia precisa estar dentro da pasta local protegida $backupRoot."
 }
-if (Test-PathWithinDirectory -CandidatePath $receiptFile -DirectoryPath $syncRoot) {
-  throw "O recibo independente precisa permanecer fora da pasta sincronizada."
-}
-if (Test-PathWithinDirectory -CandidatePath $temporaryRoot -DirectoryPath $syncRoot) {
-  throw "A pasta temporária local está dentro da pasta sincronizada; escolha outra pasta de sincronização."
-}
-$receiptRoot = (Resolve-Path -LiteralPath $receiptDirectory -ErrorAction Stop).Path.TrimEnd("\", "/") + [System.IO.Path]::DirectorySeparatorChar
-if (-not $receiptFile.StartsWith($receiptRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+if (-not (Test-PathWithinDirectory -CandidatePath $receiptFile -DirectoryPath $receiptDirectory)) {
   throw "O recibo deve estar dentro de $receiptDirectory."
+}
+$repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
+if (Test-PathWithinDirectory -CandidatePath $downloadedBackup -DirectoryPath $repositoryRoot) {
+  throw "A cópia precisa ficar fora do repositório para não ser incluída em um pacote de release."
+}
+if (Test-PathWithinDirectory -CandidatePath $backupRoot -DirectoryPath $temporaryRoot) {
+  throw "A pasta de backup não pode estar dentro da área temporária do Windows."
+}
+foreach ($protectedRoot in @($backupRoot, $receiptDirectory)) {
+  $protectedItem = Get-Item -LiteralPath $protectedRoot -Force
+  if (($protectedItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+    throw "As pastas locais de backup e recibo não podem ser links ou junctions: $protectedRoot"
+  }
 }
 $downloadedDirectory = Split-Path -Parent $downloadedBackup
 $downloadedName = Split-Path -Leaf $downloadedBackup
@@ -155,17 +158,17 @@ function Write-NewUtf8File {
 
 $databaseTimestamp = [DateTime]::UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'", [Globalization.CultureInfo]::InvariantCulture)
 $databaseNonce = [guid]::NewGuid().ToString("N").Substring(0, 8)
-$restoreDatabase = "hub_restore_offsite_" + $databaseTimestamp + "_" + $databaseNonce
+$restoreDatabase = "hub_restore_local_" + $databaseTimestamp + "_" + $databaseNonce
 $stageToken = [guid]::NewGuid().ToString("N").Substring(0, 16)
-$remoteStage = "/var/tmp/hub-offsite-$stageToken"
-$localStage = Join-Path $temporaryRoot ("hub-offsite-verify-" + [guid]::NewGuid().ToString("N"))
+$remoteStage = "/var/tmp/hub-local-backup-$stageToken"
+$localStage = Join-Path $temporaryRoot ("hub-local-backup-verify-" + [guid]::NewGuid().ToString("N"))
 $remoteStageCreated = $false
 $remoteRestoreStarted = $false
 [System.IO.Directory]::CreateDirectory($localStage) | Out-Null
 
 $remoteRestoreScript = @'
 set -Eeuo pipefail
-stage="/var/tmp/hub-offsite-__STAGE_TOKEN__"
+stage="/var/tmp/hub-local-backup-__STAGE_TOKEN__"
 dump_name='__DUMP_NAME__'
 restore_database='__DATABASE_NAME__'
 expected_hash='__EXPECTED_HASH__'
@@ -176,12 +179,12 @@ if [[ "$(id -un)" != "hub" ]]; then
   echo "O ensaio precisa ser executado pela conta hub." >&2
   exit 1
 fi
-if [[ "$stage" != "/var/tmp/hub-offsite-__STAGE_TOKEN__" || ! -d "$stage" || -L "$stage" ]]; then
+if [[ "$stage" != "/var/tmp/hub-local-backup-__STAGE_TOKEN__" || ! -d "$stage" || -L "$stage" ]]; then
   echo "O staging remoto não corresponde à pasta criada para esta execução." >&2
   exit 1
 fi
 if [[ ! "$dump_name" =~ ^hub-[0-9]{8}T[0-9]{6}Z-[0-9]+\.dump$ ||
-      ! "$restore_database" =~ ^hub_restore_offsite_[0-9]{8}T[0-9]{6}Z_[a-f0-9]{8}$ ||
+      ! "$restore_database" =~ ^hub_restore_local_[0-9]{8}T[0-9]{6}Z_[a-f0-9]{8}$ ||
       ! "$expected_hash" =~ ^[a-f0-9]{64}$ ]]; then
   echo "Os identificadores do ensaio estão fora dos formatos permitidos." >&2
   exit 1
@@ -210,8 +213,8 @@ cleanup() {
   if [[ -f "$stage/$dump_name.sha256" && ! -L "$stage/$dump_name.sha256" ]]; then
     rm -f -- "$stage/$dump_name.sha256" || cleanup_failed=1
   fi
-  if [[ -f "$stage/restore-offsite.sh" && ! -L "$stage/restore-offsite.sh" ]]; then
-    rm -f -- "$stage/restore-offsite.sh" || cleanup_failed=1
+  if [[ -f "$stage/restore-local-backup.sh" && ! -L "$stage/restore-local-backup.sh" ]]; then
+    rm -f -- "$stage/restore-local-backup.sh" || cleanup_failed=1
   fi
   if ! rmdir -- "$stage"; then
     echo "REMOTE_STAGING_CLEANUP=failed; revise somente $stage." >&2
@@ -251,7 +254,8 @@ if [[ ! -f "$restore_script" || -L "$restore_script" ]]; then
 fi
 
 echo "Validando o formato PostgreSQL e restaurando somente em $restore_database."
-bash "$restore_script" "$stage/$dump_name" "$restore_database"
+COMPOSE_PROJECT_NAME=hub-turismo HUB_ENV_FILE="$release_directory/infra/vps.env" \
+  bash "$restore_script" "$stage/$dump_name" "$restore_database"
 database_created=1
 postgres_container_id="$(docker ps --filter 'label=com.docker.compose.project=hub-turismo' --filter 'label=com.docker.compose.service=postgres' --format '{{.ID}}' | head -n 1)"
 if [[ -z "$postgres_container_id" ]]; then
@@ -288,7 +292,7 @@ $remoteRestoreScript = $remoteRestoreScript.Replace("__STAGE_TOKEN__", $stageTok
 $remoteRestoreScript = $remoteRestoreScript.Replace("__DUMP_NAME__", $downloadedName)
 $remoteRestoreScript = $remoteRestoreScript.Replace("__DATABASE_NAME__", $restoreDatabase)
 $remoteRestoreScript = $remoteRestoreScript.Replace("__EXPECTED_HASH__", $receiptHash)
-$localRestoreScript = Join-Path $localStage "restore-offsite.sh"
+$localRestoreScript = Join-Path $localStage "restore-local-backup.sh"
 
 try {
   Write-NewUtf8File -Path $localRestoreScript -Content $remoteRestoreScript
@@ -298,12 +302,12 @@ if [[ "$(id -un)" != "hub" ]]; then
   echo "A criação de staging precisa usar a conta hub." >&2
   exit 1
 fi
-mkdir -m 700 -- "/var/tmp/hub-offsite-__STAGE_TOKEN__"
+mkdir -m 700 -- "/var/tmp/hub-local-backup-__STAGE_TOKEN__"
 '@
   $createStageScript = $createStageScript.Replace("__STAGE_TOKEN__", $stageToken)
   $createStageCommand = ConvertTo-RemoteBashCommand -Script $createStageScript
-  Write-Output "Verificando os arquivos baixados recentemente e o recibo SHA-256 local."
-  Write-Output "Confirmação recebida: o dump veio de um novo download pelo portal do provedor."
+  Write-Output "Verificando a cópia local recebida por SSH e o recibo SHA-256 independente."
+  Write-Output "Confirmação recebida: o dump está armazenado neste computador fora da VPS."
   Write-Output "Criando staging remoto exclusivo e restaurando em banco temporário isolado."
   Invoke-OpenSsh -Executable $ssh -Arguments @("-T", "-o", "ForwardAgent=no", "-o", "ConnectTimeout=15", $sshAlias, $createStageCommand) -Description "A criação do staging remoto"
   $remoteStageCreated = $true
@@ -311,11 +315,12 @@ mkdir -m 700 -- "/var/tmp/hub-offsite-__STAGE_TOKEN__"
   Invoke-OpenSsh -Executable $scp -Arguments @("-q", $downloadedBackup, $downloadedSidecar, $localRestoreScript, ($sshAlias + ":" + $remoteStage + "/")) -Description "O envio da cópia baixada ao staging remoto"
   $remoteRestoreStarted = $true
   try {
-    Invoke-OpenSsh -Executable $ssh -Arguments @("-T", "-o", "ForwardAgent=no", "-o", "ConnectTimeout=15", $sshAlias, "bash '$remoteStage/restore-offsite.sh'") -Description "O ensaio de restauração isolada"
+    Invoke-OpenSsh -Executable $ssh -Arguments @("-T", "-o", "ForwardAgent=no", "-o", "ConnectTimeout=15", $sshAlias, "bash '$remoteStage/restore-local-backup.sh'") -Description "O ensaio de restauração isolada"
   } catch {
     Write-Warning ("O roteiro remoto foi iniciado ou a conexão foi interrompida. Confira a saída do SSH para a limpeza do banco {0} e revise somente o staging {1}." -f $restoreDatabase, $remoteStage)
     throw
   }
+  Write-Output "LOCAL_BACKUP_VERIFICATION=passed"
   Write-Output "OFFSITE_BACKUP_VERIFICATION=passed"
   Write-Output "OFFSITE_BACKUP_SHA256=$receiptHash"
   Write-Output "OFFSITE_RESTORE_COUNTS_REVIEW_REQUIRED=true"
@@ -323,9 +328,9 @@ mkdir -m 700 -- "/var/tmp/hub-offsite-__STAGE_TOKEN__"
   if ($remoteStageCreated -and -not $remoteRestoreStarted) {
     $cleanupScript = @'
 set -euo pipefail
-stage="/var/tmp/hub-offsite-__STAGE_TOKEN__"
-if [[ "$stage" == "/var/tmp/hub-offsite-__STAGE_TOKEN__" && -d "$stage" && ! -L "$stage" ]]; then
-  for file in '__DUMP_NAME__' '__DUMP_NAME__.sha256' 'restore-offsite.sh'; do
+stage="/var/tmp/hub-local-backup-__STAGE_TOKEN__"
+if [[ "$stage" == "/var/tmp/hub-local-backup-__STAGE_TOKEN__" && -d "$stage" && ! -L "$stage" ]]; then
+  for file in '__DUMP_NAME__' '__DUMP_NAME__.sha256' 'restore-local-backup.sh'; do
     if [[ -f "$stage/$file" && ! -L "$stage/$file" ]]; then
       rm -f -- "$stage/$file"
     fi

@@ -2,51 +2,40 @@ import Link from "next/link";
 import { PlatformBrand } from "./brand";
 import { ModuleSwitcher, publicModules, type ModuleLink } from "./shared";
 import { SignOutButton } from "@/components/site/admin-auth";
-import type { Company } from "@/server/platform-models";
-import { companyDisplayName } from "@/lib/platform-schema";
+import { PlatformOptionSelect } from "./platform-option-select";
 import { LanguageSwitcher } from "@/components/site/language-switcher";
 import { getLocale } from "@/lib/i18n/server";
 import { translate } from "@/lib/i18n/messages";
 import { LocalizedTree } from "@/lib/i18n/localized-tree";
+import { panelAreas, type PanelArea } from "@/lib/platform-navigation";
 export async function PanelShell({
   module,
   section,
-  companies,
+  hasCompanies,
   companyId,
+  companyKind,
+  guideMode = false,
+  unreadNotifications = 0,
   modules,
   children,
 }: {
-  module: "hotel" | "passeios" | "plataforma";
+  module: PanelArea;
   section: string;
-  companies: Company[];
+  hasCompanies: boolean;
   companyId?: string;
+  companyKind?: "hotel" | "operator";
+  guideMode?: boolean;
+  unreadNotifications?: number;
   modules: ModuleLink[];
   children: React.ReactNode;
 }) {
   const locale = await getLocale();
-  const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
-  const links =
-    module === "hotel"
-      ? [
-          ["", t("panel.overview")],
-          ["quartos", t("panel.rooms")],
-          ["reservas", t("panel.bookings")],
-          ["fnrh", t("panel.stays")],
-        ]
-      : module === "passeios"
-        ? [
-            ["", t("panel.overview")],
-            ["experiencias", t("panel.experiencesTab")],
-            ["agenda", t("panel.schedule")],
-            ["vagas", t("panel.availability")],
-          ]
-        : [
-            ["", t("panel.overview")],
-            ["empresas", t("panel.companies")],
-            ["acessos", t("panel.permissions")],
-            ["cadastur", t("panel.directory")],
-            ["conteudos", t("panel.content")],
-          ];
+  const t = (key: Parameters<typeof translate>[1], values?: Record<string, string | number>) =>
+    translate(locale, key, values);
+  const definition = panelAreas[module];
+  const links = guideMode
+    ? [["", t("panel.myDepartures")] as const]
+    : definition.sections.map(({ path, labelKey }) => [path, t(labelKey)] as const);
   const suffix = companyId ? "?empresa=" + companyId : "";
   return (
     <div className="panel-app">
@@ -55,13 +44,7 @@ export async function PanelShell({
       </a>
       <aside className="panel-sidebar">
         <PlatformBrand />
-        <p className="sidebar-caption">
-          {module === "hotel"
-            ? t("panel.hotel")
-            : module === "passeios"
-              ? t("panel.experiences")
-              : t("panel.platform")}
-        </p>
+        <p className="sidebar-caption">{t(definition.titleKey)}</p>
         <nav aria-label={t("panel.nav")}>
           {links.map(([path, label]) => (
             <Link
@@ -72,9 +55,24 @@ export async function PanelShell({
               {label}
             </Link>
           ))}
-          {module === "plataforma" && <Link href="/painel/contato">{t("panel.contacts")}</Link>}
+          {definition.externalLinks.map(({ href, labelKey }) => (
+            <Link key={href} href={href}>
+              {t(labelKey)}
+            </Link>
+          ))}
         </nav>
         <div className="sidebar-bottom">
+          <Link href="/minha-conta/notificacoes" className="notification-nav-link">
+            {t("panel.notifications")}
+            {unreadNotifications > 0 && (
+              <span
+                className="notification-count"
+                aria-label={t("notifications.unreadCount", { count: unreadNotifications })}
+              >
+                {unreadNotifications}
+              </span>
+            )}
+          </Link>
           <Link href="/minha-conta">{t("panel.myAccount")}</Link>
           <Link href="/">{t("panel.visitSite")}</Link>
         </div>
@@ -87,16 +85,17 @@ export async function PanelShell({
           <SignOutButton />
         </header>
         <main id="conteudo" tabIndex={-1} className="panel-main">
-          {module !== "plataforma" && companies.length > 0 && (
+          {module !== "plataforma" && hasCompanies && (
             <form className="company-picker" method="get">
-              <label htmlFor="company-picker">{t("panel.company")}</label>
-              <select id="company-picker" name="empresa" defaultValue={companyId}>
-                {companies.map((company) => (
-                  <option key={company.id} value={company.id}>
-                    {companyDisplayName(company)}
-                  </option>
-                ))}
-              </select>
+              <PlatformOptionSelect
+                id="company-picker"
+                name="empresa"
+                label={t("panel.company")}
+                initialValue={companyId || ""}
+                entity="company"
+                companyKind={companyKind}
+                required
+              />
               <button className="button button-dark">{t("panel.select")}</button>
             </form>
           )}

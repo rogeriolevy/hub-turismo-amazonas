@@ -71,7 +71,7 @@ const steps = [
 export default function AboutPage() {
   return (
     <>
-      <Header />
+      <Header variant="institutional" />
       <LocalizedTree>
         <main id="conteudo" tabIndex={-1} className="about-page">
           <section className="about-hero" aria-labelledby="about-title">
@@ -252,14 +252,14 @@ export default function AboutPage() {
                   oficiais continuam fora do que está disponível nesta etapa.
                 </p>
               </div>
-              <Link className="about-now-link" href="/hospedagens">
-                Explore a Hub <ArrowRight size={17} aria-hidden="true" />
+              <Link className="about-now-link" href="/plataforma">
+                Acessar a plataforma <ArrowRight size={17} aria-hidden="true" />
               </Link>
             </div>
           </section>
         </main>
       </LocalizedTree>
-      <Footer />
+      <Footer variant="institutional" />
     </>
   );
 }

@@ -51,7 +51,10 @@ next-env.d.ts
 /test-results/
 /data/
 /backups/
+/public/uploads/
 /tmp/
+/infra/vps.env
+/infra/backups/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm

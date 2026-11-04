@@ -5,7 +5,7 @@ export type NavigationCity = (typeof navigationCities)[number];
 export type TransportMode = "fluvial" | "aereo";
 export type NavigationSource = {
   name: string;
-  url: string;
+  url?: string;
   note: string;
 };
 
@@ -29,6 +29,10 @@ export const navigationSources = {
     name: "Navegam · Maués → Parintins",
     url: "https://navegam.com.br/busca?ida=2026-10-02&type=ida&origem=39&destino=27&passageiros=1",
     note: "Consulta em 01/10/2026 para 02/10/2026 sem passagens exibidas. Isso não comprova ausência de transporte local ou em outras datas.",
+  },
+  parintinsPoster: {
+    name: "Quadro semanal enviado pelo usuário",
+    note: "Horários e embarcações transcritos da imagem recebida em 04/11/2026. A imagem não informa validade nem contatos; confirme a programação antes de viajar.",
   },
   navegamRamos: {
     name: "Navegam · Maués → Boa Vista do Ramos",
@@ -112,13 +116,13 @@ export const navigationRoutes: NavigationRoute[] = [
     origin: "Maués",
     destination: "Parintins",
     mode: "fluvial",
-    operator: "Trecho pesquisado · operador a confirmar",
+    operator: "Salmo 91, Dona Neyder e Daniel Tavares",
     summary:
-      "A busca para 02/10/2026 não exibiu passagens na Navegam. Verifique outras datas e consulte os operadores locais sobre saída direta ou escalas.",
-    schedule: "Horário, duração e embarcação a confirmar",
+      "O quadro semanal enviado informa embarcações e horários para este trecho. A programação não tem validade indicada; confirme a saída e o contato antes de viajar.",
+    schedule: "Quadro semanal enviado · horários e saídas a confirmar",
     price: null,
-    sourceIds: ["navegamParintins"],
-    action: { label: "Consultar o trecho", href: navigationSources.navegamParintins.url },
+    sourceIds: ["parintinsPoster", "navegamParintins"],
+    action: { label: "Ver horários", href: "#horarios-parintins" },
   },
   {
     id: "maues-ramos-fluvial",
@@ -244,6 +248,33 @@ export const vesselSchedules: VesselSchedule[] = [
     operator: "pp",
   },
   { direction: "manaus-maues", day: 6, vessel: "F/B Expresso PP", time: "17:00", operator: "pp" },
+];
+
+export type ParintinsDirection = "maues-parintins" | "parintins-maues";
+export type ParintinsVesselSchedule = {
+  direction: ParintinsDirection;
+  day: number;
+  vessel: string | null;
+  time: string | null;
+  contact: string | null;
+};
+
+// Transcribed from the user's undated image. Empty cells mean the source does not provide data.
+export const parintinsVesselSchedules: ParintinsVesselSchedule[] = [
+  { direction: "maues-parintins", day: 0, vessel: "Salmo 91", time: "17h", contact: null },
+  { direction: "maues-parintins", day: 1, vessel: null, time: null, contact: null },
+  { direction: "maues-parintins", day: 2, vessel: "Dona Neyder", time: "17h", contact: null },
+  { direction: "maues-parintins", day: 3, vessel: "Daniel Tavares", time: "17h", contact: null },
+  { direction: "maues-parintins", day: 4, vessel: "Salmo 91", time: "17h", contact: null },
+  { direction: "maues-parintins", day: 5, vessel: "Dona Neyder", time: "17h", contact: null },
+  { direction: "maues-parintins", day: 6, vessel: "Daniel Tavares", time: "17h", contact: null },
+  { direction: "parintins-maues", day: 0, vessel: "Dona Neyder", time: "17h", contact: null },
+  { direction: "parintins-maues", day: 1, vessel: "Daniel Tavares", time: "15h", contact: null },
+  { direction: "parintins-maues", day: 2, vessel: "Salmo 91", time: "16h", contact: null },
+  { direction: "parintins-maues", day: 3, vessel: "Dona Neyder", time: "17h", contact: null },
+  { direction: "parintins-maues", day: 4, vessel: "Daniel Tavares", time: "15h", contact: null },
+  { direction: "parintins-maues", day: 5, vessel: null, time: null, contact: null },
+  { direction: "parintins-maues", day: 6, vessel: "Salmo 91", time: "15h", contact: null },
 ];
 
 export const navigationPackages = [

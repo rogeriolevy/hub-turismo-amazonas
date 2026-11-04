@@ -1,0 +1,138 @@
+name: hub-turismo
+
+services:
+  postgres:
+    image: postgres:18.6-alpine
+    restart: unless-stopped
+    stop_grace_period: 1m
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "5"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in infra/vps.env}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in infra/vps.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in infra/vps.env}
+      HUB_DB_USER: ${HUB_DB_USER:?Set HUB_DB_USER in infra/vps.env}
+      HUB_DB_PASSWORD: ${HUB_DB_PASSWORD:?Set HUB_DB_PASSWORD in infra/vps.env}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./init-postgres-app-role.sh:/docker-entrypoint-initdb.d/010-create-hub-app-role.sh:ro
+      - ./migrate-postgres-app-role-bootstrap.sql:/tmp/hub-migrate-app-role-bootstrap.sql:ro
+      - ./migrate-postgres-app-role-objects.sql:/tmp/hub-migrate-app-role-objects.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - hub_private
+
+  web:
+    image: hub-turismo-amazonas:${APP_VERSION:?Set APP_VERSION in infra/vps.env}
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        SITE_URL: ${SITE_URL:?Set SITE_URL in infra/vps.env}
+    restart: unless-stopped
+    stop_grace_period: 30s
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "5"
+    init: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      APP_VERSION: ${APP_VERSION:?Set APP_VERSION in infra/vps.env}
+      NEXT_STANDALONE_SERVER: "true"
+      HOST: 0.0.0.0
+      PORT: 3000
+      AUTO_MIGRATE: "true"
+      CATALOG_MEDIA_STORAGE: postgres
+      SITE_URL: ${SITE_URL:?Set SITE_URL in infra/vps.env}
+      DATABASE_URL: postgresql://${HUB_DB_USER}:${HUB_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in infra/vps.env}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:?Set ADMIN_EMAILS in infra/vps.env}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      BOOKING_EMAIL_NOTIFICATIONS: ${BOOKING_EMAIL_NOTIFICATIONS:-false}
+      REQUIRE_EMAIL_VERIFICATION: ${REQUIRE_EMAIL_VERIFICATION:-false}
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:?Set TURNSTILE_SITE_KEY in infra/vps.env}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:?Set TURNSTILE_SECRET_KEY in infra/vps.env}
+      OSM_NOMINATIM_URL: ${OSM_NOMINATIM_URL:-https://nominatim.openstreetmap.org}
+      OSM_OVERPASS_URL: ${OSM_OVERPASS_URL:-https://overpass-api.de/api/interpreter}
+      TRUST_PROXY_IP_HEADER: x-real-ip
+    ports:
+      - "127.0.0.1:3005:3000"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - hub_private
+
+  booking-email-worker:
+    image: hub-turismo-amazonas:${APP_VERSION:?Set APP_VERSION in infra/vps.env}
+    command: ["node", "--experimental-strip-types", "scripts/booking-notification-worker.ts"]
+    restart: unless-stopped
+    stop_grace_period: 30s
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "5"
+    init: true
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      SITE_URL: ${SITE_URL:?Set SITE_URL in infra/vps.env}
+      DATABASE_URL: postgresql://${HUB_DB_USER}:${HUB_DB_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      BOOKING_EMAIL_NOTIFICATIONS: ${BOOKING_EMAIL_NOTIFICATIONS:-false}
+    healthcheck:
+      test: ["CMD", "node", "--experimental-strip-types", "scripts/check-booking-worker-health.ts"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 45s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - hub_private
+
+networks:
+  hub_private:
+
+volumes:
+  postgres_data:

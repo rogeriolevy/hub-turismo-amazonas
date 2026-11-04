@@ -1,11 +1,9 @@
 import {
   ArrowUpRight,
-  BedDouble,
-  BriefcaseBusiness,
-  Compass,
-  Ship,
-  Sparkles,
-  UtensilsCrossed,
+  ContactRound,
+  Grid2X2,
+  LogIn,
+  Settings2,
   UserRound,
   Waves,
 } from "lucide-react";
@@ -17,71 +15,100 @@ import { getLocale } from "@/lib/i18n/server";
 import { translate, type MessageKey } from "@/lib/i18n/messages";
 import { avatarKeyFromImage, defaultAvatarForUser } from "@/lib/profile-avatars";
 import { getSession } from "@/server/admin";
+import { PlatformNavigation } from "./platform-navigation";
 import "./navigation.css";
 
-const destinations = [
-  { href: "/hospedagens", key: "header.accommodations", icon: BedDouble },
-  { href: "/gastronomia", key: "header.food", icon: UtensilsCrossed },
-  { href: "/experiencias", key: "header.experiences", icon: Compass },
-  { href: "/agencias", key: "header.agencies", icon: BriefcaseBusiness },
-  { href: "/servicos", key: "header.services", icon: Sparkles },
-  { href: "/navegacao", key: "header.navigation", icon: Ship },
-];
+const institutionalLinks = [
+  { href: "/sobre", key: "header.about", icon: Waves },
+  { href: "/#contato", key: "header.contact", icon: ContactRound },
+] as const;
 
-const primaryLinks = [...destinations, { href: "/sobre", key: "header.about", icon: Waves }];
+const platformLinks = [
+  { href: "/hospedagens", key: "header.accommodations", icon: "accommodations" },
+  { href: "/navegacao", key: "header.navigation", icon: "navigation" },
+  { href: "/gastronomia", key: "header.food", icon: "food" },
+  { href: "/experiencias", key: "header.experiences", icon: "experiences" },
+  { href: "/agencias", key: "header.agencies", icon: "agencies" },
+  { href: "/servicos", key: "header.services", icon: "services" },
+] as const;
 
-const hubLinks = [
-  { href: "/sobre", key: "header.about" },
-  { href: "/privacidade", key: "footer.privacy" },
-  { href: "/painel/contato", key: "footer.admin" },
-];
+type NavigationVariant = "institutional" | "platform";
 
-export function Brand() {
-  return <PlatformBrand />;
+export function Brand({ variant = "platform" }: { variant?: NavigationVariant }) {
+  return <PlatformBrand homeHref={variant === "platform" ? "/plataforma" : "/"} />;
 }
-export async function Header() {
+export async function Header({ variant = "platform" }: { variant?: NavigationVariant } = {}) {
   const [session, locale] = await Promise.all([getSession().catch(() => null), getLocale()]);
   const t = (key: MessageKey) => translate(locale, key);
   const avatar = session
     ? (avatarKeyFromImage(session.user.image) ?? defaultAvatarForUser(session.user.id))
     : null;
+  const accountHref =
+    variant === "platform"
+      ? session
+        ? "/minha-conta"
+        : "/entrar?voltar=%2Fminha-conta"
+      : "/plataforma";
+  const accountLabel =
+    variant === "platform"
+      ? session
+        ? t("module.account")
+        : t("auth.login")
+      : t("header.account");
+  const AccountIcon = variant === "platform" ? (session ? UserRound : LogIn) : Grid2X2;
 
   return (
     <>
       <a className="skip-link" href="#conteudo">
         {t("header.skip")}
       </a>
-      <header className="site-header site-header--compact">
+      <header className={`site-header site-header--compact site-header--${variant}`}>
         <div className="container header-inner">
-          <Brand />
-          <nav className="header-primary-nav" aria-label={t("header.nav")}>
-            {primaryLinks.map(({ href, key, icon: Icon }) => (
-              <Link className="header-primary-link" href={href} key={href}>
-                <Icon size={17} strokeWidth={1.8} aria-hidden="true" />
-                <span>{t(key as MessageKey)}</span>
-              </Link>
-            ))}
-          </nav>
+          <Brand variant={variant} />
+          {variant === "platform" ? (
+            <PlatformNavigation
+              ariaLabel={t("header.nav")}
+              links={platformLinks.map(({ href, key, icon }) => ({
+                href,
+                label: t(key),
+                icon,
+              }))}
+            />
+          ) : (
+            <nav className="header-primary-nav" aria-label={t("header.nav")}>
+              {institutionalLinks.map(({ href, key, icon: Icon }) => (
+                <Link className="header-primary-link" href={href} key={href}>
+                  <Icon size={17} strokeWidth={1.8} aria-hidden="true" />
+                  <span>{t(key)}</span>
+                </Link>
+              ))}
+            </nav>
+          )}
           <LanguageSwitcher />
+          <Link
+            className="header-account"
+            href={accountHref}
+            aria-label={accountLabel}
+            title={accountLabel}
+          >
+            <AccountIcon size={17} aria-hidden="true" />
+            <span>{accountLabel}</span>
+          </Link>
           {session && avatar ? (
             <AccountMenu name={session.user.name} email={session.user.email} avatar={avatar} />
-          ) : (
-            <Link
-              className="header-account"
-              href="/minha-conta"
-              aria-label={t("header.account")}
-              title={t("header.account")}
-            >
-              <UserRound size={18} aria-hidden="true" />
-              <span>{t("header.account")}</span>
-            </Link>
-          )}
+          ) : null}
         </div>
       </header>
     </>
   );
 }
-export async function Footer({ photoCredit = true }: { photoCredit?: boolean }) {
+export async function Footer({
+  photoCredit = true,
+  variant = "platform",
+}: {
+  photoCredit?: boolean;
+  variant?: NavigationVariant;
+}) {
   const locale = await getLocale();
   const t = (key: MessageKey) => translate(locale, key);
   return (
@@ -89,33 +116,33 @@ export async function Footer({ photoCredit = true }: { photoCredit?: boolean }) 
       <div className="container">
         <div className="footer-map">
           <section className="footer-about" aria-label="Hub Turismo Amazonas">
-            <Brand />
+            <Brand variant={variant} />
             <p>{t("footer.tagline")}</p>
-            <Link className="footer-contact" href="/#contato">
-              {t("footer.contact")} <ArrowUpRight size={15} aria-hidden="true" />
-            </Link>
+            {variant === "institutional" ? (
+              <Link className="footer-contact" href="/#contato">
+                {t("footer.contact")} <ArrowUpRight size={15} aria-hidden="true" />
+              </Link>
+            ) : null}
           </section>
-          <nav className="footer-links" aria-label={t("footer.explore")}>
-            <h2>{t("footer.explore")}</h2>
-            <div className="footer-link-grid">
-              {destinations.map(({ href, key, icon: Icon }) => (
-                <Link className="footer-link" href={href} key={href}>
-                  <Icon size={17} strokeWidth={1.7} aria-hidden="true" />
-                  <span>{t(key as MessageKey)}</span>
-                </Link>
-              ))}
+          <nav className="footer-links" aria-label={t("footer.siteInfo")}>
+            <h2>{t("footer.siteInfo")}</h2>
+            <div className="footer-link-list">
+              <Link className="footer-link" href="/plataforma">
+                <Grid2X2 size={17} strokeWidth={1.7} aria-hidden="true" />
+                <span>{t("header.account")}</span>
+              </Link>
+              <Link className="footer-link" href="/painel/contato">
+                <Settings2 size={17} strokeWidth={1.7} aria-hidden="true" />
+                <span>{t("footer.admin")}</span>
+              </Link>
             </div>
           </nav>
         </div>
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} Hub Turismo Amazonas</span>
           <nav className="footer-meta-links" aria-label={t("footer.siteInfo")}>
-            <Link href="/minha-conta">{t("footer.account")}</Link>
-            {hubLinks.map((item) => (
-              <Link href={item.href} key={item.href}>
-                {t(item.key as MessageKey)}
-              </Link>
-            ))}
+            {variant === "institutional" ? <Link href="/sobre">{t("header.about")}</Link> : null}
+            <Link href="/privacidade">{t("footer.privacy")}</Link>
           </nav>
           {photoCredit && (
             <span>

@@ -9,14 +9,14 @@ export const metadata: Metadata = {
 export default function Privacy() {
   return (
     <>
-      <Header />
+      <Header variant="institutional" />
       <LocalizedTree>
         <main id="conteudo" tabIndex={-1} className="container prose">
           <p className="eyebrow">TRANSPARÊNCIA</p>
           <h1>Seu contato, com cuidado.</h1>
           <p>
             Este aviso explica como os dados enviados no site da Hub Turismo Amazonas são
-            utilizados. Atualizado em 3 de outubro de 2026.
+            utilizados. Atualizado em 14 de outubro de 2026.
           </p>
           <h2>O que você compartilha</h2>
           <p>
@@ -83,24 +83,24 @@ export default function Privacy() {
           </p>
           <h2>Sugestões de proximidade</h2>
           <p>
-            Ao abrir os detalhes de uma hospedagem, o servidor consulta os serviços públicos
-            Nominatim e Overpass do OpenStreetMap para localizar o estabelecimento e buscar pontos
-            de interesse em até 2 km. A consulta usa o nome, o endereço comercial e a cidade da
-            hospedagem quando esses dados estão disponíveis; não envia a localização nem outros
-            dados pessoais do visitante. Os resultados ficam em cache para reduzir consultas
-            externas. A distância exibida é aproximada, em linha reta, e o mapa colaborativo pode
-            não conter todos os locais. Os dados do OpenStreetMap são atribuídos aos seus
-            colaboradores sob a licença ODbL. O uso do serviço Nominatim segue sua{" "}
+            A seção envia ao Nominatim o nome, o endereço público e o município da hospedagem para
+            localizar o ponto e consulta o Overpass/OpenStreetMap para encontrar estabelecimentos
+            próximos. O servidor guarda os resultados em cache no banco para reduzir chamadas e
+            apresenta distâncias aproximadas. A localização do visitante não é enviada a esses
+            serviços. As chamadas ao Nominatim seguem a{" "}
             <a
               href="https://operations.osmfoundation.org/policies/nominatim/"
               target="_blank"
               rel="noreferrer"
             >
-              política de utilização
+              política de uso do Nominatim
             </a>
-            . Ao clicar em uma categoria ou em um estabelecimento, o Google Maps abre em outra aba
-            com a busca e as coordenadas públicas da hospedagem ou do local selecionado. A navegação
-            passa a seguir a{" "}
+            . Os dados são atribuídos ao{" "}
+            <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
+              OpenStreetMap
+            </a>
+            . Quando você abre uma busca, a referência pública da hospedagem e a categoria
+            consultada são enviadas ao Google Maps, que segue sua{" "}
             <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">
               política de privacidade do Google
             </a>
@@ -116,7 +116,7 @@ export default function Privacy() {
           </a>
         </main>
       </LocalizedTree>
-      <Footer />
+      <Footer variant="institutional" />
     </>
   );
 }

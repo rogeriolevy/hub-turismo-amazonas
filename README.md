@@ -1,8 +1,8 @@
-# Hub Turismo Amazonas — versão Node.js + SQLite
+# Hub Turismo Amazonas — Node.js, SQLite local e PostgreSQL na VPS
 
-Site institucional, diretórios de hospedagens, gastronomia, experiências, agências e serviços turísticos do Amazonas, navegação, contas de turistas, reservas por aprovação e painéis de empresas, em Next.js oficial com Node.js. Esta versão local é independente da publicação existente no Sites. Para hospedar o servidor Next.js no Render, consulte [Publicar no Render](docs/RENDER.md).
+Site institucional, diretórios de hospedagens, gastronomia, experiências, agências e serviços turísticos do Amazonas, navegação, contas de turistas, reservas por aprovação e painéis de empresas, em Next.js oficial com Node.js. Esta versão local é independente da publicação existente no Sites. A direção atual é evoluir a aplicação como monólito modular, com PostgreSQL e implantação reproduzível em VPS; consulte [Arquitetura evolutiva](docs/ARQUITETURA-EVOLUTIVA.md) e [Publicação](docs/DEPLOY.md).
 
-Para usar diariamente no Windows, iniciar o servidor, fazer backup ou recuperar o acesso, consulte [Uso local](docs/USO-LOCAL.md). A prioridade atual é a operação local; a publicação na VPS foi adiada pelo proprietário.
+Para usar diariamente no Windows, iniciar o servidor, fazer backup ou recuperar o acesso, consulte [Uso local](docs/USO-LOCAL.md).
 
 ## Começar
 
@@ -65,7 +65,7 @@ data/                 Banco local (ignorado)
 backups/              Backups locais (ignorados)
 ```
 
-Tecnologias: React 19, Next.js 16, TypeScript, Zod, Better Auth e better-sqlite3. A aplicação não utiliza Workers, D1 ou Drizzle. A conexão ativa é SQLite direto.
+Tecnologias: React 19, Next.js 16, TypeScript, Zod, Better Auth, better-sqlite3 e pg. O ambiente local usa SQLite direto por padrão; o perfil de VPS usa PostgreSQL por `DATABASE_URL`. Os dois bancos compartilham os serviços de aplicação, com migrações próprias para cada mecanismo. A publicação PostgreSQL ainda precisa de homologação antes da troca do domínio.
 
 ## Banco e autenticação
 
@@ -125,11 +125,11 @@ CI definido em .github/workflows/ci.yml: instalação pelo lockfile, configuraç
 
 SQL parametrizado, transação atômica para contatos, índice de idempotência e ordenação, paginação de 20 itens, página institucional pré-renderizada, catálogos dinâmicos, assets locais e cache privado/no-store na administração. Há validação de origem, cookies HttpOnly/SameSite e cookies Secure em HTTPS. Nenhum segredo deve ir para Git, public ou logs.
 
-As novas listas de reservas e inventário ainda não possuem paginação; o dimensionamento deve ser revisto com o aumento do volume. Contas básicas ainda não verificam o e-mail por mensagem: confirme a identidade diretamente antes de conceder acesso empresarial.
+As listas de reservas, estadias, cadastros operacionais, vínculos de acesso, empresas e conteúdo editorial usam paginação no banco, em blocos de 20 registros; o diretório Cadastur também é paginado e pesquisável. O acesso empresarial e a auditoria buscam opções de empresa no servidor, em páginas de 20. Os painéis usam contagens agregadas. A paginação opcional das APIs preserva a resposta anterior quando não é solicitada. Contas básicas ainda podem operar sem confirmação de e-mail para preservar contas migradas; confirme a identidade antes de conceder acesso empresarial.
 
 O CSP atual permite scripts inline necessários ao build; não é uma política de nonce estrita. Ao aumentar o uso de conteúdo dinâmico, reavaliar essa decisão. O proxy deve sobrescrever x-real-ip e o Node aceitar conexões somente do proxy para o rate limit por IP ser confiável.
 
-A aplicação precisa de disco persistente, HTTPS e backup fora da máquina. Consulte docs/DEPLOY.md. A versão publicada no Sites permanece separada. Os documentos anteriores em docs/ANALISE-E-ARQUITETURA.md e docs/VERIFICACAO-SITES.md descrevem a implementação antiga, não esta arquitetura.
+A aplicação precisa de HTTPS e backups fora da máquina. O PostgreSQL da VPS usa volume persistente; uploads de catálogo são armazenados na tabela `catalog_media`. Consulte [Publicação](docs/DEPLOY.md) e [Arquitetura evolutiva](docs/ARQUITETURA-EVOLUTIVA.md). A versão publicada no Sites permanece separada. Os documentos anteriores em docs/ANALISE-E-ARQUITETURA.md e docs/VERIFICACAO-SITES.md descrevem a implementação antiga, não esta arquitetura.
 
 ## Cadastur — v0.4.0
 

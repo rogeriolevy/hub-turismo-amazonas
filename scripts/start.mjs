@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = process.cwd();
@@ -22,10 +23,22 @@ if (autoMigrate) {
 
 const host = process.env.HOST || (onRender ? "0.0.0.0" : "127.0.0.1");
 const port = process.env.PORT || "3005";
+const standaloneServer = resolve(root, "server.js");
+const useStandalone = process.env.NEXT_STANDALONE_SERVER === "true";
+if (useStandalone && !existsSync(standaloneServer)) {
+  console.error("O servidor Next.js standalone não está presente na imagem.");
+  process.exit(1);
+}
 const nextCli = resolve(root, "node_modules", "next", "dist", "bin", "next");
-const child = spawn(process.execPath, [nextCli, "start", "--hostname", host, "--port", port], {
+const serverArguments = useStandalone
+  ? [standaloneServer]
+  : [nextCli, "start", "--hostname", host, "--port", port];
+const child = spawn(process.execPath, serverArguments, {
   cwd: root,
-  env: process.env,
+  env: {
+    ...process.env,
+    ...(useStandalone ? { HOSTNAME: host, PORT: port } : {}),
+  },
   stdio: "inherit",
   windowsHide: true,
 });
