@@ -68,3 +68,40 @@ test("new numbered migrations in both migration roots are allowed", () => {
   });
 });
 
+test("deleting baseline migrations from both roots fails with each path", () => {
+  withRepository((repo, base) => {
+    rmSync(join(repo, "db/migrations/001_initial.sql"));
+    rmSync(join(repo, "db/postgres-migrations/002_postgres.sql"));
+    const result = check(repo, base);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /db\/migrations\/001_initial\.sql/);
+    assert.match(result.stderr, /db\/postgres-migrations\/002_postgres\.sql/);
+  });
+});
+
+test("renaming baseline migrations in both roots fails with the original paths", () => {
+  withRepository((repo, base) => {
+    git(repo, "mv", "db/migrations/001_initial.sql", "db/migrations/003_renamed.sql");
+    git(repo, "mv", "db/postgres-migrations/002_postgres.sql", "db/postgres-migrations/004_renamed.sql");
+    const result = check(repo, base);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /db\/migrations\/001_initial\.sql/);
+    assert.match(result.stderr, /db\/postgres-migrations\/002_postgres\.sql/);
+  });
+});
+
+test("an invalid base revision fails closed with an actionable diagnostic", () => {
+  withRepository((repo) => {
+    const result = check(repo, "missing-base-revision");
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /base revision 'missing-base-revision' cannot be resolved/);
+  });
+});
+
+test("a missing base-ref argument fails closed with usage guidance", () => {
+  withRepository((repo) => {
+    const result = spawnSync(process.execPath, [checker], { cwd: repo, encoding: "utf8" });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /provide a base revision with --base-ref <revision>/);
+  });
+});
