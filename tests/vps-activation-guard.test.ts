@@ -318,6 +318,123 @@ for (const scenario of ["ledger-missing", "ledger-extra", "ledger-mismatch"]) {
   });
 }
 
+for (const [scenario, errorCode] of [
+  ["compose-service-drift", "COMPOSE_SERVICE_SET_INVALID"],
+  ["image-mismatch", "COMPOSE_APP_IMAGE_MISMATCH"],
+  ["postgres-unhealthy", "POSTGRES_NOT_HEALTHY"],
+] as const) {
+  test(`${scenario} is rejected during preflight without switching or Compose up`, async () => {
+    const fixture = await createFixture();
+    const result = runGuard(fixture, { simulate: true, scenario });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, new RegExp(`ERROR=${errorCode}`));
+    assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+    assert.doesNotMatch(await callLog(fixture), /\|up\|/);
+  });
+}
+
+test("migration checksum drift fails before switching or invoking Compose up", async () => {
+  const fixture = await createFixture();
+  await writeFile(
+    path.join(fixture.candidate, "db", "migrations", "001-fixture.sql"),
+    "SELECT 999;\n",
+  );
+  const result = runGuard(fixture, { simulate: true });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /ERROR=MIGRATION_SET_OR_CHECKSUM_DRIFT/);
+  assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+  assert.doesNotMatch(await callLog(fixture), /\|up\|/);
+});
+
+for (const change of ["added", "removed"] as const) {
+  test(`migration ${change} fails before switching or invoking Compose up`, async () => {
+    const fixture = await createFixture();
+    const migrationPath = path.join(fixture.candidate, "db", "migrations", "001-fixture.sql");
+    if (change === "added") {
+      await writeFile(
+        path.join(fixture.candidate, "db", "migrations", "003-extra.sql"),
+        "SELECT 3;\n",
+      );
+    } else {
+      await rm(migrationPath);
+    }
+    const result = runGuard(fixture, { simulate: true });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /ERROR=MIGRATION_SET_OR_CHECKSUM_DRIFT/);
+    assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+    assert.doesNotMatch(await callLog(fixture), /\|up\|/);
+  });
+}
+
+test("environment or Compose content drift fails before switching or invoking Compose up", async () => {
+  const fixture = await createFixture();
+  await writeFile(
+    path.join(fixture.candidate, "infra", "vps.env"),
+    "APP_VERSION=0.12.14\nSITE_URL=https://other.invalid\n",
+  );
+  const envResult = runGuard(fixture, { simulate: true });
+  assert.notEqual(envResult.status, 0);
+  assert.match(envResult.stderr, /ERROR=ENVIRONMENT_CONTENT_DRIFT/);
+  assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+  assert.doesNotMatch(await callLog(fixture), /\|up\|/);
+
+  const composeFixture = await createFixture();
+  await writeFile(
+    path.join(composeFixture.candidate, "infra", "compose.vps.yaml"),
+    "name: changed\nservices: {}\n",
+  );
+  const composeResult = runGuard(composeFixture, { simulate: true });
+  assert.notEqual(composeResult.status, 0);
+  assert.match(composeResult.stderr, /ERROR=COMPOSE_FILE_DRIFT/);
+  assert.equal(await currentTarget(composeFixture), await realpath(composeFixture.previous));
+  assert.doesNotMatch(await callLog(composeFixture), /\|up\|/);
+});
+
+for (const scenario of [
+  "health-fail-candidate",
+  "worker-fail-candidate",
+  "post-ledger-missing",
+  "post-ledger-extra",
+  "post-ledger-mismatch",
+  "postgres-unhealthy-candidate",
+  "postgres-id-drift",
+  "postgres-image-drift",
+  "postgres-volume-drift",
+  "post-counts-drift",
+  "post-ledger-hash-drift",
+  "database-not-postgres-candidate",
+  "version-mismatch-candidate",
+]) {
+  test(`${scenario} rolls current back and restarts only web and worker`, async () => {
+    const fixture = await createFixture();
+    const result = runGuard(fixture, { simulate: true, scenario });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /ROLLBACK=passed/);
+    assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+    const upCalls = (await callLog(fixture)).split("\n").filter((line) => line.startsWith("up|"));
+    assert.equal(upCalls.length, 2);
+    assert.ok(upCalls.every((line) => line.endsWith("|web booking-email-worker")));
+  });
+}
+
+test("rollback failure returns the distinct terminal code 90", async () => {
+  const fixture = await createFixture();
+  const result = runGuard(fixture, { simulate: true, scenario: "health-fail-rollback-fail" });
+
+  assert.equal(result.status, 90);
+  assert.match(result.stderr, /ACTIVATION=failed/);
+  assert.match(result.stderr, /ROLLBACK=failed/);
+  assert.match(result.stderr, /ORIGINAL_EXIT=1/);
+  assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+  const upCalls = (await callLog(fixture)).split("\n").filter((line) => line.startsWith("up|"));
+  assert.equal(upCalls.length, 2);
+  assert.ok(upCalls.every((line) => line.endsWith("|web booking-email-worker")));
+});
+
 test("test mode rejects production flags and roots under the production release path", async () => {
   const fixture = await createFixture();
   const productionFlags = runGuard(fixture, {
