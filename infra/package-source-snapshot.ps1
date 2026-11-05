@@ -68,10 +68,6 @@ try {
   Assert-ContainedPath -Parent $temporaryRoot -Child (Resolve-Path -LiteralPath $stageDirectory).Path -Description "A pasta temporária resolvida"
 
   $excludedPathPattern = '(^|/)(\.git|node_modules|\.next|tmp|data|backups|output|coverage|test-results|public/uploads|\.planning|\.codex|\.agents|\.sites-runtime|\.vercel|\.ssh|secrets|credentials)(/|$)|(^|/)\.env[^/]*$|(^|/)[^/]+\.env$|(^|/)\.npmrc$|(^|/)(authorized_keys|known_hosts)$|(^|/)(id_rsa|id_ed25519|id_ecdsa|id_dsa)(\.pub)?$|(^|/)[^/]*\.(sqlite|pem|key|p12|pfx|ppk|crt|p7b|secret)([-.].*)?$'
-  $gitPaths = @(& git -C $repoRoot -c core.quotepath=false ls-files --cached --others --exclude-standard)
-  if ($LASTEXITCODE -ne 0) {
-    throw "Não foi possível listar as fontes pelo Git."
-  }
   $gitStatusLines = @(& git -C $repoRoot -c core.quotepath=false status --porcelain=v1 --untracked-files=all --no-renames)
   if ($LASTEXITCODE -ne 0) {
     throw "Não foi possível capturar o estado Git das fontes."
@@ -90,13 +86,42 @@ try {
     $statusPath = $line.Substring(3).Replace('\', '/')
     $gitStatusByPath[$statusPath] = $statusCode
   }
+  foreach ($statusPath in @($gitStatusByPath.Keys)) {
+    if ($gitStatusByPath[$statusPath] -eq "??" -and $statusPath -notmatch $excludedPathPattern) {
+      throw "Fonte não rastreada não pode entrar no snapshot aprovado pelo Git: $statusPath"
+    }
+  }
   $trackedPathSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
   foreach ($trackedPath in $trackedPaths) {
     [void]$trackedPathSet.Add(([string]$trackedPath).Replace('\', '/'))
   }
 
+  $gitHead = (& git -C $repoRoot rev-parse HEAD).Trim()
+  if ($LASTEXITCODE -ne 0 -or $gitHead -notmatch '^[a-f0-9]{40,64}$') {
+    throw "Não foi possível identificar o commit base do snapshot."
+  }
+  $gitTree = (& git -C $repoRoot rev-parse "$gitHead^{tree}").Trim()
+  if ($LASTEXITCODE -ne 0 -or $gitTree -notmatch '^[a-f0-9]{40,64}$') {
+    throw "Não foi possível identificar a árvore de fontes do commit aprovado."
+  }
+
+  foreach ($gitPath in $trackedPaths) {
+    $relativePath = ([string]$gitPath).Replace('\', '/')
+    if ($relativePath -match $excludedPathPattern) {
+      continue
+    }
+    $rawStatus = if ($gitStatusByPath.ContainsKey($relativePath)) { [string]$gitStatusByPath[$relativePath] } else { "  " }
+    if ($rawStatus -ne "  ") {
+      throw "Fonte rastreada alterada ou adicionada fora do commit aprovado: $relativePath ($rawStatus)"
+    }
+    $sourcePath = Join-Path $repoRoot ($relativePath.Replace('/', [System.IO.Path]::DirectorySeparatorChar))
+    if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
+      throw "Fonte rastreada ausente na cópia de trabalho: $relativePath"
+    }
+  }
+
   $sourceFiles = [System.Collections.Generic.List[object]]::new()
-  foreach ($gitPath in ($gitPaths | Sort-Object -Unique)) {
+  foreach ($gitPath in ($trackedPaths | Sort-Object -Unique)) {
     $relativePath = ([string]$gitPath).Replace('\', '/')
     if ($relativePath -match $excludedPathPattern) {
       continue
@@ -105,30 +130,20 @@ try {
       throw "Caminho de fonte inválido: $relativePath"
     }
 
+    $rawStatus = if ($gitStatusByPath.ContainsKey($relativePath)) { [string]$gitStatusByPath[$relativePath] } else { "  " }
+    if ($rawStatus -ne "  ") {
+      throw "Fonte rastreada alterada ou adicionada fora do commit aprovado: $relativePath ($rawStatus)"
+    }
+
     $sourcePath = Join-Path $repoRoot ($relativePath.Replace('/', [System.IO.Path]::DirectorySeparatorChar))
     if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
-      continue
+      throw "Fonte rastreada ausente na cópia de trabalho: $relativePath"
     }
     $resolvedSourcePath = (Resolve-Path -LiteralPath $sourcePath).Path
     Assert-ContainedPath -Parent $repoRoot -Child $resolvedSourcePath -Description "A fonte"
     $sourceItem = Get-Item -LiteralPath $sourcePath -Force
     if (($sourceItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
       throw "Links simbólicos não são incluídos no snapshot: $relativePath"
-    }
-
-    $rawStatus = if ($gitStatusByPath.ContainsKey($relativePath)) { [string]$gitStatusByPath[$relativePath] } else { "  " }
-    $statusLabel = if ($rawStatus -eq "??") {
-      "untracked"
-    } elseif ($rawStatus.Contains('U')) {
-      "conflicted"
-    } elseif ($rawStatus.Contains('A')) {
-      "added"
-    } elseif ($rawStatus.Contains('R')) {
-      "renamed"
-    } elseif ($rawStatus.Contains('M')) {
-      "modified"
-    } else {
-      "tracked"
     }
 
     $targetPath = Join-Path $stageSource ($relativePath.Replace('/', [System.IO.Path]::DirectorySeparatorChar))
@@ -142,7 +157,7 @@ try {
         sha256        = $fileHash
         bytes         = $sourceItem.Length
         gitStatus     = $rawStatus
-        gitStatusLabel = $statusLabel
+        gitStatusLabel = "tracked"
         gitTracked    = $trackedPathSet.Contains($relativePath)
       }
     )
@@ -152,17 +167,29 @@ try {
     throw "Nenhum arquivo de fonte foi selecionado para o snapshot."
   }
 
-  $gitHead = (& git -C $repoRoot rev-parse HEAD).Trim()
+  $finalGitStatusLines = @(& git -C $repoRoot -c core.quotepath=false status --porcelain=v1 --untracked-files=all --no-renames)
   if ($LASTEXITCODE -ne 0) {
-    throw "Não foi possível identificar o commit base do snapshot."
+    throw "Não foi possível reconferir o estado Git após copiar as fontes."
   }
+  foreach ($line in $finalGitStatusLines) {
+    if ($line.Length -lt 4) {
+      continue
+    }
+    $statusPath = $line.Substring(3).Replace('\', '/')
+    if ($statusPath -notmatch $excludedPathPattern) {
+      throw "O estado das fontes mudou durante a criação do snapshot: $statusPath"
+    }
+  }
+
   $manifest = [ordered]@{
-    format                 = "hub-source-snapshot-v1"
+    format                 = "hub-source-snapshot-v2"
     createdAtUtc           = [DateTime]::UtcNow.ToString("o")
     packageVersion         = $version
     gitHead                = $gitHead
-    gitStatusLineCount     = $gitStatusLines.Count
-    gitWorkingTreeClean    = ($gitStatusLines.Count -eq 0)
+    gitTree                = $gitTree
+    repositoryGitStatusLineCount = $gitStatusLines.Count
+    sourceGitStatusLineCount = 0
+    sourceGitWorkingTreeClean = $true
     excludedPathPattern    = $excludedPathPattern
     sourceFileCount        = $sourceFiles.Count
     files                  = $sourceFiles

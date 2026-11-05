@@ -105,15 +105,22 @@ for (const [name, expectedHash] of [
 const sourceManifestBytes = await readFile(join(bundleDirectory, manifest.sourceSnapshotManifest));
 const sourceManifest = JSON.parse(sourceManifestBytes.toString("utf8"));
 if (
-  sourceManifest.format !== "hub-source-snapshot-v1" ||
+  sourceManifest.format !== "hub-source-snapshot-v2" ||
   sourceManifest.packageVersion !== version ||
+  !/^[a-f0-9]{40,64}$/.test(sourceManifest.gitHead) ||
+  !/^[a-f0-9]{40,64}$/.test(sourceManifest.gitTree) ||
+  sourceManifest.gitHead !== manifest.sourceGitBaseCommit ||
+  sourceManifest.gitTree !== manifest.sourceGitTree ||
   sourceManifest.excludedPathPattern !== expectedExcludedPathPattern ||
-  typeof sourceManifest.gitWorkingTreeClean !== "boolean" ||
+  sourceManifest.sourceGitStatusLineCount !== 0 ||
+  sourceManifest.sourceGitWorkingTreeClean !== true ||
+  !Number.isSafeInteger(sourceManifest.repositoryGitStatusLineCount) ||
+  sourceManifest.repositoryGitStatusLineCount < 0 ||
   !Array.isArray(sourceManifest.files) ||
   sourceManifest.sourceFileCount !== sourceManifest.files.length ||
   sourceManifest.sourceFileCount !== manifest.sourceFileCount ||
-  sourceManifest.gitStatusLineCount !== manifest.sourceGitStatusLineCount ||
-  sourceManifest.gitWorkingTreeClean !== manifest.sourceGitWorkingTreeClean
+  sourceManifest.sourceGitStatusLineCount !== manifest.sourceGitStatusLineCount ||
+  sourceManifest.sourceGitWorkingTreeClean !== manifest.sourceGitWorkingTreeClean
 )
   throw new Error("Manifesto de fontes inconsistente com o pacote ou com a versão.");
 
@@ -168,10 +175,9 @@ for (const file of sourceManifest.files) {
     file.bytes > maximumSourceEntryBytes ||
     typeof file.gitStatus !== "string" ||
     !/^(  |[ MADRCU?!]{2})$/.test(file.gitStatus) ||
-    !["tracked", "modified", "added", "renamed", "conflicted", "untracked"].includes(file.gitStatusLabel) ||
-    typeof file.gitTracked !== "boolean" ||
-    (file.gitStatusLabel === "untracked" && (file.gitStatus !== "??" || file.gitTracked)) ||
-    (file.gitStatusLabel === "tracked" && (!file.gitTracked || file.gitStatus !== "  ")) ||
+    file.gitStatusLabel !== "tracked" ||
+    file.gitTracked !== true ||
+    file.gitStatus !== "  " ||
     sourceFiles.has(file.path)
   )
     throw new Error(

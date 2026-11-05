@@ -204,7 +204,7 @@ try {
 Status: somente local, não publicada. A produção foi verificada em 0.12.0; este pacote não altera a VPS.
 
 Esta candidata reúne a imagem e as fontes do mesmo snapshot: ``$($snapshotResult.Directory)``.
-O manifesto registra hash, tamanho e estado Git de cada arquivo incluído, inclusive arquivos locais ainda não adotados.
+O manifesto fixa o commit/árvore aprovados e registra hash e tamanho de cada fonte rastreada. O gerador recusa fontes alteradas ou não rastreadas, e valida os hashes de cada entrada do ZIP contra o manifesto.
 
 - ``databaseMigration: false``; nenhum dado ou schema foi alterado.
 - ``externalBackupValidated: false``; não transferir nem publicar até validar uma cópia externa e uma restauração isolada.
@@ -212,7 +212,7 @@ O manifesto registra hash, tamanho e estado Git de cada arquivo incluído, inclu
 "@
   [System.IO.File]::WriteAllText($readmePath, $readme, [System.Text.UTF8Encoding]::new($false))
 
-  $gitStatusCount = [int]$sourceManifest.gitStatusLineCount
+  $gitStatusCount = [int]$sourceManifest.sourceGitStatusLineCount
   $repoPrefix = $repoRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
   $relativeSourceDirectory = $sourceDirectory.Substring($repoPrefix.Length).Replace('\', '/') + '/'
   $manifest = [ordered]@{
@@ -245,7 +245,8 @@ O manifesto registra hash, tamanho e estado Git de cada arquivo incluído, inclu
     sourceSnapshotManifest = "SOURCE-MANIFEST.json"
     sourceSnapshotManifestSha256 = $sourceManifestSha256
     sourceGitBaseCommit = [string]$sourceManifest.gitHead
-    sourceGitWorkingTreeClean = [bool]$sourceManifest.gitWorkingTreeClean
+    sourceGitTree = [string]$sourceManifest.gitTree
+    sourceGitWorkingTreeClean = [bool]$sourceManifest.sourceGitWorkingTreeClean
     sourceGitStatusLineCount = $gitStatusCount
     sourceFileCount = [int]$sourceManifest.sourceFileCount
     sourceFiles = @($sourceManifest.files)
