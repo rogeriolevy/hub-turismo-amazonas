@@ -12,13 +12,23 @@ import { authOptions } from "../server/auth-config.ts";
 import { resetAdminPassword, verifyStoredPassword } from "../scripts/admin-credentials.ts";
 import { verifyPlatformHttp } from "./platform-http.ts";
 
+const inheritedDatabaseSelectors = ["DATABASE_URL", "POSTGRES_URL"].filter(
+  (name) => process.env[name] !== undefined,
+);
+if (inheritedDatabaseSelectors.length) {
+  throw new Error(
+    `Unsafe integration environment: unset ${inheritedDatabaseSelectors.join(" and ")} before running; no temporary database or server was started.`,
+  );
+}
+
 mkdirSync("tmp", { recursive: true });
 const directory = mkdtempSync(resolve("tmp/integration-"));
+const databasePath = resolve(directory, "hub.sqlite");
 const base = "http://127.0.0.1:3100";
 const email = "admin@example.test";
 let password = ' Árvore@"$`\\-' + randomBytes(24).toString("base64url") + "! ";
 process.env.SITE_URL = base;
-process.env.DATABASE_PATH = resolve(directory, "hub.sqlite");
+process.env.DATABASE_PATH = databasePath;
 process.env.BETTER_AUTH_SECRET = randomBytes(48).toString("base64url");
 process.env.ADMIN_EMAILS = email;
 process.env.TRUST_PROXY_IP_HEADER = "";
@@ -40,13 +50,21 @@ await provision.api.signUpEmail({
 });
 process.env.TURNSTILE_SITE_KEY = "1x00000000000000000000AA";
 process.env.TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA";
+const serverEnv: NodeJS.ProcessEnv = {
+  ...process.env,
+  NODE_ENV: "production",
+  TZ: "Pacific/Kiritimati",
+  DATABASE_PATH: databasePath,
+};
+delete serverEnv.DATABASE_URL;
+delete serverEnv.POSTGRES_URL;
 const server = spawn(
   process.execPath,
   process.argv.includes("--preview")
     ? ["tests/preview-server.mjs"]
     : ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", "3100"],
   {
-    env: { ...process.env, NODE_ENV: "production", TZ: "Pacific/Kiritimati" },
+    env: serverEnv,
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
   },
