@@ -1,0 +1,355 @@
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import {
+  chmod,
+  lstat,
+  mkdtemp,
+  mkdir,
+  readFile,
+  realpath,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { after, test } from "node:test";
+
+const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const activationScript = path.join(repositoryRoot, "infra", "activate-vps-release.sh");
+const gitBash = process.env.GIT_BASH_EXE ?? "C:/Program Files/Git/bin/bash.exe";
+const cygpath = process.env.CYGPATH_EXE ?? "C:/Program Files/Git/usr/bin/cygpath.exe";
+const fixtureDirectories: string[] = [];
+
+const fakeDocker = `#!/usr/bin/env bash
+# hub-activation-fake-runtime-v1
+set -euo pipefail
+printf 'docker' >> "$FIXTURE_ROOT/calls.log"
+for argument in "$@"; do printf '|%s' "$argument" >> "$FIXTURE_ROOT/calls.log"; done
+printf '\\n' >> "$FIXTURE_ROOT/calls.log"
+
+active_release() { readlink -f "$FIXTURE_ROOT/current"; }
+version_from_release() { awk -F '"' '/^[[:space:]]*"version"[[:space:]]*:/ { print $4; exit }' "$1/package.json"; }
+active_version() { version_from_release "$(active_release)"; }
+
+if [[ "$1" == "info" ]]; then exit 0; fi
+if [[ "$1" == "compose" ]]; then
+  shift
+  release=""
+  action=""
+  config_option=""
+  service=""
+  while (($#)); do
+    case "$1" in
+      --env-file) shift 2 ;;
+      -f) compose_file="$2"; release="$(dirname "$(dirname "$compose_file")")"; shift 2 ;;
+      config|ps|up) action="$1"; shift; break ;;
+      *) shift ;;
+    esac
+  done
+  if [[ "$action" == "config" ]]; then
+    for argument in "$@"; do config_option="$argument"; done
+    case "$config_option" in
+      --quiet) exit 0 ;;
+      --services)
+        printf 'postgres\\nweb\\nbooking-email-worker\\n'
+        if [[ "\${HUB_GUARD_SCENARIO:-}" == compose-service-drift && "$(version_from_release "$release")" == 0.12.14 ]]; then printf 'proxy\\n'; fi
+        exit 0
+        ;;
+      --images)
+        version="$(version_from_release "$release")"
+        if [[ "\${HUB_GUARD_SCENARIO:-}" == image-mismatch && "$version" == 0.12.14 ]]; then printf 'unexpected-image\\n'; exit 0; fi
+        printf 'hub-turismo-amazonas:%s\\nhub-turismo-amazonas:%s\\npostgres:18.6-alpine\\n' "$version" "$version"
+        exit 0
+        ;;
+    esac
+  fi
+  if [[ "$action" == "ps" ]]; then
+    service="\${@: -1}"
+    case "$service" in
+      postgres)
+        if [[ "\${HUB_GUARD_SCENARIO:-}" == postgres-id-drift && "$(active_version)" == 0.12.14 ]]; then printf 'pg-fixture-candidate\\n'; else printf 'pg-fixture\\n'; fi
+        ;;
+      web) printf 'web-%s\\n' "$(version_from_release "$release")" ;;
+      booking-email-worker) printf 'worker-%s\\n' "$(version_from_release "$release")" ;;
+      *) exit 31 ;;
+    esac
+    exit 0
+  fi
+  if [[ "$action" == "up" ]]; then
+    expected_services='web booking-email-worker'
+    actual_services="$(printf '%s ' "$@" | sed -E 's/.*--no-build //')"
+    actual_services="$(xargs <<<"$actual_services")"
+    [[ "$actual_services" == "$expected_services" ]] || exit 32
+    version="$(version_from_release "$release")"
+    printf 'up|%s|%s\\n' "$version" "$actual_services" >> "$FIXTURE_ROOT/calls.log"
+    if [[ "\${HUB_GUARD_SCENARIO:-}" == health-fail-rollback-fail && "$version" == 0.12.13 ]]; then exit 45; fi
+    exit 0
+  fi
+fi
+
+if [[ "$1" == "image" && "$2" == "inspect" ]]; then
+  image="\${@: -1}"
+  printf 'sha256:fixture-%s\\n' "\${image##*:}"
+  exit 0
+fi
+
+if [[ "$1" == "inspect" ]]; then
+  format="$3"
+  case "$format" in
+    *State.Health*)
+      inspected="\${@: -1}"
+      if [[ "$inspected" == pg-fixture* && ( "\${HUB_GUARD_SCENARIO:-}" == postgres-unhealthy || ( "\${HUB_GUARD_SCENARIO:-}" == postgres-unhealthy-candidate && "$(active_version)" == 0.12.14 ) ) ]]; then printf 'unhealthy\\n'; else printf 'healthy\\n'; fi
+      ;;
+    *Config.Image*)
+      if [[ "\${HUB_GUARD_SCENARIO:-}" == postgres-image-drift && "$(active_version)" == 0.12.14 ]]; then printf 'postgres:18.7-alpine\\n'; else printf 'postgres:18.6-alpine\\n'; fi
+      ;;
+    *Mounts*)
+      if [[ "\${HUB_GUARD_SCENARIO:-}" == postgres-volume-drift && "$(active_version)" == 0.12.14 ]]; then printf 'hub-fixture-postgres-data-changed\\n'; else printf 'hub-fixture-postgres-data\\n'; fi
+      ;;
+    *) exit 33 ;;
+  esac
+  exit 0
+fi
+
+if [[ "$1" == "exec" ]]; then
+  command_line="$*"
+  if [[ "$command_line" == *verify-postgres-migration-ledger.ts* ]]; then
+    scenario="\${HUB_GUARD_SCENARIO:-}"
+    active="$(active_version)"
+    if [[ "$scenario" == ledger-missing || ( "$scenario" == post-ledger-missing && "$active" == 0.12.14 ) ]]; then
+      printf '{"expectedCount":1,"actualCount":1,"missing":["x.sql"],"extra":[],"mismatched":[]}\\n'
+      exit 2
+    fi
+    if [[ "$scenario" == ledger-extra || ( "$scenario" == post-ledger-extra && "$active" == 0.12.14 ) ]]; then
+      printf '{"expectedCount":1,"actualCount":1,"missing":[],"extra":["x.sql"],"mismatched":[]}\\n'
+      exit 2
+    fi
+    if [[ "$scenario" == ledger-mismatch || ( "$scenario" == post-ledger-mismatch && "$active" == 0.12.14 ) ]]; then
+      printf '{"expectedCount":1,"actualCount":1,"missing":[],"extra":[],"mismatched":["x.sql"]}\\n'
+      exit 2
+    fi
+    printf '{"expectedCount":1,"actualCount":1,"missing":[],"extra":[],"mismatched":[]}\\nPOSTGRES_MIGRATION_LEDGER=match\\n'
+    exit 0
+  fi
+  if [[ "$command_line" == *verify-vps-health.mjs* ]]; then exit 0; fi
+  if [[ "$command_line" == *check-booking-worker-health.ts* ]]; then
+    if [[ "\${HUB_GUARD_SCENARIO:-}" == worker-fail-candidate && "$(active_version)" == 0.12.14 ]]; then exit 1; fi
+    printf 'booking_email_worker_health_check_ok\\n'
+    exit 0
+  fi
+  if [[ "$command_line" == *'--input-type=module -'* ]]; then
+    count=7
+    if [[ "\${HUB_GUARD_SCENARIO:-}" == post-counts-drift && "$(active_version)" == 0.12.14 ]]; then count=8; fi
+    ledger_hash=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    if [[ "\${HUB_GUARD_SCENARIO:-}" == post-ledger-hash-drift && "$(active_version)" == 0.12.14 ]]; then ledger_hash=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb; fi
+    printf 'DB_COUNTS={"accounts":"%s"}\\nLEDGER_SHA256=%s\\n' "$count" "$ledger_hash"
+    exit 0
+  fi
+fi
+
+printf 'unexpected fake docker command\\n' >&2
+exit 34
+`;
+
+const fakeCurl = `#!/usr/bin/env bash
+# hub-activation-fake-runtime-v1
+set -euo pipefail
+printf 'curl' >> "$FIXTURE_ROOT/calls.log"
+for argument in "$@"; do printf '|%s' "$argument" >> "$FIXTURE_ROOT/calls.log"; done
+printf '\\n' >> "$FIXTURE_ROOT/calls.log"
+version="$(awk -F '"' '/^[[:space:]]*"version"[[:space:]]*:/ { print $4; exit }' "$(readlink -f "$FIXTURE_ROOT/current")/package.json")"
+status=ok
+if [[ ( "\${HUB_GUARD_SCENARIO:-}" == health-fail-candidate || "\${HUB_GUARD_SCENARIO:-}" == health-fail-rollback-fail ) && "$version" == 0.12.14 ]]; then status=degraded; fi
+database=postgresql
+if [[ "\${HUB_GUARD_SCENARIO:-}" == database-not-postgres-candidate && "$version" == 0.12.14 ]]; then database=sqlite; fi
+if [[ "\${HUB_GUARD_SCENARIO:-}" == version-mismatch-candidate && "$version" == 0.12.14 ]]; then version=0.12.13; fi
+printf '{"status":"%s","version":"%s","database":"%s"}\\n' "$status" "$version" "$database"
+`;
+
+const fixtureSetCurrent = `param(
+  [Parameter(Mandatory = $true)][string]$FixtureRoot,
+  [Parameter(Mandatory = $true)][string]$Current,
+  [Parameter(Mandatory = $true)][string]$Target
+)
+$ErrorActionPreference = 'Stop'
+# hub-activation-fake-runtime-v1
+$root = [System.IO.Path]::GetFullPath($FixtureRoot).TrimEnd('\\') + '\\'
+$currentPath = [System.IO.Path]::GetFullPath($Current)
+$targetPath = [System.IO.Path]::GetFullPath($Target)
+if (!(Test-Path -LiteralPath (Join-Path $FixtureRoot '.hub-activation-fixture'))) { throw 'fixture sentinel missing' }
+if (!(Get-Content -LiteralPath (Join-Path $FixtureRoot '.hub-activation-fixture') -Raw).Contains('hub-activation-test-fixture-v1')) { throw 'fixture sentinel invalid' }
+if (!$currentPath.StartsWith($root, [System.StringComparison]::OrdinalIgnoreCase)) { throw 'current outside fixture' }
+if (!$targetPath.StartsWith($root, [System.StringComparison]::OrdinalIgnoreCase)) { throw 'target outside fixture' }
+$currentItem = Get-Item -LiteralPath $Current -Force
+if (($currentItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -eq 0) { throw 'current is not a junction' }
+[System.IO.Directory]::Delete($currentPath, $false)
+New-Item -ItemType Junction -Path $currentPath -Target $targetPath | Out-Null
+`;
+
+function commandOutput(file: string, args: string[]): string {
+  const result = spawnSync(file, args, { encoding: "utf8", windowsHide: true });
+  assert.equal(result.error, undefined, result.error?.message);
+  assert.equal(result.status, 0, result.stderr || `Command exited ${result.status}`);
+  return result.stdout.trim();
+}
+
+function toPosixPath(windowsPath: string): string {
+  return commandOutput(cygpath, ["-u", windowsPath]);
+}
+
+async function createFixture() {
+  const root = await mkdtemp(path.join(os.tmpdir(), "hub-vps-activation-"));
+  fixtureDirectories.push(root);
+  const posixRoot = toPosixPath(root);
+  const candidate = path.join(root, "release-candidate");
+  const previous = path.join(root, "release-previous");
+  const fakeBin = path.join(root, "fake-bin");
+  await mkdir(fakeBin, { recursive: true });
+  await writeFile(path.join(root, ".hub-activation-fixture"), "hub-activation-test-fixture-v1\n");
+  await writeFile(path.join(fakeBin, ".hub-fake-runtime"), "hub-activation-fake-runtime-v1\n");
+  await writeFile(path.join(fakeBin, "docker"), fakeDocker);
+  await writeFile(path.join(fakeBin, "curl"), fakeCurl);
+  await writeFile(path.join(fakeBin, "set-current.ps1"), fixtureSetCurrent);
+  await chmod(path.join(fakeBin, "docker"), 0o755);
+  await chmod(path.join(fakeBin, "curl"), 0o755);
+
+  const compose =
+    "name: hub-turismo\nservices:\n  postgres:\n    image: postgres:18.6-alpine\n  web:\n    image: hub-turismo-amazonas:${APP_VERSION}\n  booking-email-worker:\n    image: hub-turismo-amazonas:${APP_VERSION}\n";
+  for (const [release, version] of [
+    [candidate, "0.12.14"],
+    [previous, "0.12.13"],
+  ] as const) {
+    await mkdir(path.join(release, "infra"), { recursive: true });
+    await mkdir(path.join(release, "db", "migrations"), { recursive: true });
+    await mkdir(path.join(release, "db", "postgres-migrations"), { recursive: true });
+    await writeFile(
+      path.join(release, "package.json"),
+      JSON.stringify({ name: "hub-turismo-amazonas", version }, null, 2) + "\n",
+    );
+    await writeFile(path.join(release, "infra", "compose.vps.yaml"), compose);
+    await writeFile(
+      path.join(release, "infra", "vps.env"),
+      `APP_VERSION=${version}\nSITE_URL=https://fixture.invalid\n`,
+    );
+    await writeFile(path.join(release, "db", "migrations", "001-fixture.sql"), "SELECT 1;\n");
+    await writeFile(
+      path.join(release, "db", "postgres-migrations", "002-fixture.sql"),
+      "SELECT 2;\n",
+    );
+  }
+  await symlink(
+    previous,
+    path.join(root, "current"),
+    process.platform === "win32" ? "junction" : "dir",
+  );
+  return { root, posixRoot, candidate, previous, fakeBin, posixFakeBin: toPosixPath(fakeBin) };
+}
+
+function runGuard(
+  fixture: Awaited<ReturnType<typeof createFixture>>,
+  options: { simulate?: boolean; scenario?: string; extraArgs?: string[] } = {},
+) {
+  const args = [
+    activationScript,
+    "--test-only",
+    "--fixture-root",
+    fixture.posixRoot,
+    "--fake-bin",
+    fixture.posixFakeBin,
+    ...(options.simulate ? ["--simulate-activate"] : []),
+    ...(options.extraArgs ?? []),
+  ];
+  return spawnSync(gitBash, args, {
+    encoding: "utf8",
+    windowsHide: true,
+    env: {
+      ...process.env,
+      TMPDIR: "/tmp",
+      FIXTURE_ROOT: fixture.posixRoot,
+      HUB_GUARD_SCENARIO: options.scenario ?? "",
+    },
+  });
+}
+
+async function currentTarget(fixture: Awaited<ReturnType<typeof createFixture>>) {
+  return realpath(path.join(fixture.root, "current"));
+}
+
+async function callLog(fixture: Awaited<ReturnType<typeof createFixture>>) {
+  return readFile(path.join(fixture.root, "calls.log"), "utf8").catch(() => "");
+}
+
+test("test-only preflight checks compatibility without changing current or starting Compose", async () => {
+  const fixture = await createFixture();
+  const result = runGuard(fixture);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /PREFLIGHT=passed/);
+  assert.match(result.stdout, /CURRENT_UNCHANGED=ok/);
+  assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+  assert.doesNotMatch(await callLog(fixture), /\|up\|/);
+  assert.match(await callLog(fixture), /^docker\|/m);
+});
+
+test("test-only simulated activation switches only the fixture and only web/worker", async () => {
+  const fixture = await createFixture();
+  const result = runGuard(fixture, { simulate: true });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /ACTIVATION=passed/);
+  assert.equal(await currentTarget(fixture), await realpath(fixture.candidate));
+  assert.match(await callLog(fixture), /up\|[^\n]+\|web booking-email-worker/);
+  const upCalls = (await callLog(fixture)).split("\n").filter((line) => line.startsWith("up|"));
+  assert.equal(upCalls.length, 1);
+  assert.match(upCalls[0], /^up\|[^|]+\|web booking-email-worker$/);
+});
+
+for (const scenario of ["ledger-missing", "ledger-extra", "ledger-mismatch"]) {
+  test(`ledger ${scenario} fails closed before changing current or starting Compose`, async () => {
+    const fixture = await createFixture();
+    const result = runGuard(fixture, { simulate: true, scenario });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /ERROR=MIGRATION_LEDGER_MISMATCH/);
+    assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+    assert.doesNotMatch(await callLog(fixture), /\|up\|/);
+  });
+}
+
+test("test mode rejects production flags and roots under the production release path", async () => {
+  const fixture = await createFixture();
+  const productionFlags = runGuard(fixture, {
+    extraArgs: ["--candidate", fixture.posixRoot, "--previous", fixture.posixRoot, "--activate"],
+  });
+  assert.notEqual(productionFlags.status, 0);
+  assert.match(productionFlags.stderr, /PRODUCTION_FLAGS_FORBIDDEN_IN_TEST_MODE/);
+
+  const productionRoot = spawnSync(
+    gitBash,
+    [
+      activationScript,
+      "--test-only",
+      "--fixture-root",
+      "/opt/hub-turismo/release-fixture",
+      "--fake-bin",
+      "/opt/hub-turismo/fake-bin",
+    ],
+    {
+      encoding: "utf8",
+      windowsHide: true,
+      env: { ...process.env, TMPDIR: "/tmp" },
+    },
+  );
+  assert.notEqual(productionRoot.status, 0);
+  assert.match(productionRoot.stderr, /PRODUCTION_PATH_FORBIDDEN_IN_TEST_MODE/);
+  const currentInfo = await lstat(path.join(fixture.root, "current"));
+  assert.equal(currentInfo.isSymbolicLink() || currentInfo.isDirectory(), true);
+});
+
+after(async () => {
+  await Promise.all(
+    fixtureDirectories.map((directory) => rm(directory, { recursive: true, force: true })),
+  );
+});
