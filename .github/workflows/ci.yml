@@ -24,6 +24,12 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check migration immutability
+        run: npm run check:migration-immutability -- --base-ref "$MIGRATION_BASE"
+        env:
+          MIGRATION_BASE: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
       - name: Keep VPS secrets out of Git and Docker context
         run: |
           git check-ignore -q infra/vps.env
