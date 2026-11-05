@@ -1,6 +1,6 @@
 # Plataforma local — módulos e operação
 
-Versão 0.12.12, publicada na VPS em 04/11/2026. A plataforma evolui como monólito Node.js/Next.js: SQLite no desenvolvimento e PostgreSQL na VPS. As reservas são **solicitações sujeitas à aprovação do hotel ou operador**, sem cobrança online. O site institucional e a caixa de contatos permanecem disponíveis. A publicação anterior no Sites é independente.
+Versão 0.12.13, candidata preparada para publicação na VPS após backup local, restauração isolada e gates operacionais. A plataforma evolui como monólito Node.js/Next.js: SQLite no desenvolvimento e PostgreSQL na VPS. As reservas são **solicitações sujeitas à aprovação do hotel ou operador**, sem cobrança online. O site institucional e a caixa de contatos permanecem disponíveis. A publicação anterior no Sites é independente.
 
 ## Rotas e permissões
 
@@ -133,7 +133,11 @@ As listagens públicas `GET /api/catalogo/hospedagens` e `GET /api/catalogo/pass
 
 ## Segurança e recuperação
 
-Validação no frontend/backend, listas fechadas de campos, autorização no servidor, identificação da conta pela sessão, origem obrigatória nos POSTs, corpo JSON limitado, SQL parametrizado, cookies HttpOnly/SameSite, idempotência e proteção contra sobreposição de reservas. A administração não confia em e-mails ou permissões enviados pelo cliente. Segredos, banco e backups ficam fora do Git.
+Antes de publicar uma empresa ou alterar seus campos públicos enquanto ela já está publicada, o administrador precisa confirmar que revisou os dados com o prestador. A API aplica a regra mesmo em chamadas diretas e grava `company.publish_confirmed` junto com a alteração na auditoria existente; a confirmação é transitória e não vira campo do cadastro nem exige migration.
+
+O harness de integração falha antes de abrir banco se herdar `DATABASE_URL` ou `POSTGRES_URL`; o processo filho recebe somente o caminho SQLite temporário. A parada do worker de ensaio exige projeto Compose isolado, valida serviço/volume/rede e compara o estado de produção antes/depois. Consulte `REHEARSAL-SAFETY.md` antes de operar a stack temporária.
+
+Validação no frontend/backend, listas fechadas de campos, autorização no servidor, identificação da conta pela sessão, origem obrigatória nos POSTs, corpo JSON limitado, SQL parametrizado, cookies HttpOnly/SameSite, idempotência e proteção contra sobreposição de reservas. A administração não confia em e-mails ou permissões enviados pelo cliente. Segredos, banco e backups ficam fora do Git. Esta release não altera migrations nem o schema PostgreSQL.
 
 O SMTP é opcional. Quando configurado, o sistema envia confirmação de cadastro, permite reenvio do link, redefine senhas com token de 30 minutos e revoga sessões existentes após a redefinição; também envia aviso de senha alterada. A interface só oferece esses fluxos quando há SMTP. Sem SMTP, a administração pode recuperar uma conta pelo terminal com `npm run account:password -- EMAIL`; a senha é digitada e confirmada de forma oculta, verificada contra o hash e as sessões anteriores são encerradas. O comando não cria contas nem concede permissões. Confirme a identidade da pessoa antes da manutenção.
 

@@ -14,6 +14,14 @@ O serviço Sites existente permanece independente da VPS. A origem oficial foi c
 
 Para copiar o backup da VPS para este computador por SSH e ensaiar a restauração isolada, consulte o [runbook de backup local e recuperação](BACKUP-RECUPERACAO.md). A exportação sozinha não libera publicação; checksum, ensaio e preflight continuam obrigatórios.
 
+## Candidata 0.12.13
+
+A candidata acrescenta o isolamento do harness, a parada controlada do worker de ensaio e a confirmação administrativa auditável para publicação/alteração de dados de prestadores. A publicação permanece pendente até que o snapshot seja conferido, construído na VPS e ativado após os gates deste plano. Nenhuma migration nova está prevista; PostgreSQL, volume, proxy e dados devem permanecer inalterados. O rollback compatível é a release 0.12.12.
+
+Antes de montar a candidata, o dump `hub-20261105T013807Z-2530477.dump` foi copiado para este computador, comparado ao manifesto e recibo independentes e restaurado em banco isolado. SHA-256: `e1416d44f8b76de18db9c878211da5393c65faca7f3f87c27d3f1987141f2571`. A restauração retornou `users=2`, `bookings=0`, `booking_reminders=0` e `cadastur_entries=42`; o banco temporário e staging foram removidos (`RESTORE_DATABASE_CLEANUP=ok`, `REMOTE_STAGING_CLEANUP=ok`). O arquivo permanece na pasta local protegida; nenhuma cópia em nuvem foi configurada.
+
+Baseline imediatamente anterior: `/opt/hub-turismo/current` aponta para `release-0.12.12`; web `1bd0716c8346`, worker `934940637afb` e PostgreSQL `05bdf6999373` estão saudáveis. O volume PostgreSQL é `hub-turismo_postgres_data`; o ledger tem 23 migrations, SHA-256 agregado `d00f196e24cbba77ece6ebd58f20daeb7cd33cd5b3ffc51302b6120a8865bffc`. Contagens agregadas: `users=2`, `companies=0`, `catalog_items=0`, `catalog_media=1`, `bookings=0`, `booking_reminders=0`, `cadastur_entries=42`. A saúde HTTPS respondeu HTTP 200 com PostgreSQL.
+
 ## Limpeza Cadastur de outros municípios
 
 O procedimento `infra/apply-cadastur-maues-cleanup.ps1`, introduzido durante a preparação da 0.12.8, permanece disponível na release atual. A limpeza aprovada já foi aplicada: o preflight remoto confirmou o backup mais recente e as contagens esperadas, a transação deixou 42 registros Cadastur de Maués e zero fora, e preservou as seis importações históricas. O script permanece como procedimento auditável para futuras execuções; sem parâmetros, apenas consulta e imprime contagens agregadas.
