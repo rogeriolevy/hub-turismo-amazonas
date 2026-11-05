@@ -54,7 +54,7 @@ A chave privada permanece neste computador e não deve ser copiada ao repositór
 
 Para consultar containers, volumes, permissões das releases, heartbeat, timer e arquivos de backup sem alterar a VPS, execute `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\infra\inspect-vps-operations.ps1 -IdentityFile 'C:\caminho\da\chave'`. O script exige uma entrada prévia do host em `known_hosts`, usa a fingerprint já confiada por OpenSSH e consulta somente o projeto Compose `hub-turismo`; apresenta os nomes e destinos dos volumes montados, o alvo do link `current`, modos/contagens de escrita em cada release e as permissões do arquivo `vps.env`, sem ler seus valores. Também confere a presença dos pares de dump/manifesto e, para o dump mais recente, o SHA-256 e se `pg_restore --list` consegue ler o índice. Para salvar a saída localmente sem sobrescrever um arquivo, acrescente `-OutputLogPath "$env:TEMP\hub-operations.log"` e escolha um nome ainda não usado. O log contém a saída do diagnóstico, não a frase-senha digitada no prompt do OpenSSH. Essa checagem não restaura o banco nem valida todos os blocos de dados; faça um ensaio separado em banco descartável antes de depender do backup.
 
-Antes de reconstruir ou transferir o código, gere um snapshot de fontes com `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\infra\package-source-snapshot.ps1`. O ZIP e o sidecar `.sha256` ficam em `tmp/`; o manifesto registra a versão, o `HEAD`, o estado do checkout e o hash de cada arquivo incluído. O empacotador ignora dados SQLite, backups, uploads, segredos locais, chaves privadas, dependências e arquivos temporários, e remove somente a pasta que criou se a validação do ZIP falhar. Esse pacote preserva o código para reconstrução; não substitui o backup do banco nem o histórico Git.
+Antes de reconstruir ou transferir o código, gere um snapshot de fontes v4 com `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\infra\package-source-snapshot.ps1`. O ZIP e o sidecar `.sha256` ficam em `tmp/`; o manifesto registra a versão, o commit, a árvore Git e o hash/blob Git de cada arquivo incluído. O empacotador ignora dados SQLite, backups, uploads, segredos locais, chaves privadas, dependências e arquivos temporários. Esse pacote preserva o código para reconstrução; não substitui o backup do banco nem o histórico Git. Para a proveniência aprovada, não use `infra/package-vps-release-bundle.ps1`: esse wrapper faz build/export local e não é o fluxo desta entrega, que valida fontes e constrói a imagem somente na VPS.
 
 ## Alvo atual: VPS com PostgreSQL
 
@@ -166,9 +166,9 @@ Testar periodicamente em diretório separado. Não copiar somente o arquivo prin
 
 ### Proveniência de fontes antes do build remoto
 
-Para gerar uma candidata a partir do repositório local, execute `infra/package-source-snapshot.ps1`. O gerador seleciona arquivos da árvore do commit (`git archive`), compara cada cópia de trabalho diretamente com o blob Git esperado (inclusive quando o índice marca `assume-unchanged`/`skip-worktree`), recusa fontes não rastreadas e gera o manifesto v4 com commit, prova das entradas da árvore e blob por arquivo. O verificador remoto reconstrói os objetos tree e exige que o hash da raiz corresponda à árvore aprovada; assim, trocar ZIP e manifesto juntos não basta para mudar uma fonte.
+Para gerar uma candidata a partir do repositório local, execute `infra/package-source-snapshot.ps1` depois de aprovar e commitar as fontes. O gerador seleciona arquivos da árvore do commit (`git archive`), compara cada cópia de trabalho diretamente com o blob Git esperado (inclusive quando o índice marca `assume-unchanged`/`skip-worktree`), recusa fontes não rastreadas e gera o manifesto v4 com commit, prova das entradas da árvore e blob por arquivo. Fixe fora do pacote `GitHead`, `GitTree` e `VerifierSha256` diretamente da saída local. O verificador remoto reconstrói os objetos tree e exige que o hash da raiz corresponda à árvore aprovada; assim, trocar ZIP e manifesto juntos não basta para mudar uma fonte.
 
-Transfira para a pasta de staging da VPS o ZIP de fontes, o arquivo `SOURCE-MANIFEST.json`, o sidecar `<arquivo.zip>.sha256` e o verificador `source/scripts/verify-vps-source-snapshot.mjs` da pasta gerada localmente. Registre `GitHead`, `GitTree` e `VerifierSha256` diretamente da saída local do gerador; não obtenha o hash do verificador do pacote transferido. Antes de executar o verificador, compare o arquivo staged com esse hash fixado fora do pacote. Exemplo, após preencher os quatro valores locais:
+Transfira para a pasta de staging da VPS o ZIP de fontes, `SOURCE-MANIFEST.json`, o sidecar `<arquivo.zip>.sha256` e o verificador `source/scripts/verify-vps-source-snapshot.mjs`. Não obtenha o hash do verificador do pacote transferido. Antes da validação, confira no host o hash do ZIP e compare o arquivo staged do verificador com o `VerifierSha256` fixado localmente. Execute o verificador v4 dentro da imagem aprovada 0.12.13 da própria VPS, em container sem rede e com raiz, staging e verificador somente leitura. O arquivo do verificador é montado no caminho `/app/scripts/verify-vps-source-snapshot.mjs` para resolver `unzipper-esm` a partir das dependências já aprovadas da imagem; confirme a disponibilidade do módulo antes. Exemplo, após preencher os valores coletados localmente:
 
 ```bash
 APPROVED_GIT_HEAD=COMMIT_REGISTRADO_PELO_GERADOR
@@ -184,16 +184,17 @@ printf '%s  %s\n' "$APPROVED_VERIFIER_SHA256" "$VERIFIER_FILE" | sha256sum --che
   exit 1
 }
 
-docker run --rm --network none --user 0:0 \
+docker run --pull=never --rm --network none --read-only \
   --mount "type=bind,src=$PWD,dst=/app/tmp/release-audit,readonly" \
+  --mount "type=bind,src=$PWD/$VERIFIER_FILE,dst=/app/scripts/verify-vps-source-snapshot.mjs,readonly" \
   --entrypoint node "$VERIFIER_IMAGE" \
-  "/app/tmp/release-audit/$VERIFIER_FILE" \
+  /app/scripts/verify-vps-source-snapshot.mjs \
   "/app/tmp/release-audit/$SOURCE_ZIP" \
   "/app/tmp/release-audit/$SOURCE_MANIFEST" \
   "$APPROVED_GIT_HEAD" "$APPROVED_GIT_TREE" --self-check
 ```
 
-Atualize a tag aprovada e os nomes dos arquivos para a release que está sendo preparada. O `sha256sum` do host confere a cópia do verificador contra `VerifierSha256`, obtido localmente e passado separadamente do pacote; o programa validado então confere a prova da árvore, commit/árvore esperados, cada blob Git, SHA-256, manifesto e conjunto completo de entradas. Só extraia e execute `docker compose ... build web` se ele passar. Se a imagem aprovada não tiver `unzipper-esm`, pare e prepare um verificador confiável com essa dependência antes de extrair; não instale dependências de fontes ainda não verificadas.
+O `sha256sum` do host confere o ZIP e a cópia do verificador contra os hashes fixados localmente e passados separadamente do pacote; o programa validado então confere commit/árvore esperados, cada blob Git, SHA-256, manifesto e conjunto completo de entradas. Só extraia depois de aprovação. Para candidatas comuns sem alteração de schema, extraia na pasta versionada e construa `web` na VPS com o Compose e `infra/vps.env` daquela release. Não rode build/export na estação de trabalho, não instale dependências a partir de fontes ainda não verificadas e não ative durante a preparação da candidata.
 
 Antes de ativar cada release, conclua e registre os seguintes gates, nesta ordem:
 
