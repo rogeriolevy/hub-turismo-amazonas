@@ -82,11 +82,15 @@ function run() {
   }
 
   if (changedPaths.length > 0) {
-    fail(`existing migration paths were modified, deleted, or renamed:\n${changedPaths.map((path) => `  - ${path}`).join("\n")}`);
+    fail(
+      `existing migration paths were modified, deleted, or renamed:\n${changedPaths.map((path) => `  - ${path}`).join("\n")}`,
+    );
     return;
   }
 
-  console.log(`Migration immutability check passed (${baselinePaths.length} baseline SQL file(s), merge base ${mergeBase}).`);
+  console.log(
+    `Migration immutability check passed (${baselinePaths.length} baseline SQL file(s), merge base ${mergeBase}).`,
+  );
 }
 
 run();

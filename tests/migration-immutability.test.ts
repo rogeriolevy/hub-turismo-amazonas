@@ -6,7 +6,9 @@ import { join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-const checker = resolve(fileURLToPath(new URL("../scripts/check-migration-immutability.mjs", import.meta.url)));
+const checker = resolve(
+  fileURLToPath(new URL("../scripts/check-migration-immutability.mjs", import.meta.url)),
+);
 
 function withRepository(run: (repo: string, base: string) => void) {
   const repo = mkdtempSync(join(tmpdir(), "migration-immutability-"));
@@ -25,7 +27,11 @@ function withRepository(run: (repo: string, base: string) => void) {
   }
 }
 
-function writeMigration(repo: string, path: string, contents = "CREATE TABLE example (id INTEGER);\n") {
+function writeMigration(
+  repo: string,
+  path: string,
+  contents = "CREATE TABLE example (id INTEGER);\n",
+) {
   const absolute = join(repo, path);
   mkdirSync(join(absolute, ".."), { recursive: true });
   writeFileSync(absolute, contents);
@@ -51,7 +57,11 @@ test("unchanged shared and PostgreSQL-only baseline passes", () => {
 
 test("editing an existing migration fails and names its path", () => {
   withRepository((repo, base) => {
-    writeMigration(repo, "db/migrations/001_initial.sql", "ALTER TABLE example ADD COLUMN changed INTEGER;\n");
+    writeMigration(
+      repo,
+      "db/migrations/001_initial.sql",
+      "ALTER TABLE example ADD COLUMN changed INTEGER;\n",
+    );
     const result = check(repo, base);
     assert.equal(result.status, 1);
     assert.match(result.stderr, /db\/migrations\/001_initial\.sql/);
@@ -82,7 +92,12 @@ test("deleting baseline migrations from both roots fails with each path", () => 
 test("renaming baseline migrations in both roots fails with the original paths", () => {
   withRepository((repo, base) => {
     git(repo, "mv", "db/migrations/001_initial.sql", "db/migrations/003_renamed.sql");
-    git(repo, "mv", "db/postgres-migrations/002_postgres.sql", "db/postgres-migrations/004_renamed.sql");
+    git(
+      repo,
+      "mv",
+      "db/postgres-migrations/002_postgres.sql",
+      "db/postgres-migrations/004_renamed.sql",
+    );
     const result = check(repo, base);
     assert.equal(result.status, 1);
     assert.match(result.stderr, /db\/migrations\/001_initial\.sql/);
