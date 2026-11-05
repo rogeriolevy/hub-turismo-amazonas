@@ -71,7 +71,7 @@ export async function Directory({ kind, query }: { kind: "hotel" | "tour"; query
           {!hotels.length && !tours.length && !experiences.length ? (
             <EmptyState title={query ? t("catalog.noResults") : t("catalog.comingSoon")}>
               <p>{query ? t("catalog.tryNameOrCity") : t("catalog.notPublished")}</p>
-              <Link className="text-link" href="/#contato">
+              <Link className="text-link" href="/contato">
                 {t("catalog.contactHub")}
               </Link>
             </EmptyState>

@@ -67,7 +67,7 @@ export default function Privacy() {
           </p>
           <p>
             Você pode solicitar informações, correção ou exclusão da sua mensagem pelo{" "}
-            <a href="/#contato">formulário de contato</a>, selecionando “Privacidade”. A equipe
+            <a href="/contato">formulário de contato</a>, selecionando “Privacidade”. A equipe
             poderá pedir confirmação de identidade antes de atender solicitações. As mensagens são
             mantidas enquanto necessárias ao atendimento; a equipe deve revisar e excluir dados que
             não sejam mais necessários.
@@ -111,7 +111,7 @@ export default function Privacy() {
             A Hub Turismo Amazonas está estruturando seus canais institucionais. Os dados formais da
             organização e o canal específico de privacidade serão incluídos quando definidos.
           </p>
-          <a className="button button-dark" href="/#contato">
+          <a className="button button-dark" href="/contato">
             Voltar ao contato
           </a>
         </main>
