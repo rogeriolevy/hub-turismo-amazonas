@@ -20,7 +20,7 @@ import "./navigation.css";
 
 const institutionalLinks = [
   { href: "/sobre", key: "header.about", icon: Waves },
-  { href: "/#contato", key: "header.contact", icon: ContactRound },
+  { href: "/contato", key: "header.contact", icon: ContactRound },
 ] as const;
 
 const platformLinks = [
@@ -68,6 +68,7 @@ export async function Header({ variant = "platform" }: { variant?: NavigationVar
           {variant === "platform" ? (
             <PlatformNavigation
               ariaLabel={t("header.nav")}
+              homeLabel={t("header.platformHome")}
               links={platformLinks.map(({ href, key, icon }) => ({
                 href,
                 label: t(key),
@@ -75,7 +76,10 @@ export async function Header({ variant = "platform" }: { variant?: NavigationVar
               }))}
             />
           ) : (
-            <nav className="header-primary-nav" aria-label={t("header.nav")}>
+            <nav
+              className="header-primary-nav header-primary-nav--institutional"
+              aria-label={t("header.nav")}
+            >
               {institutionalLinks.map(({ href, key, icon: Icon }) => (
                 <Link className="header-primary-link" href={href} key={href}>
                   <Icon size={17} strokeWidth={1.8} aria-hidden="true" />
@@ -84,19 +88,21 @@ export async function Header({ variant = "platform" }: { variant?: NavigationVar
               ))}
             </nav>
           )}
-          <LanguageSwitcher />
-          <Link
-            className="header-account"
-            href={accountHref}
-            aria-label={accountLabel}
-            title={accountLabel}
-          >
-            <AccountIcon size={17} aria-hidden="true" />
-            <span>{accountLabel}</span>
-          </Link>
-          {session && avatar ? (
-            <AccountMenu name={session.user.name} email={session.user.email} avatar={avatar} />
-          ) : null}
+          <div className="header-actions">
+            <LanguageSwitcher />
+            <Link
+              className="header-account"
+              href={accountHref}
+              aria-label={accountLabel}
+              title={accountLabel}
+            >
+              <AccountIcon size={17} aria-hidden="true" />
+              <span>{accountLabel}</span>
+            </Link>
+            {session && avatar ? (
+              <AccountMenu name={session.user.name} email={session.user.email} avatar={avatar} />
+            ) : null}
+          </div>
         </div>
       </header>
     </>
@@ -119,7 +125,7 @@ export async function Footer({
             <Brand variant={variant} />
             <p>{t("footer.tagline")}</p>
             {variant === "institutional" ? (
-              <Link className="footer-contact" href="/#contato">
+              <Link className="footer-contact" href="/contato">
                 {t("footer.contact")} <ArrowUpRight size={15} aria-hidden="true" />
               </Link>
             ) : null}
