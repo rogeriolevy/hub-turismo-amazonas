@@ -2,13 +2,13 @@
 
 ## Estado publicado
 
-A versão 0.12.11 está publicada na VPS com Docker Compose, PostgreSQL e Nginx em `https://hubamazonas.vps12233.panel.icontainer.site`. Em 04/11/2026, HTTPS validou sem erro de certificado; `/api/health` respondeu HTTP 200 com `status=ok`, `version=0.12.11` e `database=postgresql`. Web, worker e PostgreSQL estão saudáveis. O link `/opt/hub-turismo/current` aponta para `/opt/hub-turismo/release-0.12.11`; a release 0.12.10 permanece disponível para retorno.
+A versão 0.12.12 está publicada na VPS com Docker Compose, PostgreSQL e Nginx em `https://hubamazonas.vps12233.panel.icontainer.site`. Em 04/11/2026, HTTPS validou; `/api/health` pela VPS e pela origem pública respondeu HTTP 200 com `status=ok`, `version=0.12.12` e `database=postgresql`. Web, worker e PostgreSQL estão saudáveis. O link `/opt/hub-turismo/current` aponta para `/opt/hub-turismo/release-0.12.12`; a release 0.12.11 permanece disponível para retorno.
 
-Na plataforma, o cabeçalho oferece links para os seis módulos turísticos e destaca a página ativa; Sobre a Hub e Contato ficam somente na área institucional e não aparecem no rodapé da plataforma. As páginas `/plataforma`, `/hospedagens` e `/navegacao` foram verificadas por HTTPS; o item Navegação recebeu `aria-current="page"`. A página institucional mantém Sobre/Contato, e a grade Maués ↔ Parintins aparece em Navegação. O heartbeat do worker foi atualizado e as contagens agregadas da base após a publicação foram `users=2`, `bookings=0`, `booking_reminders=0`, `cadastur_entries=42`, `cadastur_imports=6` e `catalog_media=1`.
+Na plataforma, o cabeçalho oferece links para os seis módulos turísticos e destaca a página ativa; Sobre a Hub e Contato ficam somente na área institucional e não aparecem no rodapé da plataforma. As páginas `/plataforma`, `/hospedagens` e `/navegacao` foram verificadas por HTTPS; o item Navegação recebeu `aria-current="page"`. A página institucional mantém Sobre/Contato, e a grade Maués ↔ Parintins aparece em Navegação. O heartbeat do worker tinha 5 segundos na verificação. As contagens agregadas antes e depois da atualização foram `users=2`, `bookings=0`, `booking_reminders=0` e `cadastur_entries=42`; o total de migrations permaneceu 23, com o mesmo hash agregado.
 
-Antes da publicação 0.12.11, um backup PostgreSQL foi copiado para este computador, conferido por SHA-256 e restaurado em banco isolado. A restauração confirmou `users=2`, `bookings=0`, `booking_reminders=0` e `cadastur_entries=42`. O arquivo está em `%LOCALAPPDATA%\HubTurismo\Backups\hub-20261104T213535Z-2422434\hub-20261104T213535Z-2422434.dump`; o SHA-256 é `6eb2ebf7c27ee633fe3d0eaf85b50af1e7c38517b976206e1d81b052e7485753`. Consulte o [runbook de backup local e recuperação](BACKUP-RECUPERACAO.md).
+Antes da publicação 0.12.12, o dump `hub-20261104T232415Z-2478441.dump` foi copiado por SSH para a pasta local protegida, validado por SHA-256 e restaurado em banco isolado. A restauração confirmou `users=2`, `bookings=0`, `booking_reminders=0` e `cadastur_entries=42`; o banco temporário e o staging remoto foram removidos. SHA-256: `bd299b86726d608ee791e37bb281340e8e61e04d5e1c3ac3ef9895002dd7f201`. Consulte o [runbook de backup local e recuperação](BACKUP-RECUPERACAO.md).
 
-As releases 0.12.6 a 0.12.11 permanecem preservadas; a 0.12.10 é a versão anterior elegível para retorno. A imagem 0.12.11 foi construída exclusivamente no Docker da VPS. Nenhum schema ou volume foi alterado e a importação SQLite→PostgreSQL não foi repetida. Consulte a [baseline de proveniência](../.planning/phases/01-baseline-e-candidata/01-BASELINE.md), o [registro da versão 0.12.10](releases/0.12.10.md) e a [proveniência da 0.12.11](releases/0.12.11.md).
+As releases 0.12.6 a 0.12.12 permanecem preservadas; a 0.12.11 é a versão anterior elegível para retorno. A imagem 0.12.12 foi construída exclusivamente no Docker da VPS a partir do snapshot SHA-256 `1ab97eb2e11239f51b87f854e0920188217de38f0ab36e283318833ef2a7c311`; digest da imagem `sha256:b240349fd5ef0e812c5b663988b3a807cc106a6ad4467b4fa6d32462199e0ec8`. O volume `hub-turismo_postgres_data`, o container PostgreSQL e as 23 migrations permaneceram iguais. A importação SQLite→PostgreSQL não foi repetida. Consulte a [baseline de proveniência](../.planning/phases/01-baseline-e-candidata/01-BASELINE.md), o [registro da versão 0.12.11](releases/0.12.11.md) e a [proveniência da 0.12.12](releases/0.12.12.md).
 
 O serviço Sites existente permanece independente da VPS. A origem oficial foi confirmada e validada em uma transferência descartável antes da publicação. Consulte também [USO-LOCAL.md](USO-LOCAL.md) para continuar usando a instalação local.
 
@@ -106,7 +106,7 @@ Para configurar uma VPS com releases em `/opt/hub-turismo/release-VERSÃO`, exec
 Após a nova release passar pela verificação de saúde, atualize o link como root, ajustando a versão. Remova escrita de grupo/outros e mantenha `vps.env` restrito; o wrapper de backup recusa executar se essas condições falharem. O comando abaixo troca o destino do link de forma atômica:
 
 ```sh
-release=/opt/hub-turismo/release-0.12.11
+release=/opt/hub-turismo/release-0.12.12
 chmod -R go-w "$release"
 chown hub:hub "$release/infra/vps.env"
 chmod 600 "$release/infra/vps.env"
