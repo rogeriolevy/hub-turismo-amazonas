@@ -168,7 +168,9 @@ Testar periodicamente em diretório separado. Não copiar somente o arquivo prin
 
 Para gerar uma candidata a partir do repositório local, execute `infra/package-source-snapshot.ps1` depois de aprovar e commitar as fontes. O gerador seleciona arquivos da árvore do commit (`git archive`), compara cada cópia de trabalho diretamente com o blob Git esperado (inclusive quando o índice marca `assume-unchanged`/`skip-worktree`), recusa fontes não rastreadas e gera o manifesto v4 com commit, prova das entradas da árvore e blob por arquivo. Fixe fora do pacote `GitHead`, `GitTree` e `VerifierSha256` diretamente da saída local. O verificador remoto reconstrói os objetos tree e exige que o hash da raiz corresponda à árvore aprovada; assim, trocar ZIP e manifesto juntos não basta para mudar uma fonte.
 
-Transfira para a pasta de staging da VPS o ZIP de fontes, `SOURCE-MANIFEST.json`, o sidecar `<arquivo.zip>.sha256` e o verificador `source/scripts/verify-vps-source-snapshot.mjs`. Não obtenha o hash do verificador do pacote transferido. Antes da validação, confira no host o hash do ZIP e compare o arquivo staged do verificador com o `VerifierSha256` fixado localmente. Execute o verificador v4 dentro da imagem aprovada 0.12.13 da própria VPS, em container sem rede e com raiz, staging e verificador somente leitura. O arquivo do verificador é montado no caminho `/app/scripts/verify-vps-source-snapshot.mjs` para resolver `unzipper-esm` a partir das dependências já aprovadas da imagem; confirme a disponibilidade do módulo antes. Exemplo, após preencher os valores coletados localmente:
+Transfira para a pasta de staging da VPS o ZIP de fontes, `SOURCE-MANIFEST.json`, o sidecar `<arquivo.zip>.sha256` e o verificador `source/scripts/verify-vps-source-snapshot.mjs`. Não obtenha o hash do verificador do pacote transferido. Antes da validação, confira no host o hash do ZIP e compare o arquivo staged do verificador com o `VerifierSha256` fixado localmente. Execute o verificador v4 dentro da imagem aprovada 0.12.13 da própria VPS, em container sem rede e com staging, verificador e dependência auxiliar somente leitura. Monte o verificador em `/app/scripts/verify-vps-source-snapshot.mjs` para que a resolução do módulo use `/app/node_modules`. Confirme a presença real de `unzipper-esm/index.js` e das versões de suas dependências; `import.meta.resolve()` sozinho pode retornar uma URL mesmo quando o arquivo está ausente.
+
+Se a imagem aprovada não incluir `unzipper-esm`, pare antes de extrair fontes. Obtenha localmente o tarball da versão exata registrada em `package-lock.json` com `npm pack --ignore-scripts`, compare o SRI SHA-512 do tarball ao campo `integrity` do lockfile e transfira esse tarball separadamente. Confira o mesmo SHA-512 na VPS, valide que as dependências diretas já existem na imagem nas versões compatíveis com o lockfile, extraia o pacote verificado em um diretório dedicado de staging e monte esse diretório como `/app/node_modules/unzipper-esm:ro`. Não instale dependências nem altere a imagem aprovada para esta verificação. Exemplo, após preencher os valores coletados localmente e preparar `unzipper-esm-package` em staging:
 
 ```bash
 APPROVED_GIT_HEAD=COMMIT_REGISTRADO_PELO_GERADOR
@@ -176,6 +178,7 @@ APPROVED_GIT_TREE=ARVORE_REGISTRADA_PELO_GERADOR
 APPROVED_VERIFIER_SHA256=HASH_DO_VERIFICADOR_REGISTRADO_LOCALMENTE
 VERIFIER_IMAGE=hub-turismo-amazonas:0.12.13
 VERIFIER_FILE=verify-vps-source-snapshot.mjs
+VERIFIER_MODULE_DIR=unzipper-esm-package
 SOURCE_ZIP=hub-turismo-amazonas-0.12.14-source.zip
 SOURCE_MANIFEST=SOURCE-MANIFEST.json
 
@@ -187,6 +190,7 @@ printf '%s  %s\n' "$APPROVED_VERIFIER_SHA256" "$VERIFIER_FILE" | sha256sum --che
 docker run --pull=never --rm --network none --read-only \
   --mount "type=bind,src=$PWD,dst=/app/tmp/release-audit,readonly" \
   --mount "type=bind,src=$PWD/$VERIFIER_FILE,dst=/app/scripts/verify-vps-source-snapshot.mjs,readonly" \
+  --mount "type=bind,src=$PWD/$VERIFIER_MODULE_DIR,dst=/app/node_modules/unzipper-esm,readonly" \
   --entrypoint node "$VERIFIER_IMAGE" \
   /app/scripts/verify-vps-source-snapshot.mjs \
   "/app/tmp/release-audit/$SOURCE_ZIP" \
