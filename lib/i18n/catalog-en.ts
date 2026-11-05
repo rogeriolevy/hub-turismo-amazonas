@@ -495,15 +495,17 @@ export const en: Record<MessageKey, string> = {
   "contactPage.eyebrow": "CONTACT HUB",
   "contactPage.title": "Let’s talk?",
   "contactPage.description":
-    "Tell us what you need. While our direct channels are being prepared, our team receives your message through the form.",
-  "contactPage.channelsTitle": "Channels in preparation",
+    "The WhatsApp and email details below are fictional examples. Use the form to contact the Hub team.",
+  "contactPage.channelsTitle": "Demo contact details",
   "contactPage.channelsDescription":
-    "Institutional contact details will be shared here as soon as they are available.",
+    "Real contact details are still being arranged. These fictional examples cannot receive messages.",
   "contactPage.whatsappTitle": "WhatsApp",
-  "contactPage.whatsappDescription": "Institutional channel coming soon.",
+  "contactPage.whatsappDescription":
+    "Fictional example: +55 (92) 00000-0000. This is not an active number.",
   "contactPage.emailTitle": "Email",
-  "contactPage.emailDescription": "Institutional address coming soon.",
-  "contactPage.comingSoon": "Coming soon",
+  "contactPage.emailDescription":
+    "Fictional example: contato@example.invalid. This address cannot receive email.",
+  "contactPage.demoLabel": "Fictional",
   "contactPage.formEyebrow": "SEND US A MESSAGE",
   "contactPage.formTitle": "How can we help?",
   "contactPage.formDescription":

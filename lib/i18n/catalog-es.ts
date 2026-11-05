@@ -500,15 +500,17 @@ export const es: Record<MessageKey, string> = {
   "contactPage.eyebrow": "HABLA CON HUB",
   "contactPage.title": "¿Hablamos?",
   "contactPage.description":
-    "Cuéntanos qué necesitas. Mientras preparamos nuestros canales directos, el equipo recibe tu mensaje a través del formulario.",
-  "contactPage.channelsTitle": "Canales en preparación",
+    "Los datos de WhatsApp y correo que aparecen abajo son ejemplos ficticios. Para hablar con el equipo, usa el formulario.",
+  "contactPage.channelsTitle": "Datos de demostración",
   "contactPage.channelsDescription":
-    "Los contactos institucionales se publicarán aquí tan pronto como estén disponibles.",
+    "Los contactos reales aún están por definirse. Estos ejemplos ficticios no reciben mensajes.",
   "contactPage.whatsappTitle": "WhatsApp",
-  "contactPage.whatsappDescription": "Canal institucional próximamente.",
+  "contactPage.whatsappDescription":
+    "Ejemplo ficticio: +55 (92) 00000-0000. No es un número activo.",
   "contactPage.emailTitle": "Correo electrónico",
-  "contactPage.emailDescription": "Dirección institucional próximamente.",
-  "contactPage.comingSoon": "Próximamente",
+  "contactPage.emailDescription":
+    "Ejemplo ficticio: contato@example.invalid. Esta dirección no recibe mensajes.",
+  "contactPage.demoLabel": "Ficticio",
   "contactPage.formEyebrow": "ENVÍANOS UN MENSAJE",
   "contactPage.formTitle": "¿Cómo podemos ayudarte?",
   "contactPage.formDescription":

@@ -496,15 +496,17 @@ export const pt = {
   "contactPage.eyebrow": "FALE COM A HUB",
   "contactPage.title": "Vamos conversar?",
   "contactPage.description":
-    "Conte o que você precisa. Enquanto nossos canais diretos são preparados, nossa equipe recebe sua mensagem pelo formulário.",
-  "contactPage.channelsTitle": "Canais em preparação",
+    "Os dados de WhatsApp e e-mail abaixo são exemplos fictícios. Para falar com a equipe, use o formulário.",
+  "contactPage.channelsTitle": "Dados de demonstração",
   "contactPage.channelsDescription":
-    "Os contatos institucionais serão divulgados aqui assim que estiverem disponíveis.",
+    "Os contatos reais ainda serão definidos. Estes exemplos são fictícios e não recebem mensagens.",
   "contactPage.whatsappTitle": "WhatsApp",
-  "contactPage.whatsappDescription": "Canal institucional em breve.",
+  "contactPage.whatsappDescription":
+    "Exemplo fictício: +55 (92) 00000-0000. Não é um número ativo.",
   "contactPage.emailTitle": "E-mail",
-  "contactPage.emailDescription": "Endereço institucional em breve.",
-  "contactPage.comingSoon": "Em breve",
+  "contactPage.emailDescription":
+    "Exemplo fictício: contato@example.invalid. Este endereço não recebe mensagens.",
+  "contactPage.demoLabel": "Fictício",
   "contactPage.formEyebrow": "ENVIE SUA MENSAGEM",
   "contactPage.formTitle": "Como podemos ajudar?",
   "contactPage.formDescription":
