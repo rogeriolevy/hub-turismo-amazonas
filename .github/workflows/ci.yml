@@ -3,6 +3,11 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      migration_base:
+        description: Base branch or commit to compare against; do not use the selected run commit.
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
@@ -29,7 +34,7 @@ jobs:
       - name: Check migration immutability
         run: npm run check:migration-immutability -- --base-ref "$MIGRATION_BASE"
         env:
-          MIGRATION_BASE: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+          MIGRATION_BASE: ${{ github.event.pull_request.base.sha || github.event.before || inputs.migration_base || '' }}
       - name: Keep VPS secrets out of Git and Docker context
         run: |
           git check-ignore -q infra/vps.env
