@@ -20,6 +20,7 @@ export const en: Record<MessageKey, string> = {
   "header.navigation": "River travel",
   "header.about": "About Hub",
   "header.contact": "Contact",
+  "header.platformHome": "Home",
   "header.account": "Access the platform",
   "footer.tagline": "From the Amazon, building new connections.",
   "footer.contact": "Contact Hub",
@@ -488,6 +489,25 @@ export const en: Record<MessageKey, string> = {
   "contact.title": "Join the conversation",
   "contact.intro":
     "Tell us a little about yourself. All fields are required except the organization.",
+  "contactPage.metaTitle": "Contact",
+  "contactPage.metaDescription":
+    "Contact Hub Turismo Amazonas through the institutional form.",
+  "contactPage.eyebrow": "CONTACT HUB",
+  "contactPage.title": "Let’s talk?",
+  "contactPage.description":
+    "Tell us what you need. While our direct channels are being prepared, our team receives your message through the form.",
+  "contactPage.channelsTitle": "Channels in preparation",
+  "contactPage.channelsDescription":
+    "Institutional contact details will be shared here as soon as they are available.",
+  "contactPage.whatsappTitle": "WhatsApp",
+  "contactPage.whatsappDescription": "Institutional channel coming soon.",
+  "contactPage.emailTitle": "Email",
+  "contactPage.emailDescription": "Institutional address coming soon.",
+  "contactPage.comingSoon": "Coming soon",
+  "contactPage.formEyebrow": "SEND US A MESSAGE",
+  "contactPage.formTitle": "How can we help?",
+  "contactPage.formDescription":
+    "Use the form to share a question, idea, or request with Hub.",
   "contact.yourName": "Your name",
   "contact.namePlaceholder": "What should we call you?",
   "contact.email": "Email",

@@ -20,6 +20,7 @@ export const es: Record<MessageKey, string> = {
   "header.navigation": "Navegación fluvial",
   "header.about": "Sobre Hub",
   "header.contact": "Contacto",
+  "header.platformHome": "Inicio",
   "header.account": "Acceder a la plataforma",
   "footer.tagline": "Desde la Amazonía, creando nuevas conexiones.",
   "footer.contact": "Contacta con Hub",
@@ -493,6 +494,25 @@ export const es: Record<MessageKey, string> = {
   "contact.title": "Forma parte de esta conversación",
   "contact.intro":
     "Cuéntanos un poco sobre ti. Todos los campos son obligatorios, excepto la organización.",
+  "contactPage.metaTitle": "Contacto",
+  "contactPage.metaDescription":
+    "Ponte en contacto con Hub Turismo Amazonas mediante el formulario institucional.",
+  "contactPage.eyebrow": "HABLA CON HUB",
+  "contactPage.title": "¿Hablamos?",
+  "contactPage.description":
+    "Cuéntanos qué necesitas. Mientras preparamos nuestros canales directos, el equipo recibe tu mensaje a través del formulario.",
+  "contactPage.channelsTitle": "Canales en preparación",
+  "contactPage.channelsDescription":
+    "Los contactos institucionales se publicarán aquí tan pronto como estén disponibles.",
+  "contactPage.whatsappTitle": "WhatsApp",
+  "contactPage.whatsappDescription": "Canal institucional próximamente.",
+  "contactPage.emailTitle": "Correo electrónico",
+  "contactPage.emailDescription": "Dirección institucional próximamente.",
+  "contactPage.comingSoon": "Próximamente",
+  "contactPage.formEyebrow": "ENVÍANOS UN MENSAJE",
+  "contactPage.formTitle": "¿Cómo podemos ayudarte?",
+  "contactPage.formDescription":
+    "Usa el formulario para compartir una pregunta, idea o solicitud con Hub.",
   "contact.yourName": "Tu nombre",
   "contact.namePlaceholder": "¿Cómo podemos llamarte?",
   "contact.email": "Correo electrónico",

@@ -18,6 +18,7 @@ export const pt = {
   "header.navigation": "Navegação",
   "header.about": "Sobre a Hub",
   "header.contact": "Contato",
+  "header.platformHome": "Início",
   "header.account": "Acessar a plataforma",
   "footer.tagline": "Da Amazônia, para novas conexões.",
   "footer.contact": "Fale com a Hub",
@@ -489,6 +490,25 @@ export const pt = {
   "contact.title": "Faça parte dessa conversa",
   "contact.intro":
     "Conte um pouco sobre você. Todos os campos são obrigatórios, exceto a organização.",
+  "contactPage.metaTitle": "Contato",
+  "contactPage.metaDescription":
+    "Entre em contato com a Hub Turismo Amazonas pelo formulário institucional.",
+  "contactPage.eyebrow": "FALE COM A HUB",
+  "contactPage.title": "Vamos conversar?",
+  "contactPage.description":
+    "Conte o que você precisa. Enquanto nossos canais diretos são preparados, nossa equipe recebe sua mensagem pelo formulário.",
+  "contactPage.channelsTitle": "Canais em preparação",
+  "contactPage.channelsDescription":
+    "Os contatos institucionais serão divulgados aqui assim que estiverem disponíveis.",
+  "contactPage.whatsappTitle": "WhatsApp",
+  "contactPage.whatsappDescription": "Canal institucional em breve.",
+  "contactPage.emailTitle": "E-mail",
+  "contactPage.emailDescription": "Endereço institucional em breve.",
+  "contactPage.comingSoon": "Em breve",
+  "contactPage.formEyebrow": "ENVIE SUA MENSAGEM",
+  "contactPage.formTitle": "Como podemos ajudar?",
+  "contactPage.formDescription":
+    "Use o formulário para compartilhar uma dúvida, ideia ou solicitação com a Hub.",
   "contact.yourName": "Seu nome",
   "contact.namePlaceholder": "Como podemos chamar você?",
   "contact.email": "E-mail",
