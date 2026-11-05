@@ -164,6 +164,37 @@ Testar periodicamente em diretório separado. Não copiar somente o arquivo prin
 
 ## Atualizações e retorno
 
+### Proveniência de fontes antes do build remoto
+
+Para gerar uma candidata a partir do repositório local, execute `infra/package-source-snapshot.ps1`. O gerador seleciona arquivos da árvore do commit (`git archive`), compara cada cópia de trabalho diretamente com o blob Git esperado (inclusive quando o índice marca `assume-unchanged`/`skip-worktree`), recusa fontes não rastreadas e gera o manifesto v4 com commit, prova das entradas da árvore e blob por arquivo. O verificador remoto reconstrói os objetos tree e exige que o hash da raiz corresponda à árvore aprovada; assim, trocar ZIP e manifesto juntos não basta para mudar uma fonte.
+
+Transfira para a pasta de staging da VPS o ZIP de fontes, o arquivo `SOURCE-MANIFEST.json`, o sidecar `<arquivo.zip>.sha256` e o verificador `source/scripts/verify-vps-source-snapshot.mjs` da pasta gerada localmente. Registre `GitHead`, `GitTree` e `VerifierSha256` diretamente da saída local do gerador; não obtenha o hash do verificador do pacote transferido. Antes de executar o verificador, compare o arquivo staged com esse hash fixado fora do pacote. Exemplo, após preencher os quatro valores locais:
+
+```bash
+APPROVED_GIT_HEAD=COMMIT_REGISTRADO_PELO_GERADOR
+APPROVED_GIT_TREE=ARVORE_REGISTRADA_PELO_GERADOR
+APPROVED_VERIFIER_SHA256=HASH_DO_VERIFICADOR_REGISTRADO_LOCALMENTE
+VERIFIER_IMAGE=hub-turismo-amazonas:0.12.13
+VERIFIER_FILE=verify-vps-source-snapshot.mjs
+SOURCE_ZIP=hub-turismo-amazonas-0.12.14-source.zip
+SOURCE_MANIFEST=SOURCE-MANIFEST.json
+
+printf '%s  %s\n' "$APPROVED_VERIFIER_SHA256" "$VERIFIER_FILE" | sha256sum --check --status || {
+  echo 'O verificador staged não corresponde ao hash aprovado localmente.' >&2
+  exit 1
+}
+
+docker run --rm --network none --user 0:0 \
+  --mount "type=bind,src=$PWD,dst=/app/tmp/release-audit,readonly" \
+  --entrypoint node "$VERIFIER_IMAGE" \
+  "/app/tmp/release-audit/$VERIFIER_FILE" \
+  "/app/tmp/release-audit/$SOURCE_ZIP" \
+  "/app/tmp/release-audit/$SOURCE_MANIFEST" \
+  "$APPROVED_GIT_HEAD" "$APPROVED_GIT_TREE" --self-check
+```
+
+Atualize a tag aprovada e os nomes dos arquivos para a release que está sendo preparada. O `sha256sum` do host confere a cópia do verificador contra `VerifierSha256`, obtido localmente e passado separadamente do pacote; o programa validado então confere a prova da árvore, commit/árvore esperados, cada blob Git, SHA-256, manifesto e conjunto completo de entradas. Só extraia e execute `docker compose ... build web` se ele passar. Se a imagem aprovada não tiver `unzipper-esm`, pare e prepare um verificador confiável com essa dependência antes de extrair; não instale dependências de fontes ainda não verificadas.
+
 Fazer backup antes da migração. Atualizar `package.json` e `APP_VERSION` em `infra/vps.env` para a mesma versão nova; o preflight recusa divergência. Parar o serviço para alterações de esquema, construir a imagem com `docker compose -p hub-turismo --env-file infra/vps.env -f infra/compose.vps.yaml build web`, aplicar migrações e reiniciar. Verifique `/api/health`: exija HTTP 200, `status: "ok"`, `database: "postgresql"` e `version` correspondente à release pretendida. Cada versão fica em uma etiqueta própria e a imagem anterior deve ser preservada. Depois de corrigir uma falha terminal, reabra as entregas com `docker compose -p hub-turismo --env-file infra/vps.env -f infra/compose.vps.yaml run --rm --no-deps booking-email-worker node --experimental-strip-types scripts/retry-failed-booking-email.ts --confirm`.
 
 Se houver falha de aplicação e o schema continuar compatível, volte `APP_VERSION` à versão anterior em `infra/vps.env` e execute `docker compose -p hub-turismo --env-file infra/vps.env -f infra/compose.vps.yaml up -d --no-build web booking-email-worker`. Se o schema não for compatível, restaure o dump em um banco separado e só então aponte a versão anterior para esse banco. Não execute versões antigas sobre esquema incompatível. Ao retornar da 0.12.0 para a 0.11.0, mantenha a tabela 022 e os demais dados do schema; a versão anterior a ignora e deixa de gerar lembretes. As versões 0.10.0 e 0.9.0 não alteram o schema; o retorno ao binário 0.9.0 mantém o heartbeat e apenas remove a atualização automática do painel. Versões 0.8.0 ou anteriores podem ignorar as tabelas 021 e 022, que devem permanecer no banco.

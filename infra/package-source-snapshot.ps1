@@ -25,6 +25,63 @@ function Assert-ContainedPath {
   }
 }
 
+function Get-StreamHashes {
+  param(
+    [System.IO.Stream]$Stream,
+    [long]$ExpectedBytes,
+    [string]$GitObjectFormat
+  )
+
+  $sha256 = [System.Security.Cryptography.IncrementalHash]::CreateHash([System.Security.Cryptography.HashAlgorithmName]::SHA256)
+  $gitHash = $null
+  if ($GitObjectFormat) {
+    $algorithm = if ($GitObjectFormat -eq "sha1") {
+      [System.Security.Cryptography.HashAlgorithmName]::SHA1
+    } elseif ($GitObjectFormat -eq "sha256") {
+      [System.Security.Cryptography.HashAlgorithmName]::SHA256
+    } else {
+      throw "Formato de objeto Git não suportado: $GitObjectFormat"
+    }
+    $gitHash = [System.Security.Cryptography.IncrementalHash]::CreateHash($algorithm)
+    $header = [System.Text.UTF8Encoding]::new($false).GetBytes("blob $ExpectedBytes`0")
+    $gitHash.AppendData($header)
+  }
+
+  $buffer = [byte[]]::new(65536)
+  $bytes = 0L
+  try {
+    while (($read = $Stream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+      $bytes += $read
+      if ($bytes -gt $ExpectedBytes) {
+        throw "Entrada ZIP maior do que o tamanho aprovado."
+      }
+      $sha256.AppendData($buffer, 0, $read)
+      if ($gitHash) {
+        $gitHash.AppendData($buffer, 0, $read)
+      }
+    }
+    if ($bytes -ne $ExpectedBytes) {
+      throw "Tamanho lido do ZIP diverge do tamanho declarado."
+    }
+    $sha256Hex = [BitConverter]::ToString($sha256.GetHashAndReset()).Replace('-', '').ToLowerInvariant()
+    $gitBlob = if ($gitHash) {
+      [BitConverter]::ToString($gitHash.GetHashAndReset()).Replace('-', '').ToLowerInvariant()
+    } else {
+      $null
+    }
+    [pscustomobject]@{
+      Bytes = $bytes
+      Sha256 = $sha256Hex
+      GitBlob = $gitBlob
+    }
+  } finally {
+    $sha256.Dispose()
+    if ($gitHash) {
+      $gitHash.Dispose()
+    }
+  }
+}
+
 $packageInfo = Get-Content -LiteralPath (Join-Path $repoRoot "package.json") -Raw | ConvertFrom-Json
 $version = [string]$packageInfo.version
 if ($version -notmatch '^\d+\.\d+\.\d+$') {
@@ -72,10 +129,6 @@ try {
   if ($LASTEXITCODE -ne 0) {
     throw "Não foi possível capturar o estado Git das fontes."
   }
-  $trackedPaths = @(& git -C $repoRoot -c core.quotepath=false ls-files --cached)
-  if ($LASTEXITCODE -ne 0) {
-    throw "Não foi possível identificar as fontes rastreadas pelo Git."
-  }
 
   $gitStatusByPath = @{}
   foreach ($line in $gitStatusLines) {
@@ -91,11 +144,6 @@ try {
       throw "Fonte não rastreada não pode entrar no snapshot aprovado pelo Git: $statusPath"
     }
   }
-  $trackedPathSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-  foreach ($trackedPath in $trackedPaths) {
-    [void]$trackedPathSet.Add(([string]$trackedPath).Replace('\', '/'))
-  }
-
   $gitHead = (& git -C $repoRoot rev-parse HEAD).Trim()
   if ($LASTEXITCODE -ne 0 -or $gitHead -notmatch '^[a-f0-9]{40,64}$') {
     throw "Não foi possível identificar o commit base do snapshot."
@@ -104,37 +152,86 @@ try {
   if ($LASTEXITCODE -ne 0 -or $gitTree -notmatch '^[a-f0-9]{40,64}$') {
     throw "Não foi possível identificar a árvore de fontes do commit aprovado."
   }
-
-  foreach ($gitPath in $trackedPaths) {
-    $relativePath = ([string]$gitPath).Replace('\', '/')
-    if ($relativePath -match $excludedPathPattern) {
-      continue
-    }
-    $rawStatus = if ($gitStatusByPath.ContainsKey($relativePath)) { [string]$gitStatusByPath[$relativePath] } else { "  " }
-    if ($rawStatus -ne "  ") {
-      throw "Fonte rastreada alterada ou adicionada fora do commit aprovado: $relativePath ($rawStatus)"
-    }
-    $sourcePath = Join-Path $repoRoot ($relativePath.Replace('/', [System.IO.Path]::DirectorySeparatorChar))
-    if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
-      throw "Fonte rastreada ausente na cópia de trabalho: $relativePath"
-    }
+  $gitObjectFormat = (& git -C $repoRoot rev-parse --show-object-format).Trim()
+  if ($LASTEXITCODE -ne 0 -or $gitObjectFormat -notin @("sha1", "sha256")) {
+    throw "O formato de objetos do Git não é suportado."
   }
 
-  $sourceFiles = [System.Collections.Generic.List[object]]::new()
-  foreach ($gitPath in ($trackedPaths | Sort-Object -Unique)) {
-    $relativePath = ([string]$gitPath).Replace('\', '/')
-    if ($relativePath -match $excludedPathPattern) {
+  $treeLines = @(& git -C $repoRoot -c core.quotepath=false ls-tree -t -r --full-tree $gitHead)
+  if ($LASTEXITCODE -ne 0) {
+    throw "Não foi possível ler os arquivos do commit aprovado."
+  }
+  $commitFiles = [System.Collections.Generic.List[object]]::new()
+  $gitTreeEntries = [System.Collections.Generic.List[object]]::new()
+  $commitFileByPath = @{}
+  $trackedPathSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+  $expectedGitBlobLength = if ($gitObjectFormat -eq "sha1") { 40 } else { 64 }
+  foreach ($line in $treeLines) {
+    $separator = $line.IndexOf("`t")
+    if ($separator -lt 1) {
+      throw "A listagem da árvore Git contém uma entrada inválida."
+    }
+    $metadata = @($line.Substring(0, $separator).Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries))
+    if ($metadata.Count -ne 3) {
+      throw "A listagem da árvore Git contém metadados inválidos."
+    }
+    $relativePath = $line.Substring($separator + 1)
+    if ([System.IO.Path]::IsPathRooted($relativePath) -or $relativePath.Contains('\') -or $relativePath.Contains('"') -or ($relativePath -split '/') -contains '..' -or ($relativePath -split '/') -contains '.') {
+      throw "Caminho da árvore Git inválido ou não portável neste snapshot: $relativePath"
+    }
+    if ([string]::IsNullOrWhiteSpace($relativePath) -or $relativePath -match '[\x00-\x1f\x7f]') {
+      throw "Caminho da árvore Git contém caracteres não representáveis com segurança."
+    }
+    $mode = [string]$metadata[0]
+    $objectType = [string]$metadata[1]
+    $gitObjectId = ([string]$metadata[2]).ToLowerInvariant()
+    if ($gitObjectId -notmatch "^[a-f0-9]{$expectedGitBlobLength}$") {
+      throw "Hash Git inválido na árvore aprovada: $relativePath"
+    }
+    $validTreeEntry = ($mode -eq "040000" -and $objectType -eq "tree") -or
+      ($mode -in @("100644", "100755", "120000") -and $objectType -eq "blob") -or
+      ($mode -eq "160000" -and $objectType -eq "commit")
+    if (-not $validTreeEntry) {
+      throw "Tipo ou modo Git não reconhecido na árvore aprovada: $relativePath"
+    }
+    $gitTreeEntries.Add(
+      [ordered]@{
+        path       = $relativePath
+        mode       = $mode
+        objectType = $objectType
+        objectId   = $gitObjectId
+      }
+    )
+    if ($objectType -eq "tree" -or $relativePath -match $excludedPathPattern) {
       continue
     }
-    if ([System.IO.Path]::IsPathRooted($relativePath) -or ($relativePath -split '/') -contains '..') {
-      throw "Caminho de fonte inválido: $relativePath"
+    if ($objectType -ne "blob" -or $mode -notin @("100644", "100755")) {
+      throw "Tipo, modo ou hash Git da fonte não é aceito: $relativePath"
     }
+    if ($relativePath -eq "SOURCE-MANIFEST.json") {
+      throw "A raiz do commit não pode conter SOURCE-MANIFEST.json; o nome é reservado ao manifesto do snapshot."
+    }
+    if (-not $trackedPathSet.Add($relativePath)) {
+      throw "A árvore do commit contém caminhos incompatíveis com este sistema de arquivos: $relativePath"
+    }
+    $commitFile = [pscustomobject]@{
+      Path = $relativePath
+      Mode = $mode
+      GitBlob = $gitObjectId
+    }
+    $commitFiles.Add($commitFile)
+    $commitFileByPath[$relativePath] = $commitFile
+  }
+  if ($commitFiles.Count -eq 0) {
+    throw "Nenhum arquivo de fonte elegível foi encontrado no commit aprovado."
+  }
 
+  foreach ($commitFile in $commitFiles) {
+    $relativePath = [string]$commitFile.Path
     $rawStatus = if ($gitStatusByPath.ContainsKey($relativePath)) { [string]$gitStatusByPath[$relativePath] } else { "  " }
     if ($rawStatus -ne "  ") {
       throw "Fonte rastreada alterada ou adicionada fora do commit aprovado: $relativePath ($rawStatus)"
     }
-
     $sourcePath = Join-Path $repoRoot ($relativePath.Replace('/', [System.IO.Path]::DirectorySeparatorChar))
     if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
       throw "Fonte rastreada ausente na cópia de trabalho: $relativePath"
@@ -145,26 +242,76 @@ try {
     if (($sourceItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
       throw "Links simbólicos não são incluídos no snapshot: $relativePath"
     }
+    $workingTreeBlob = (& git -C $repoRoot hash-object "--path=$relativePath" -- $sourcePath).Trim().ToLowerInvariant()
+    if ($LASTEXITCODE -ne 0 -or $workingTreeBlob -ne $commitFile.GitBlob) {
+      throw "O conteúdo local diverge do blob do commit aprovado: $relativePath"
+    }
+  }
 
-    $targetPath = Join-Path $stageSource ($relativePath.Replace('/', [System.IO.Path]::DirectorySeparatorChar))
-    $targetParent = Split-Path -Parent $targetPath
-    New-Item -ItemType Directory -Path $targetParent -Force | Out-Null
-    Copy-Item -LiteralPath $sourcePath -Destination $targetPath
-    $fileHash = (Get-FileHash -LiteralPath $targetPath -Algorithm SHA256).Hash.ToLowerInvariant()
-    $sourceFiles.Add(
-      [ordered]@{
-        path          = $relativePath
-        sha256        = $fileHash
-        bytes         = $sourceItem.Length
-        gitStatus     = $rawStatus
-        gitStatusLabel = "tracked"
-        gitTracked    = $trackedPathSet.Contains($relativePath)
+  $gitArchivePath = Join-Path $stageDirectory "git-commit-source.zip"
+  & git -C $repoRoot -c core.quotepath=false -c core.autocrlf=false -c core.eol=lf archive --format=zip "--output=$gitArchivePath" $gitHead
+  if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $gitArchivePath -PathType Leaf)) {
+    throw "Não foi possível arquivar os arquivos do commit aprovado."
+  }
+
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  $sourceFiles = [System.Collections.Generic.List[object]]::new()
+  $archiveSourcePathSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+  $gitArchive = [System.IO.Compression.ZipFile]::OpenRead($gitArchivePath)
+  try {
+    foreach ($entry in $gitArchive.Entries | Where-Object { -not $_.FullName.EndsWith('/') }) {
+      $relativePath = $entry.FullName.Replace('\', '/')
+      if ($relativePath -match $excludedPathPattern) {
+        continue
       }
-    )
+      if ([System.IO.Path]::IsPathRooted($relativePath) -or ($relativePath -split '/') -contains '..' -or -not $commitFileByPath.ContainsKey($relativePath)) {
+        throw "O arquivo Git archive contém um caminho não aprovado: $relativePath"
+      }
+      if (-not $archiveSourcePathSet.Add($relativePath)) {
+        throw "O Git archive contém caminho duplicado: $relativePath"
+      }
+      $commitFile = $commitFileByPath[$relativePath]
+      $targetPath = Join-Path $stageSource ($relativePath.Replace('/', [System.IO.Path]::DirectorySeparatorChar))
+      Assert-ContainedPath -Parent $stageSource -Child $targetPath -Description "A fonte extraída do commit"
+      $targetParent = Split-Path -Parent $targetPath
+      New-Item -ItemType Directory -Path $targetParent -Force | Out-Null
+      $entryStream = $entry.Open()
+      $targetStream = [System.IO.File]::Open($targetPath, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+      try {
+        $entryStream.CopyTo($targetStream)
+      } finally {
+        $targetStream.Dispose()
+        $entryStream.Dispose()
+      }
+      $targetItem = Get-Item -LiteralPath $targetPath -Force
+      $fileHash = (Get-FileHash -LiteralPath $targetPath -Algorithm SHA256).Hash.ToLowerInvariant()
+      $sourceFiles.Add(
+        [ordered]@{
+          path          = $relativePath
+          sha256        = $fileHash
+          bytes         = $targetItem.Length
+          gitBlob       = [string]$commitFile.GitBlob
+          gitMode       = [string]$commitFile.Mode
+          gitStatus     = "  "
+          gitStatusLabel = "tracked"
+          gitTracked    = $true
+        }
+      )
+    }
+    if ($archiveSourcePathSet.Count -ne $commitFiles.Count) {
+      throw "O Git archive omitiu fontes da árvore do commit aprovado."
+    }
+  } finally {
+    $gitArchive.Dispose()
+    Remove-Item -LiteralPath $gitArchivePath -Force
   }
 
   if ($sourceFiles.Count -eq 0) {
     throw "Nenhum arquivo de fonte foi selecionado para o snapshot."
+  }
+  $sourceVerifier = $sourceFiles | Where-Object { $_.path -eq "scripts/verify-vps-source-snapshot.mjs" } | Select-Object -First 1
+  if (-not $sourceVerifier) {
+    throw "O snapshot precisa incluir o verificador de fontes aprovado."
   }
 
   $finalGitStatusLines = @(& git -C $repoRoot -c core.quotepath=false status --porcelain=v1 --untracked-files=all --no-renames)
@@ -182,15 +329,18 @@ try {
   }
 
   $manifest = [ordered]@{
-    format                 = "hub-source-snapshot-v2"
+    format                 = "hub-source-snapshot-v4"
     createdAtUtc           = [DateTime]::UtcNow.ToString("o")
     packageVersion         = $version
     gitHead                = $gitHead
     gitTree                = $gitTree
+    gitObjectFormat         = $gitObjectFormat
+    sourceArchiveMethod    = "git-archive"
     repositoryGitStatusLineCount = $gitStatusLines.Count
     sourceGitStatusLineCount = 0
     sourceGitWorkingTreeClean = $true
     excludedPathPattern    = $excludedPathPattern
+    gitTreeEntries         = $gitTreeEntries
     sourceFileCount        = $sourceFiles.Count
     files                  = $sourceFiles
   }
@@ -216,6 +366,11 @@ try {
     [System.Text.UTF8Encoding]::new($false)
   )
 
+  & node (Join-Path $repoRoot "scripts/verify-vps-source-snapshot.mjs") $archivePath $manifestPath $gitHead $gitTree
+  if ($LASTEXITCODE -ne 0) {
+    throw "A verificação independente do snapshot de fontes terminou com código $LASTEXITCODE."
+  }
+
   $zipFile = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
   try {
     $archiveEntries = @($zipFile.Entries | Where-Object { -not $_.FullName.EndsWith('/') } | ForEach-Object { $_.FullName.Replace('\', '/') })
@@ -232,6 +387,7 @@ try {
     $verifiedArchiveEntries = 0
     foreach ($entry in $zipFile.Entries | Where-Object { -not $_.FullName.EndsWith('/') }) {
       $path = $entry.FullName.Replace('\', '/')
+      $expectedGitBlob = $null
       if ($path -eq "SOURCE-MANIFEST.json") {
         $expectedHash = $manifestHash
         $expectedBytes = $manifestItem.Length
@@ -242,20 +398,23 @@ try {
         }
         $expectedHash = [string]$expectedFile.sha256
         $expectedBytes = [long]$expectedFile.bytes
+        $expectedGitBlob = [string]$expectedFile.gitBlob
       }
       if ($entry.Length -ne $expectedBytes) {
         throw "Entrada ZIP ausente ou com tamanho divergente: $path"
       }
       $entryStream = $entry.Open()
-      $entrySha256 = [System.Security.Cryptography.SHA256]::Create()
+      $hashes = $null
       try {
-        $entryHash = [BitConverter]::ToString($entrySha256.ComputeHash($entryStream)).Replace('-', '').ToLowerInvariant()
+        $hashes = Get-StreamHashes -Stream $entryStream -ExpectedBytes $expectedBytes -GitObjectFormat $(if ($expectedGitBlob) { $gitObjectFormat } else { $null })
       } finally {
-        $entrySha256.Dispose()
         $entryStream.Dispose()
       }
-      if ($entryHash -ne $expectedHash) {
+      if ($hashes.Sha256 -ne $expectedHash) {
         throw "SHA-256 da entrada ZIP diverge do manifesto: $path"
+      }
+      if ($expectedGitBlob -and $hashes.GitBlob -ne $expectedGitBlob) {
+        throw "Blob Git da entrada ZIP diverge do commit aprovado: $path"
       }
       $verifiedArchiveEntries++
     }
@@ -282,7 +441,10 @@ try {
     ArchiveEntriesVerified = $verifiedArchiveEntries
     SourceFiles     = $sourceFiles.Count
     GitHead         = $gitHead
+    GitTree         = $gitTree
+    GitObjectFormat = $gitObjectFormat
     GitStatusLines  = $gitStatusLines.Count
+    VerifierSha256  = [string]$sourceVerifier.sha256
   }
 } catch {
   $failure = $_

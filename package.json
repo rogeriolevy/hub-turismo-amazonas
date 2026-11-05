@@ -11,6 +11,7 @@
     "check:vps-env": "node --env-file=infra/vps.env scripts/check-vps-env.mjs infra/vps.env package.json",
     "check:architecture": "node scripts/check-architecture-boundaries.mjs",
     "verify:vps-runtime-image": "node scripts/verify-vps-runtime-image.mjs",
+    "verify:vps-source-snapshot": "node scripts/verify-vps-source-snapshot.mjs",
     "verify:vps-release-bundle": "node scripts/verify-vps-release-bundle.mjs",
     "verify:vps-health": "node --env-file=infra/vps.env scripts/verify-vps-health.mjs",
     "notifications:retry-failed": "node --experimental-strip-types scripts/retry-failed-booking-email.ts",

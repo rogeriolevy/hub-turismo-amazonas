@@ -204,7 +204,7 @@ try {
 Status: somente local, não publicada. A produção foi verificada em 0.12.0; este pacote não altera a VPS.
 
 Esta candidata reúne a imagem e as fontes do mesmo snapshot: ``$($snapshotResult.Directory)``.
-O manifesto fixa o commit/árvore aprovados e registra hash e tamanho de cada fonte rastreada. O gerador recusa fontes alteradas ou não rastreadas, e valida os hashes de cada entrada do ZIP contra o manifesto.
+O manifesto fixa commit, árvore e blobs aprovados; as fontes vêm de ``git archive`` do commit. O gerador compara a cópia local diretamente aos blobs (inclusive com ``assume-unchanged``), recusa fontes não rastreadas e confere SHA-256 e IDs de blob em cada entrada do ZIP.
 
 - ``databaseMigration: false``; nenhum dado ou schema foi alterado.
 - ``externalBackupValidated: false``; não transferir nem publicar até validar uma cópia externa e uma restauração isolada.
@@ -246,6 +246,8 @@ O manifesto fixa o commit/árvore aprovados e registra hash e tamanho de cada fo
     sourceSnapshotManifestSha256 = $sourceManifestSha256
     sourceGitBaseCommit = [string]$sourceManifest.gitHead
     sourceGitTree = [string]$sourceManifest.gitTree
+    sourceGitObjectFormat = [string]$sourceManifest.gitObjectFormat
+    sourceArchiveMethod = [string]$sourceManifest.sourceArchiveMethod
     sourceGitWorkingTreeClean = [bool]$sourceManifest.sourceGitWorkingTreeClean
     sourceGitStatusLineCount = $gitStatusCount
     sourceFileCount = [int]$sourceManifest.sourceFileCount
@@ -253,6 +255,7 @@ O manifesto fixa o commit/árvore aprovados e registra hash e tamanho de cada fo
     adoptedReleaseTools = @(
       "infra/package-source-snapshot.ps1",
       "infra/package-vps-release-bundle.ps1",
+      "scripts/verify-vps-source-snapshot.mjs",
       "scripts/verify-vps-release-bundle.mjs",
       "scripts/verify-vps-runtime-image.mjs"
     )

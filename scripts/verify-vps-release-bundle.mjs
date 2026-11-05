@@ -4,16 +4,12 @@ import { execFileSync } from "node:child_process";
 import { lstat, readFile, readdir } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Open } from "unzipper-esm";
+import { verifyVpsSourceSnapshot } from "./verify-vps-source-snapshot.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const packageJson = JSON.parse(await readFile(join(repositoryRoot, "package.json"), "utf8"));
 const version = packageJson.version;
-const expectedExcludedPathPattern =
-  "(^|/)(\\.git|node_modules|\\.next|tmp|data|backups|output|coverage|test-results|public/uploads|\\.planning|\\.codex|\\.agents|\\.sites-runtime|\\.vercel|\\.ssh|secrets|credentials)(/|$)|(^|/)\\.env[^/]*$|(^|/)[^/]+\\.env$|(^|/)\\.npmrc$|(^|/)(authorized_keys|known_hosts)$|(^|/)(id_rsa|id_ed25519|id_ecdsa|id_dsa)(\\.pub)?$|(^|/)[^/]*\\.(sqlite|pem|key|p12|pfx|ppk|crt|p7b|secret)([-.].*)?$";
 const maximumImageBytes = 550_000_000;
-const maximumSourceEntryBytes = 50_000_000;
-const maximumSourceBytes = 250_000_000;
 const bundlePath = process.argv[2];
 
 if (!bundlePath) throw new Error("Uso: npm run verify:vps-release-bundle -- <pasta-do-pacote>");
@@ -102,25 +98,23 @@ for (const [name, expectedHash] of [
   if (sha256(bytes) !== expectedHash) throw new Error(`SHA-256 divergente: ${name}.`);
 }
 
-const sourceManifestBytes = await readFile(join(bundleDirectory, manifest.sourceSnapshotManifest));
-const sourceManifest = JSON.parse(sourceManifestBytes.toString("utf8"));
+const sourceVerification = await verifyVpsSourceSnapshot(
+  join(bundleDirectory, manifest.sourceArchive),
+  join(bundleDirectory, manifest.sourceSnapshotManifest),
+  {
+    gitHead: manifest.sourceGitBaseCommit,
+    gitTree: manifest.sourceGitTree,
+    gitObjectFormat: manifest.sourceGitObjectFormat,
+    packageVersion: version,
+  },
+);
+const sourceManifest = sourceVerification.manifest;
 if (
-  sourceManifest.format !== "hub-source-snapshot-v2" ||
   sourceManifest.packageVersion !== version ||
-  !/^[a-f0-9]{40,64}$/.test(sourceManifest.gitHead) ||
-  !/^[a-f0-9]{40,64}$/.test(sourceManifest.gitTree) ||
-  sourceManifest.gitHead !== manifest.sourceGitBaseCommit ||
-  sourceManifest.gitTree !== manifest.sourceGitTree ||
-  sourceManifest.excludedPathPattern !== expectedExcludedPathPattern ||
-  sourceManifest.sourceGitStatusLineCount !== 0 ||
-  sourceManifest.sourceGitWorkingTreeClean !== true ||
-  !Number.isSafeInteger(sourceManifest.repositoryGitStatusLineCount) ||
-  sourceManifest.repositoryGitStatusLineCount < 0 ||
-  !Array.isArray(sourceManifest.files) ||
-  sourceManifest.sourceFileCount !== sourceManifest.files.length ||
   sourceManifest.sourceFileCount !== manifest.sourceFileCount ||
   sourceManifest.sourceGitStatusLineCount !== manifest.sourceGitStatusLineCount ||
-  sourceManifest.sourceGitWorkingTreeClean !== manifest.sourceGitWorkingTreeClean
+  sourceManifest.sourceGitWorkingTreeClean !== manifest.sourceGitWorkingTreeClean ||
+  sourceManifest.sourceArchiveMethod !== manifest.sourceArchiveMethod
 )
   throw new Error("Manifesto de fontes inconsistente com o pacote ou com a versão.");
 
@@ -134,6 +128,8 @@ for (let index = 0; index < sourceManifest.files.length; index += 1) {
     bundled.path !== source.path ||
     bundled.sha256 !== source.sha256 ||
     bundled.bytes !== source.bytes ||
+    bundled.gitBlob !== source.gitBlob ||
+    bundled.gitMode !== source.gitMode ||
     bundled.gitStatus !== source.gitStatus ||
     bundled.gitStatusLabel !== source.gitStatusLabel ||
     bundled.gitTracked !== source.gitTracked
@@ -144,6 +140,7 @@ for (let index = 0; index < sourceManifest.files.length; index += 1) {
 const expectedAdoptedTools = [
   "infra/package-source-snapshot.ps1",
   "infra/package-vps-release-bundle.ps1",
+  "scripts/verify-vps-source-snapshot.mjs",
   "scripts/verify-vps-release-bundle.mjs",
   "scripts/verify-vps-runtime-image.mjs",
 ].sort();
@@ -151,83 +148,11 @@ if (
   !Array.isArray(manifest.adoptedReleaseTools) ||
   JSON.stringify([...manifest.adoptedReleaseTools].sort()) !== JSON.stringify(expectedAdoptedTools)
 )
-  throw new Error("O manifesto precisa identificar os quatro utilitários de release autorizados.");
+  throw new Error("O manifesto precisa identificar os cinco utilitários de release autorizados.");
 for (const toolPath of expectedAdoptedTools) {
   if (!sourceFilesContain(manifest.sourceFiles, toolPath))
     throw new Error(`O utilitário adotado não aparece na proveniência do snapshot: ${toolPath}.`);
 }
-
-const sourceFiles = new Map();
-let declaredSourceBytes = 0;
-for (const file of sourceManifest.files) {
-  if (
-    !file ||
-    typeof file.path !== "string" ||
-    file.path.startsWith("/") ||
-    file.path.includes("\\") ||
-    file.path.includes("\0") ||
-    /^[a-z]:/i.test(file.path) ||
-    file.path.split("/").some((part) => part === "" || part === "." || part === "..") ||
-    new RegExp(expectedExcludedPathPattern).test(file.path) ||
-    !/^[a-f0-9]{64}$/.test(file.sha256) ||
-    !Number.isSafeInteger(file.bytes) ||
-    file.bytes < 0 ||
-    file.bytes > maximumSourceEntryBytes ||
-    typeof file.gitStatus !== "string" ||
-    !/^(  |[ MADRCU?!]{2})$/.test(file.gitStatus) ||
-    file.gitStatusLabel !== "tracked" ||
-    file.gitTracked !== true ||
-    file.gitStatus !== "  " ||
-    sourceFiles.has(file.path)
-  )
-    throw new Error(
-      `Entrada inválida ou duplicada no manifesto de fontes: ${file?.path ?? "desconhecida"}.`,
-    );
-  declaredSourceBytes += file.bytes;
-  if (declaredSourceBytes > maximumSourceBytes)
-    throw new Error("O ZIP declara mais fontes do que o limite de auditoria permite.");
-  sourceFiles.set(file.path, file);
-}
-
-const archive = await Open.file(join(bundleDirectory, manifest.sourceArchive));
-const archiveEntries = new Map();
-for (const entry of archive.files) {
-  const path = entry.path.replaceAll("\\", "/");
-  if (
-    entry.type !== "File" ||
-    !path ||
-    path.startsWith("/") ||
-    path.includes("\0") ||
-    /^[a-z]:/i.test(path) ||
-    path.split("/").some((part) => part === "" || part === "." || part === "..") ||
-    new RegExp(expectedExcludedPathPattern).test(path) ||
-    archiveEntries.has(path)
-  )
-    throw new Error(`Caminho inválido ou duplicado no ZIP de fontes: ${path || "vazio"}.`);
-  archiveEntries.set(path, entry);
-}
-if (archiveEntries.size !== sourceFiles.size + 1)
-  throw new Error("Quantidade de entradas do ZIP não corresponde ao manifesto de fontes.");
-
-const embeddedManifestEntry = archiveEntries.get("SOURCE-MANIFEST.json");
-if (!embeddedManifestEntry) throw new Error("SOURCE-MANIFEST.json ausente do ZIP de fontes.");
-const embeddedManifestBytes = await embeddedManifestEntry.buffer();
-if (sha256(embeddedManifestBytes) !== manifest.sourceSnapshotManifestSha256)
-  throw new Error("O manifesto interno do ZIP difere do manifesto separado do pacote.");
-if (!embeddedManifestBytes.equals(sourceManifestBytes))
-  throw new Error("O manifesto interno e o manifesto separado não são idênticos.");
-archiveEntries.delete("SOURCE-MANIFEST.json");
-
-for (const [path, expected] of sourceFiles) {
-  const entry = archiveEntries.get(path);
-  if (!entry || entry.uncompressedSize !== expected.bytes)
-    throw new Error(`Arquivo ausente ou com tamanho divergente no ZIP: ${path}.`);
-  const result = await hashStream(entry.stream());
-  if (result.bytes !== expected.bytes || result.sha256 !== expected.sha256)
-    throw new Error(`Arquivo com SHA-256 ou tamanho divergente no ZIP: ${path}.`);
-  archiveEntries.delete(path);
-}
-if (archiveEntries.size !== 0) throw new Error("O ZIP contém fontes não listadas no manifesto.");
 
 if (
   !/^sha256:[a-f0-9]{64}$/.test(manifest.imageId) ||
@@ -267,7 +192,7 @@ const runtimeCheck = runProcess(process.execPath, [
 ]);
 console.log(runtimeCheck);
 console.log(
-  `Pacote íntegro: versão ${version}; ${sourceFiles.size} arquivos de fonte conferidos; imagem ${manifest.imageTag} (${manifest.imageBytes} bytes); SHA-256 e conteúdos verificados.`,
+  `Pacote íntegro: versão ${version}; ${sourceManifest.files.length} arquivos de fonte conferidos; imagem ${manifest.imageTag} (${manifest.imageBytes} bytes); SHA-256 e conteúdos verificados.`,
 );
 if (manifest.externalBackupValidated !== true)
   console.log(
