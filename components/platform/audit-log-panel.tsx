@@ -15,6 +15,7 @@ type AuditPage = {
 
 const auditActionMessages: Record<string, MessageKey> = {
   "company.saved": "audit.action.company.saved",
+  "company.publish_confirmed": "audit.action.company.publish_confirmed",
   "member.granted": "audit.action.member.granted",
   "member.revoked": "audit.action.member.revoked",
   "room.saved": "audit.action.room.saved",

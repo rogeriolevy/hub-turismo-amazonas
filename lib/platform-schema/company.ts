@@ -72,6 +72,7 @@ export const companySchema = z
     city: text(2, 100),
     description: text(20, 2000),
     status: z.enum(["draft", "published", "suspended"]),
+    provider_data_confirmed: z.boolean().optional(),
   })
   .strict()
   .superRefine((company, context) => {

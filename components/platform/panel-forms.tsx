@@ -62,6 +62,13 @@ export function CompanyEditor({ company }: { company?: Company }) {
             { value: "suspended", label: "Suspenso — equipe sem acesso" },
           ],
         },
+        {
+          name: "provider_data_confirmed",
+          label: "Confirmo que revisei estes dados com o prestador.",
+          hint: "A publicação ou alteração dos dados públicos exige uma confirmação nova.",
+          type: "checkbox",
+          visibleWhen: { field: "status", value: "published" },
+        },
       ]}
       label={company ? "Salvar empresa" : "Cadastrar empresa"}
     />
