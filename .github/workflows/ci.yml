@@ -82,4 +82,52 @@ jobs:
       - name: Build VPS image without publishing
         run: docker compose --env-file infra/vps.env.example -f infra/compose.vps.yaml build web
       - name: Verify VPS runtime image contents and size
-        run: npm run verify:vps-runtime-image
+        shell: bash
+        run: |
+          runtime_manifest="$(mktemp "$RUNNER_TEMP/hub-runtime-manifest.XXXXXX.json")"
+          trap 'rm -f "$runtime_manifest"' EXIT
+          node --input-type=module - "$runtime_manifest" <<'NODE'
+          import { execFileSync } from "node:child_process";
+          import { readFileSync, writeFileSync } from "node:fs";
+
+          const manifestPath = process.argv.at(-1);
+          if (!manifestPath) throw new Error("RUNTIME_MANIFEST_PATH_REQUIRED");
+          const version = JSON.parse(readFileSync("package.json", "utf8")).version;
+          const imageTag = `hub-turismo-amazonas:${version}`;
+          const [imageId, imageSize, runtimeUser] = execFileSync(
+            "docker",
+            ["image", "inspect", "--format", "{{.Id}}|{{.Size}}|{{.Config.User}}", imageTag],
+            { encoding: "utf8" },
+          )
+            .trim()
+            .split("|");
+          const composeImages = execFileSync(
+            "docker",
+            [
+              "compose",
+              "--env-file",
+              "infra/vps.env.example",
+              "-f",
+              "infra/compose.vps.yaml",
+              "config",
+              "--images",
+            ],
+            { encoding: "utf8" },
+          )
+            .trim()
+            .split(/\r?\n/);
+          if (!composeImages.includes(imageTag)) throw new Error("COMPOSE_IMAGE_TAG_MISMATCH");
+          writeFileSync(
+            manifestPath,
+            JSON.stringify({
+              status: "local-candidate-not-deployed",
+              appVersion: version,
+              imageTag,
+              composeExpectedTag: imageTag,
+              imageId,
+              imageBytes: Number(imageSize),
+              runtimeUser,
+            }),
+          );
+          NODE
+          npm run verify:vps-runtime-image -- --manifest "$runtime_manifest"
