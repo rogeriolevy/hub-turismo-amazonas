@@ -168,41 +168,27 @@ Testar periodicamente em diretório separado. Não copiar somente o arquivo prin
 
 Para gerar uma candidata a partir do repositório local, execute `infra/package-source-snapshot.ps1` depois de aprovar e commitar as fontes. O gerador seleciona arquivos da árvore do commit (`git archive`), compara cada cópia de trabalho diretamente com o blob Git esperado (inclusive quando o índice marca `assume-unchanged`/`skip-worktree`), recusa fontes não rastreadas e gera o manifesto v4 com commit, prova das entradas da árvore e blob por arquivo. Fixe fora do pacote `GitHead`, `GitTree` e `VerifierSha256` diretamente da saída local. O verificador remoto reconstrói os objetos tree e exige que o hash da raiz corresponda à árvore aprovada; assim, trocar ZIP e manifesto juntos não basta para mudar uma fonte.
 
-Transfira para a pasta de staging da VPS o ZIP de fontes, `SOURCE-MANIFEST.json`, o sidecar `<arquivo.zip>.sha256` e o verificador `source/scripts/verify-vps-source-snapshot.mjs`. Não obtenha o hash do verificador do pacote transferido. Antes da validação, confira no host o hash do ZIP e compare o arquivo staged do verificador com o `VerifierSha256` fixado localmente. Execute o verificador v4 dentro da imagem aprovada 0.12.13 da própria VPS, em container sem rede e com staging, verificador e dependências auxiliares somente leitura. Monte o verificador em `/app/scripts/verify-vps-source-snapshot.mjs` para que a resolução do módulo use `/app/node_modules`. Confirme os arquivos de entrada reais de cada dependência; diretórios ou `package.json` parciais não bastam, e `import.meta.resolve()` pode retornar uma URL mesmo quando o arquivo está ausente.
+Transfira para uma subpasta nova de `/opt/hub-turismo/staging` o ZIP, `SOURCE-MANIFEST.json` e a cópia staged de `scripts/verify-vps-source-snapshot.mjs`. Registre fora do pacote, a partir da saída local do gerador, o commit, a árvore, SHA-256 do ZIP e SHA-256 do verificador. Esses quatro pins são entradas independentes: nunca derive um deles da cópia staged.
 
-Se a imagem aprovada não incluir `unzipper-esm` ou qualquer arquivo de entrada de uma dependência necessária, pare antes de extrair fontes. Obtenha localmente o tarball de cada pacote e versão exatos registrados em `package-lock.json` com `npm pack --ignore-scripts`, compare o SRI SHA-512 de cada tarball ao campo `integrity` do lockfile e transfira-os separadamente. Confira os mesmos SHA-512 na VPS, valide os caminhos e metadados dos pacotes, extraia-os em diretórios dedicados de staging e monte cada diretório no respectivo caminho `/app/node_modules/<pacote>` como somente leitura. Confirme que todos os imports exigidos pelo verificador estão resolvidos antes da validação v4. Não instale dependências nem altere a imagem aprovada. Exemplo, após preencher os valores coletados localmente e preparar os três pacotes nesta pasta de staging:
+No host, use exclusivamente `infra/verify-and-build-vps-release.sh`. Ele exige todos os caminhos e pins, verifica SHA-256 antes de executar o verificador, executa o verificador com `--self-check` numa imagem atual aprovada sem rede e com mounts somente leitura, e só então extrai e constrói `web`. Exemplo com valores medidos para a entrega atual:
 
 ```bash
-APPROVED_GIT_HEAD=COMMIT_REGISTRADO_PELO_GERADOR
-APPROVED_GIT_TREE=ARVORE_REGISTRADA_PELO_GERADOR
-APPROVED_VERIFIER_SHA256=HASH_DO_VERIFICADOR_REGISTRADO_LOCALMENTE
-VERIFIER_IMAGE=hub-turismo-amazonas:0.12.13
-VERIFIER_FILE=verify-vps-source-snapshot.mjs
-VERIFIER_UNZIPPER_DIR=unzipper-esm-package
-VERIFIER_GRACEFUL_FS_DIR=graceful-fs-package
-VERIFIER_NODE_INT64_DIR=node-int64-package
-SOURCE_ZIP=hub-turismo-amazonas-0.12.14-source.zip
-SOURCE_MANIFEST=SOURCE-MANIFEST.json
-
-printf '%s  %s\n' "$APPROVED_VERIFIER_SHA256" "$VERIFIER_FILE" | sha256sum --check --status || {
-  echo 'O verificador staged não corresponde ao hash aprovado localmente.' >&2
-  exit 1
-}
-
-docker run --pull=never --rm --network none --read-only \
-  --mount "type=bind,src=$PWD,dst=/app/tmp/release-audit,readonly" \
-  --mount "type=bind,src=$PWD/$VERIFIER_FILE,dst=/app/scripts/verify-vps-source-snapshot.mjs,readonly" \
-  --mount "type=bind,src=$PWD/$VERIFIER_UNZIPPER_DIR,dst=/app/node_modules/unzipper-esm,readonly" \
-  --mount "type=bind,src=$PWD/$VERIFIER_GRACEFUL_FS_DIR,dst=/app/node_modules/graceful-fs,readonly" \
-  --mount "type=bind,src=$PWD/$VERIFIER_NODE_INT64_DIR,dst=/app/node_modules/node-int64,readonly" \
-  --entrypoint node "$VERIFIER_IMAGE" \
-  /app/scripts/verify-vps-source-snapshot.mjs \
-  "/app/tmp/release-audit/$SOURCE_ZIP" \
-  "/app/tmp/release-audit/$SOURCE_MANIFEST" \
-  "$APPROVED_GIT_HEAD" "$APPROVED_GIT_TREE" --self-check
+bash infra/verify-and-build-vps-release.sh \
+  --staging /opt/hub-turismo/staging/ENTREGA \
+  --archive /opt/hub-turismo/staging/ENTREGA/fontes.zip \
+  --manifest /opt/hub-turismo/staging/ENTREGA/SOURCE-MANIFEST.json \
+  --verifier /opt/hub-turismo/staging/ENTREGA/verify-vps-source-snapshot.mjs \
+  --git-head COMMIT_MEDIDO \
+  --git-tree ARVORE_MEDIDA \
+  --archive-sha256 SHA256_DO_ZIP_MEDIDO \
+  --verifier-sha256 SHA256_DO_VERIFICADOR_MEDIDO
 ```
 
-O `sha256sum` do host confere o ZIP e a cópia do verificador contra os hashes fixados localmente e passados separadamente do pacote; o programa validado então confere commit/árvore esperados, cada blob Git, SHA-256, manifesto e conjunto completo de entradas. Só extraia depois de aprovação. Para candidatas comuns sem alteração de schema, extraia na pasta versionada e construa `web` na VPS com o Compose e `infra/vps.env` daquela release. Não rode build/export na estação de trabalho, não instale dependências a partir de fontes ainda não verificadas e não ative durante a preparação da candidata.
+Se a imagem atual não contiver uma dependência do verificador, transfira o tarball exato para a mesma staging e passe `--helper-tarball nome-do-pacote=CAMINHO`. O executor compara nome, versão e SRI SHA-512 com o `package-lock.json` da release atualmente aprovada, confere o entrypoint e monta o pacote somente leitura; ele não instala dependências nem altera a imagem atual.
+
+O único resultado de sucesso é `CANDIDATE_ATTESTATION=...` e seu `CANDIDATE_ATTESTATION_SHA256=...`. A atestação protegida contém o caminho canônico da candidata, pins de fonte, identidade da imagem e fingerprints de Compose, ambiente (sem `APP_VERSION`) e migrations. Ela não ativa a release. A ativação posterior deve consumir essa atestação e reavaliar os fatos externos.
+
+Em cada execução manual futura, releia na VPS a release em `current`, a versão do pacote, a identidade da imagem e a saúde pública antes de registrar evidência. Qualquer valor documentado para uma entrega anterior — inclusive 0.12.14 — é histórico, não prova para a candidata ou produção atual.
 
 Antes de ativar cada release, conclua e registre os seguintes gates, nesta ordem:
 

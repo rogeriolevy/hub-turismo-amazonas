@@ -328,10 +328,12 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const [, , archivePath, manifestPath, gitHead, gitTree, ...flags] = process.argv;
   if (!archivePath || !manifestPath)
     throw new Error("Uso: node scripts/verify-vps-source-snapshot.mjs <arquivo.zip> <SOURCE-MANIFEST.json> [commit-aprovado] [árvore-aprovada] [--self-check]");
+  if (!flags.includes("--self-check"))
+    throw new Error("SELF_CHECK_REQUIRED: a execução direta exige --self-check antes de ler o snapshot.");
   const result = await verifyVpsSourceSnapshot(archivePath, manifestPath, {
     gitHead,
     gitTree,
-    selfCheck: flags.includes("--self-check"),
+    selfCheck: true,
   });
   console.log(
     `Source snapshot íntegro: commit ${result.manifest.gitHead}; árvore ${result.manifest.gitTree}; ${result.verifiedFiles} arquivos e ${result.verifiedEntries} entradas conferidos por SHA-256 e blob Git.`,

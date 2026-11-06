@@ -9,6 +9,8 @@ import { fileURLToPath } from "node:url";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const executor = path.join(repositoryRoot, "infra", "verify-and-build-vps-release.sh");
+const sourceVerifier = path.join(repositoryRoot, "scripts", "verify-vps-source-snapshot.mjs");
+const sourcePackager = path.join(repositoryRoot, "infra", "package-source-snapshot.ps1");
 const gitBash = process.env.GIT_BASH_EXE ?? "C:/Program Files/Git/bin/bash.exe";
 const cygpath = process.env.CYGPATH_EXE ?? "C:/Program Files/Git/usr/bin/cygpath.exe";
 const fixtureDirectories: string[] = [];
@@ -171,6 +173,27 @@ test("verifier self-check is required and an attestation is never overwritten", 
   const second = runExecutor(fixture);
   assert.notEqual(second.status, 0);
   assert.match(second.stderr, /ERROR=ATTESTATION_ALREADY_EXISTS/);
+});
+
+test("direct source verifier CLI rejects a missing self-check before source reads", () => {
+  const result = spawnSync(
+    process.execPath,
+    [sourceVerifier, "missing.zip", "missing-manifest.json", head, tree],
+    { encoding: "utf8", windowsHide: true },
+  );
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /SELF_CHECK_REQUIRED/);
+  assert.doesNotMatch(result.stderr, /ENOENT|missing\.zip/);
+});
+
+test("source packager invokes the verifier with an explicit self-check", async () => {
+  const source = await readFile(sourcePackager, "utf8");
+
+  assert.match(
+    source,
+    /verify-vps-source-snapshot\.mjs"\) \$archivePath \$manifestPath \$gitHead \$gitTree --self-check/,
+  );
 });
 
 after(async () => {

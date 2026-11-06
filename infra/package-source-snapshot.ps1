@@ -366,7 +366,7 @@ try {
     [System.Text.UTF8Encoding]::new($false)
   )
 
-  & node (Join-Path $repoRoot "scripts/verify-vps-source-snapshot.mjs") $archivePath $manifestPath $gitHead $gitTree
+  & node (Join-Path $repoRoot "scripts/verify-vps-source-snapshot.mjs") $archivePath $manifestPath $gitHead $gitTree --self-check
   if ($LASTEXITCODE -ne 0) {
     throw "A verificação independente do snapshot de fontes terminou com código $LASTEXITCODE."
   }
