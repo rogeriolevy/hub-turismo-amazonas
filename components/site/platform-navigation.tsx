@@ -37,10 +37,14 @@ export function PlatformNavigation({
   links: PlatformLink[];
 }) {
   const pathname = usePathname();
+  const currentPathname = pathname.replace(/\/+$/, "") || "/";
+  const isModulePage = links.some(
+    ({ href }) => currentPathname === href || currentPathname.startsWith(`${href}/`),
+  );
 
   return (
     <nav className="header-primary-nav header-primary-nav--platform" aria-label={ariaLabel}>
-      {pathname !== "/plataforma" ? (
+      {isModulePage ? (
         <Link className="header-primary-link" href="/plataforma">
           <House size={17} strokeWidth={1.8} aria-hidden="true" />
           <span>{homeLabel}</span>
@@ -48,7 +52,7 @@ export function PlatformNavigation({
       ) : null}
       {links.map(({ href, label, icon }) => {
         const Icon = navigationIcons[icon];
-        const isCurrent = pathname === href || pathname.startsWith(`${href}/`);
+        const isCurrent = currentPathname === href || currentPathname.startsWith(`${href}/`);
 
         return (
           <Link
