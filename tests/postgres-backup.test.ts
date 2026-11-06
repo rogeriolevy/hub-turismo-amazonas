@@ -16,21 +16,12 @@ import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { gitBash, toPosixPath } from "./support/bash.ts";
 
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const backupScript = resolve(repositoryRoot, "infra/backup-postgres.sh");
 const restoreScript = resolve(repositoryRoot, "infra/restore-postgres.sh");
 const activeBackupScript = resolve(repositoryRoot, "infra/backup-postgres-active.sh");
-const gitBash = process.env.GIT_BASH_EXE ?? "C:/Program Files/Git/bin/bash.exe";
-const cygpath = process.env.CYGPATH_EXE ?? "C:/Program Files/Git/usr/bin/cygpath.exe";
-
-function toPosixPath(windowsPath: string) {
-  const result = spawnSync(cygpath, ["-u", windowsPath], { encoding: "utf8", windowsHide: true });
-  assert.equal(result.error, undefined, result.error?.message);
-  assert.equal(result.status, 0, result.stderr);
-  return result.stdout.trim();
-}
-
 function createActiveBackupFixture() {
   const root = mkdtempSync(join(tmpdir(), "hub-active-backup-"));
   const release = join(root, "release-0.12.16");
@@ -202,6 +193,9 @@ test(
         `#!/usr/bin/env bash
 set -Eeuo pipefail
 case "$*" in
+  *service=postgres*)
+    printf 'postgres-fixture\\n'
+    ;;
   *pg_dump*)
     printf 'PGDMP-mock-archive\\n'
     ;;

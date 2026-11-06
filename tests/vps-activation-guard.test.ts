@@ -16,11 +16,10 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { after, test } from "node:test";
+import { gitBash, toPosixPath } from "./support/bash.ts";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const activationScript = path.join(repositoryRoot, "infra", "activate-vps-release.sh");
-const gitBash = process.env.GIT_BASH_EXE ?? "C:/Program Files/Git/bin/bash.exe";
-const cygpath = process.env.CYGPATH_EXE ?? "C:/Program Files/Git/usr/bin/cygpath.exe";
 const fixtureDirectories: string[] = [];
 
 function sha256(value: string | Uint8Array) {
@@ -214,10 +213,6 @@ function commandOutput(file: string, args: string[]): string {
   assert.equal(result.error, undefined, result.error?.message);
   assert.equal(result.status, 0, result.stderr || `Command exited ${result.status}`);
   return result.stdout.trim();
-}
-
-function toPosixPath(windowsPath: string): string {
-  return commandOutput(cygpath, ["-u", windowsPath]);
 }
 
 function bashOutput(script: string): string {

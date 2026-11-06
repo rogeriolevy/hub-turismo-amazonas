@@ -88,10 +88,20 @@ if (decoded.includes('candidate="$(find')) {
 }
 `;
   writeFileSync(join(fakeBin, "fake-runner.mjs"), fakeRunner);
+  const isWindows = process.platform === "win32";
   for (const command of ["ssh", "scp"]) {
+    const extension = isWindows ? ".cmd" : "";
+    const wrapper = isWindows
+      ? "@echo off\r\nREM hub-vps-backup-attestation-fake-v1\r\nset FAKE_COMMAND=" +
+        command +
+        '\r\nnode "%~dp0fake-runner.mjs" %*\r\n'
+      : "#!/bin/sh\n# hub-vps-backup-attestation-fake-v1\nexport FAKE_COMMAND=" +
+        command +
+        '\nexec node "$(dirname "$0")/fake-runner.mjs" "$@"\n';
     writeFileSync(
-      join(fakeBin, `${command}.cmd`),
-      `@echo off\r\nREM hub-vps-backup-attestation-fake-v1\r\nset FAKE_COMMAND=${command}\r\nnode "%~dp0fake-runner.mjs" %*\r\n`,
+      join(fakeBin, command + extension),
+      wrapper,
+      isWindows ? undefined : { mode: 0o755 },
     );
   }
   return { fixtureRoot, fakeBin, backupRoot, localAppData, temp };
@@ -99,7 +109,7 @@ if (decoded.includes('candidate="$(find')) {
 
 function runPrepare(fixture: ReturnType<typeof createFixture>, scenario = "success") {
   return spawnSync(
-    "pwsh.exe",
+    process.env.POWERSHELL_EXE ?? (process.platform === "win32" ? "pwsh.exe" : "pwsh"),
     [
       "-NoProfile",
       "-ExecutionPolicy",

@@ -6,30 +6,18 @@ import os from "node:os";
 import path from "node:path";
 import test, { after } from "node:test";
 import { fileURLToPath } from "node:url";
+import { gitBash, toPosixPath } from "./support/bash.ts";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const executor = path.join(repositoryRoot, "infra", "verify-and-build-vps-release.sh");
 const sourceVerifier = path.join(repositoryRoot, "scripts", "verify-vps-source-snapshot.mjs");
 const sourcePackager = path.join(repositoryRoot, "infra", "package-source-snapshot.ps1");
-const gitBash = process.env.GIT_BASH_EXE ?? "C:/Program Files/Git/bin/bash.exe";
-const cygpath = process.env.CYGPATH_EXE ?? "C:/Program Files/Git/usr/bin/cygpath.exe";
 const fixtureDirectories: string[] = [];
 const head = "a".repeat(40);
 const tree = "b".repeat(40);
 
 function sha256(contents: string | Buffer) {
   return createHash("sha256").update(contents).digest("hex");
-}
-
-function runCommand(file: string, args: string[]) {
-  const result = spawnSync(file, args, { encoding: "utf8", windowsHide: true });
-  assert.equal(result.error, undefined, result.error?.message);
-  assert.equal(result.status, 0, result.stderr || `Command exited ${result.status}`);
-  return result.stdout.trim();
-}
-
-function toPosixPath(windowsPath: string) {
-  return runCommand(cygpath, ["-u", windowsPath]);
 }
 
 const fakeDocker = `#!/usr/bin/env bash
@@ -88,7 +76,7 @@ const fakeTar = [
 async function createFixture() {
   const root = await mkdtemp(path.join(os.tmpdir(), "hub-vps-verify-build-"));
   fixtureDirectories.push(root);
-  const posixRoot = runCommand(cygpath, ["-u", root]);
+  const posixRoot = toPosixPath(root);
   const staging = path.join(root, "staging");
   const fakeBin = path.join(root, "fake-bin");
   const current = path.join(root, "current");
@@ -159,15 +147,15 @@ function runExecutor(
     "--fixture-root",
     fixture.posixRoot,
     "--fake-bin",
-    runCommand(cygpath, ["-u", path.join(fixture.root, "fake-bin")]),
+    toPosixPath(path.join(fixture.root, "fake-bin")),
     "--staging",
-    runCommand(cygpath, ["-u", path.join(fixture.root, "staging")]),
+    toPosixPath(path.join(fixture.root, "staging")),
     "--archive",
-    runCommand(cygpath, ["-u", fixture.archive]),
+    toPosixPath(fixture.archive),
     "--manifest",
-    runCommand(cygpath, ["-u", fixture.manifest]),
+    toPosixPath(fixture.manifest),
     "--verifier",
-    runCommand(cygpath, ["-u", fixture.verifier]),
+    toPosixPath(fixture.verifier),
     "--git-head",
     options.gitHead ?? head,
     "--git-tree",

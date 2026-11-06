@@ -18,7 +18,8 @@ if ($TestOnly) {
   if (-not (Test-Path -LiteralPath $fixtureMarker -PathType Leaf) -or (Get-Content -LiteralPath $fixtureMarker -Raw).Trim() -cne "hub-vps-backup-attestation-fixture-v1") { throw "TEST_FIXTURE_SENTINEL_INVALID" }
   $fakeBinResolved = (Resolve-Path -LiteralPath $FakeBin -ErrorAction Stop).Path
   if (-not $fakeBinResolved.StartsWith($fixtureRootResolved + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw "FAKE_BIN_OUTSIDE_FIXTURE" }
-  $ssh = Join-Path $fakeBinResolved "ssh.cmd"; $scp = Join-Path $fakeBinResolved "scp.cmd"
+  $fakeCommandExtension = if ([System.OperatingSystem]::IsWindows()) { ".cmd" } else { "" }
+  $ssh = Join-Path $fakeBinResolved ("ssh" + $fakeCommandExtension); $scp = Join-Path $fakeBinResolved ("scp" + $fakeCommandExtension)
   foreach ($fake in @($ssh, $scp)) { if (-not (Test-Path -LiteralPath $fake -PathType Leaf) -or -not (Get-Content -LiteralPath $fake -Raw).Contains("hub-vps-backup-attestation-fake-v1")) { throw "FAKE_COMMAND_INVALID" } }
   $sshAlias = "fixture-vps"
 } elseif (-not [string]::IsNullOrWhiteSpace($FixtureRoot) -or -not [string]::IsNullOrWhiteSpace($FakeBin)) {

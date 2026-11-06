@@ -5,18 +5,10 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+import { gitBash, toPosixPath } from "./support/bash.ts";
 
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const stopScript = resolve(repositoryRoot, "infra/stop-rehearsal-worker.sh");
-const gitBash = process.env.GIT_BASH_EXE ?? "C:/Program Files/Git/bin/bash.exe";
-const cygpath = process.env.CYGPATH_EXE ?? "C:/Program Files/Git/usr/bin/cygpath.exe";
-
-function toPosixPath(value: string) {
-  const result = spawnSync(cygpath, ["-u", value], { encoding: "utf8", windowsHide: true });
-  assert.equal(result.status, 0, result.stderr);
-  return result.stdout.trim();
-}
-
 function createFixture(endpoint: string) {
   const root = mkdtempSync(join(tmpdir(), "hub-rehearsal-context-"));
   const fakeBin = join(root, "fake-bin");
