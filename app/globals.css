@@ -742,9 +742,6 @@ svg {
     width: 300px;
     opacity: 0.28;
   }
-  .hero-stamp {
-    display: none;
-  }
   .hero h1 {
     font-size: 46px;
     letter-spacing: -1.6px;
@@ -837,6 +834,12 @@ svg {
   }
   .text-link {
     line-height: 1.5;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero-stamp {
+    display: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
