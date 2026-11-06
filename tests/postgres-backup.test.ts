@@ -123,7 +123,7 @@ test("same exported snapshot is used by the active backup wrapper", () => {
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /SOURCE_RECEIPT_FILE=/);
     const calls = readFileSync(join(fixture.root, "docker-calls.log"), "utf8");
-    assert.match(calls, /pg_dump --snapshot="\$1".* sh A1-2/);
+    assert.match(calls, /pg_dump --snapshot="\$1".* sh 00000055-00001B50-1/);
     assert.match(calls, /test "\$HUB_DB_USER" = "\$1".* sh hub_app_owner/);
     assert.match(calls, /pg_dump .*--username "\$HUB_DB_USER"/);
     assert.doesNotMatch(calls, /test "\$POSTGRES_USER"/);
