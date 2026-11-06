@@ -353,12 +353,42 @@ try {
 
   $archivePath = Join-Path $stageDirectory "hub-turismo-amazonas-$version-source.zip"
   Add-Type -AssemblyName System.IO.Compression.FileSystem
-  [System.IO.Compression.ZipFile]::CreateFromDirectory(
-    $stageSource,
-    $archivePath,
-    [System.IO.Compression.CompressionLevel]::Optimal,
-    $false
-  )
+  $archiveStream = [System.IO.File]::Open($archivePath, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
+  $zipArchive = $null
+  try {
+    $zipArchive = [System.IO.Compression.ZipArchive]::new($archiveStream, [System.IO.Compression.ZipArchiveMode]::Create, $false)
+    foreach ($sourceFile in $sourceFiles) {
+      $entryName = ([string]$sourceFile.path).Replace('\', '/')
+      if ($entryName.Contains('\')) {
+        throw "O caminho ZIP da fonte contém separadores Windows: $entryName"
+      }
+      $entry = $zipArchive.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::Optimal)
+      $sourcePath = Join-Path $stageSource ($entryName.Replace('/', [System.IO.Path]::DirectorySeparatorChar))
+      $inputStream = [System.IO.File]::OpenRead($sourcePath)
+      $entryStream = $entry.Open()
+      try {
+        $inputStream.CopyTo($entryStream)
+      } finally {
+        $entryStream.Dispose()
+        $inputStream.Dispose()
+      }
+    }
+    $manifestEntry = $zipArchive.CreateEntry('SOURCE-MANIFEST.json', [System.IO.Compression.CompressionLevel]::Optimal)
+    $manifestInput = [System.IO.File]::OpenRead($manifestPath)
+    $manifestOutput = $manifestEntry.Open()
+    try {
+      $manifestInput.CopyTo($manifestOutput)
+    } finally {
+      $manifestOutput.Dispose()
+      $manifestInput.Dispose()
+    }
+  } finally {
+    if ($zipArchive) {
+      $zipArchive.Dispose()
+    } else {
+      $archiveStream.Dispose()
+    }
+  }
   $archiveHash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
   [System.IO.File]::WriteAllText(
     "$archivePath.sha256",
@@ -373,7 +403,11 @@ try {
 
   $zipFile = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
   try {
-    $archiveEntries = @($zipFile.Entries | Where-Object { -not $_.FullName.EndsWith('/') } | ForEach-Object { $_.FullName.Replace('\', '/') })
+    $backslashEntries = @($zipFile.Entries | Where-Object { $_.FullName.Contains('\') })
+    if ($backslashEntries.Count -gt 0) {
+      throw "O ZIP de fontes contém separadores Windows: $(($backslashEntries | Select-Object -First 5 | ForEach-Object { $_.FullName }) -join ', ')"
+    }
+    $archiveEntries = @($zipFile.Entries | Where-Object { -not $_.FullName.EndsWith('/') } | ForEach-Object { $_.FullName })
     $unsafeEntries = @($archiveEntries | Where-Object { $_ -match $excludedPathPattern })
     if ($unsafeEntries.Count -gt 0) {
       throw "O arquivo ZIP contém caminhos excluídos: $($unsafeEntries -join ', ')"
@@ -386,7 +420,7 @@ try {
     $manifestHash = (Get-FileHash -LiteralPath $manifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
     $verifiedArchiveEntries = 0
     foreach ($entry in $zipFile.Entries | Where-Object { -not $_.FullName.EndsWith('/') }) {
-      $path = $entry.FullName.Replace('\', '/')
+      $path = $entry.FullName
       $expectedGitBlob = $null
       if ($path -eq "SOURCE-MANIFEST.json") {
         $expectedHash = $manifestHash

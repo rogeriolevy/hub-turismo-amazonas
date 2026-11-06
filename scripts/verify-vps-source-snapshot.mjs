@@ -119,7 +119,9 @@ export async function verifyVpsSourceSnapshot(archivePathInput, manifestPathInpu
   const archive = await Open.file(archivePath);
   const archiveEntries = new Map();
   for (const entry of archive.files) {
-    const path = entry.path.replaceAll("\\", "/");
+    if (entry.path.includes("\\"))
+      throw new Error(`O ZIP de fontes usa separadores Windows: ${entry.path}.`);
+    const path = entry.path;
     const directoryEntry = path.endsWith("/") || entry.type === "Directory";
     const normalizedPath = directoryEntry ? path.replace(/\/+$/, "") : path;
     if (
