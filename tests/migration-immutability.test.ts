@@ -9,6 +9,9 @@ import { fileURLToPath } from "node:url";
 const checker = resolve(
   fileURLToPath(new URL("../scripts/check-migration-immutability.mjs", import.meta.url)),
 );
+const baseResolver = resolve(
+  fileURLToPath(new URL("../scripts/resolve-migration-base.mjs", import.meta.url)),
+);
 
 function withRepository(run: (repo: string, base: string) => void) {
   const repo = mkdtempSync(join(tmpdir(), "migration-immutability-"));
@@ -45,6 +48,21 @@ function check(repo: string, base: string) {
   return spawnSync(process.execPath, [checker, "--base-ref", base], {
     cwd: repo,
     encoding: "utf8",
+  });
+}
+
+function resolveBase(repo: string, values: Record<string, string>) {
+  return spawnSync(process.execPath, [baseResolver], {
+    cwd: repo,
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      PULL_REQUEST_BASE: "",
+      PUSH_BEFORE: "",
+      MANUAL_BASE: "",
+      DEFAULT_BRANCH: "",
+      ...values,
+    },
   });
 }
 
@@ -110,6 +128,147 @@ test("an invalid base revision fails closed with an actionable diagnostic", () =
     const result = check(repo, "missing-base-revision");
     assert.equal(result.status, 1);
     assert.match(result.stderr, /base revision 'missing-base-revision' cannot be resolved/);
+  });
+});
+
+test("a migration added at a divergent selected base cannot be removed from the run branch", () => {
+  withRepository((repo, commonBase) => {
+    git(repo, "checkout", "--quiet", "-b", "target");
+    writeMigration(
+      repo,
+      "db/migrations/003_added_on_target.sql",
+      "CREATE TABLE target_only (id INTEGER);\n",
+    );
+    git(repo, "add", "db/migrations/003_added_on_target.sql");
+    git(repo, "commit", "-qm", "target adds migration");
+    const selectedBase = git(repo, "rev-parse", "HEAD");
+
+    git(repo, "checkout", "--quiet", "--detach", commonBase);
+
+    const result = check(repo, selectedBase);
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /db\/migrations\/003_added_on_target\.sql/);
+  });
+});
+
+test("pull request base SHA takes priority over push and manual base inputs", () => {
+  withRepository((repo, base) => {
+    writeMigration(repo, "README.md", "pull request head\n");
+    git(repo, "add", "README.md");
+    git(repo, "commit", "-qm", "pull request head");
+    const head = git(repo, "rev-parse", "HEAD");
+
+    const result = resolveBase(repo, {
+      PULL_REQUEST_BASE: base,
+      PUSH_BEFORE: head,
+      MANUAL_BASE: "HEAD",
+      DEFAULT_BRANCH: "main",
+    });
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), base);
+  });
+});
+
+test("ordinary push uses its nonzero before SHA before manual and default inputs", () => {
+  withRepository((repo, base) => {
+    writeMigration(repo, "README.md", "push head\n");
+    git(repo, "add", "README.md");
+    git(repo, "commit", "-qm", "push head");
+
+    const result = resolveBase(repo, {
+      PUSH_BEFORE: base,
+      MANUAL_BASE: "HEAD",
+      DEFAULT_BRANCH: "main",
+    });
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), base);
+  });
+});
+
+test("a first push uses the fetched default branch instead of GitHub's all-zero before SHA", () => {
+  withRepository((repo, base) => {
+    writeMigration(repo, "README.md", "new branch commit\n");
+    git(repo, "add", "README.md");
+    git(repo, "commit", "-qm", "new branch commit");
+    git(repo, "update-ref", "refs/remotes/origin/main", base);
+
+    const result = resolveBase(repo, {
+      PUSH_BEFORE: "0000000000000000000000000000000000000000",
+      DEFAULT_BRANCH: "main",
+    });
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), base);
+  });
+});
+
+test("manual migration-base branch names resolve through origin tracking refs", () => {
+  withRepository((repo, base) => {
+    writeMigration(repo, "README.md", "feature change\n");
+    git(repo, "add", "README.md");
+    git(repo, "commit", "-qm", "feature change");
+    git(repo, "update-ref", "refs/remotes/origin/release/base", base);
+
+    const result = resolveBase(repo, { MANUAL_BASE: "release/base" });
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), base);
+  });
+});
+
+test("manual migration base fails closed when it resolves to the selected run commit", () => {
+  withRepository((repo) => {
+    const result = resolveBase(repo, { MANUAL_BASE: "HEAD" });
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /not earlier than the selected run commit/);
+  });
+});
+
+test("manual migration base fails closed when it is a descendant of the selected run commit", () => {
+  withRepository((repo) => {
+    writeMigration(repo, "README.md", "later base commit\n");
+    git(repo, "add", "README.md");
+    git(repo, "commit", "-qm", "later base commit");
+    const laterBase = git(repo, "rev-parse", "HEAD");
+    git(repo, "checkout", "--quiet", "HEAD~1");
+
+    const result = resolveBase(repo, { MANUAL_BASE: laterBase });
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /not earlier than the selected run commit/);
+  });
+});
+
+test("manual migration base fails closed when it has no common history with the run commit", () => {
+  withRepository((repo, commonBase) => {
+    git(repo, "checkout", "--quiet", "--orphan", "unrelated");
+    git(repo, "rm", "-r", "--cached", "--quiet", ".");
+    rmSync(join(repo, "db"), { recursive: true, force: true });
+    rmSync(join(repo, "README.md"), { force: true });
+    git(repo, "commit", "--allow-empty", "-qm", "unrelated root");
+    const unrelatedBase = git(repo, "rev-parse", "HEAD");
+    git(repo, "checkout", "--quiet", "--detach", commonBase);
+
+    const result = resolveBase(repo, { MANUAL_BASE: unrelatedBase });
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /no common history with the selected run commit/);
+  });
+});
+
+test("an initial push without a fetched default branch can use HEAD as its baseline", () => {
+  withRepository((repo, base) => {
+    const result = resolveBase(repo, {
+      PUSH_BEFORE: "0000000000000000000000000000000000000000",
+      DEFAULT_BRANCH: "main",
+    });
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), git(repo, "rev-parse", "HEAD"));
   });
 });
 

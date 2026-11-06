@@ -52,16 +52,10 @@ function run() {
   }
 
   const baseCommit = resolved.stdout.toString("utf8").trim();
-  const mergeBaseResult = git(["merge-base", baseCommit, "HEAD"]);
-  if (mergeBaseResult.status !== 0) {
-    fail(`base revision '${baseRef}' has no merge base with HEAD`);
-    return;
-  }
-
-  const mergeBase = mergeBaseResult.stdout.toString("utf8").trim();
-  const tree = git(["ls-tree", "-r", "-z", "--name-only", mergeBase, "--", ...migrationRoots]);
+  const baselineCommit = baseCommit;
+  const tree = git(["ls-tree", "-r", "-z", "--name-only", baselineCommit, "--", ...migrationRoots]);
   if (tree.status !== 0) {
-    fail(`could not list migrations at merge base ${mergeBase}`);
+    fail(`could not list migrations at base commit ${baselineCommit}`);
     return;
   }
 
@@ -72,11 +66,11 @@ function run() {
   const changedPaths = [];
 
   for (const path of baselinePaths) {
-    const diff = git(["diff", "--quiet", mergeBase, "--", `:(literal)${path}`]);
+    const diff = git(["diff", "--quiet", baselineCommit, "--", `:(literal)${path}`]);
     if (diff.status === 1) {
       changedPaths.push(path);
     } else if (diff.status !== 0) {
-      fail(`could not compare migration '${path}' with merge base ${mergeBase}`);
+      fail(`could not compare migration '${path}' with base commit ${baselineCommit}`);
       return;
     }
   }
@@ -89,7 +83,7 @@ function run() {
   }
 
   console.log(
-    `Migration immutability check passed (${baselinePaths.length} baseline SQL file(s), merge base ${mergeBase}).`,
+    `Migration immutability check passed (${baselinePaths.length} baseline SQL file(s), base commit ${baselineCommit}).`,
   );
 }
 
