@@ -1,6 +1,6 @@
 # Plataforma local — módulos e operação
 
-Versão 0.12.19 publicada e verificada na VPS em 06/11/2026. Consulte o [registro da release](releases/0.12.19.md). A plataforma evolui como monólito Node.js/Next.js: SQLite no desenvolvimento e PostgreSQL na VPS. As reservas são **solicitações sujeitas à aprovação do hotel ou operador**, sem cobrança online. O site institucional e a caixa de contatos permanecem disponíveis. A publicação anterior no Sites é independente.
+Versão 0.12.20 candidata, ainda não publicada; a produção permanece em 0.12.19 até ativação verificada e autorizada. Consulte o [registro da candidata](releases/0.12.20.md). A plataforma evolui como monólito Node.js/Next.js: SQLite no desenvolvimento e PostgreSQL na VPS. As reservas são **solicitações sujeitas à aprovação do hotel ou operador**, sem cobrança online. O site institucional e a caixa de contatos permanecem disponíveis. A publicação anterior no Sites é independente.
 
 ## Rotas e permissões
 
