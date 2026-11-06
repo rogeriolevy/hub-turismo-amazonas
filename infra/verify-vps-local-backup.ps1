@@ -410,8 +410,21 @@ printf '%s|%s\n' "$version" "$image"
   Write-NewUtf8File -Path $attestationFile -Content ($attestation + [Environment]::NewLine)
   $attestationHash = (Get-FileHash -LiteralPath $attestationFile -Algorithm SHA256).Hash.ToLowerInvariant()
   $remoteAttestationPath = "/opt/hub-turismo/attestations/backup-" + $attestationHash + ".env"
-  $remoteAttestationScript = "set -euo pipefail; test ! -e '$remoteAttestationPath' -a ! -L '$remoteAttestationPath'; install -o hub -g hub -m 600 /dev/stdin '$remoteAttestationPath'; test `"`$(sha256sum < '$remoteAttestationPath' | awk '{print `$1}')`" = '$attestationHash'"
-  $remoteAttestationCommand = "printf '%s' '" + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes([System.IO.File]::ReadAllText($attestationFile))) + "' | base64 -d | bash -c " + [Management.Automation.Language.CodeGeneration]::QuoteArgument($remoteAttestationScript)
+  $attestationPayload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes([System.IO.File]::ReadAllText($attestationFile)))
+  $remoteAttestationScript = @'
+set -euo pipefail
+target='__TARGET__'
+expected='__HASH__'
+payload='__PAYLOAD__'
+temporary="${target}.partial-$$"
+[[ ! -e "$target" && ! -L "$target" && ! -e "$temporary" && ! -L "$temporary" ]] || exit 1
+printf '%s' "$payload" | base64 -d > "$temporary"
+install -o hub -g hub -m 600 "$temporary" "$target"
+rm -f -- "$temporary"
+[[ "$(sha256sum < "$target" | awk '{print $1}')" == "$expected" ]]
+'@
+  $remoteAttestationScript = $remoteAttestationScript.Replace("__TARGET__", $remoteAttestationPath).Replace("__HASH__", $attestationHash).Replace("__PAYLOAD__", $attestationPayload)
+  $remoteAttestationCommand = ConvertTo-RemoteBashCommand -Script $remoteAttestationScript
   Invoke-OpenSsh -Executable $ssh -Arguments @("-T", "-o", "ForwardAgent=no", "-o", "ConnectTimeout=15", $sshAlias, $remoteAttestationCommand) -Description "A publicação do atestado de backup"
   Write-Output "LOCAL_BACKUP_VERIFICATION=passed"
   Write-Output "OFFSITE_BACKUP_VERIFICATION=passed"
