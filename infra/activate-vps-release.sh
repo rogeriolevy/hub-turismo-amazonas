@@ -205,6 +205,18 @@ require_receipt_keys() {
   done
 }
 
+validate_backup_attestation_window() {
+  local issued_at="$1"
+  local expires_at="$2"
+  local issued_epoch expires_epoch now_epoch
+  issued_epoch="$(date -u -d "$issued_at" +%s 2>/dev/null)" || die "BACKUP_ATTESTATION_TIMESTAMP_INVALID"
+  expires_epoch="$(date -u -d "$expires_at" +%s 2>/dev/null)" || die "BACKUP_ATTESTATION_TIMESTAMP_INVALID"
+  now_epoch="$(date -u +%s)"
+  (( issued_epoch <= now_epoch )) || die "BACKUP_ATTESTATION_ISSUED_IN_FUTURE"
+  (( issued_epoch < expires_epoch && expires_epoch > now_epoch )) || die "BACKUP_ATTESTATION_EXPIRED"
+  (( expires_epoch - issued_epoch <= 3600 )) || die "BACKUP_ATTESTATION_LIFETIME_INVALID"
+}
+
 validate_attestations() {
   candidate_attestation="$(attestation_file CANDIDATE "$candidate_attestation_arg" "$candidate_attestation_sha256_arg")"
   backup_attestation="$(attestation_file BACKUP "$backup_attestation_arg" "$backup_attestation_sha256_arg")"
@@ -228,11 +240,7 @@ validate_attestations() {
   [[ "${backup_receipt[RESTORE_SOURCE_COMPARISON]}" == "match" && "${backup_receipt[RESTORE_DATABASE_CLEANUP]}" == "ok" && "${backup_receipt[REMOTE_STAGING_CLEANUP]}" == "ok" ]] || die "BACKUP_ATTESTATION_RESTORE_INVALID"
   [[ "${backup_receipt[DUMP_SHA256]}" =~ ^[a-f0-9]{64}$ && "${backup_receipt[SOURCE_RECEIPT_SHA256]}" =~ ^[a-f0-9]{64}$ && "${backup_receipt[SOURCE_LEDGER_SHA256]}" =~ ^[a-f0-9]{64}$ && "${backup_receipt[SOURCE_COUNTS]}" =~ ^\{.*\}$ ]] || die "BACKUP_ATTESTATION_VALUE_INVALID"
   [[ "${backup_receipt[ISSUED_AT_UTC]}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$ && "${backup_receipt[EXPIRES_AT_UTC]}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$ ]] || die "BACKUP_ATTESTATION_TIMESTAMP_INVALID"
-  local issued_epoch expires_epoch now_epoch
-  issued_epoch="$(date -u -d "${backup_receipt[ISSUED_AT_UTC]}" +%s 2>/dev/null)" || die "BACKUP_ATTESTATION_TIMESTAMP_INVALID"
-  expires_epoch="$(date -u -d "${backup_receipt[EXPIRES_AT_UTC]}" +%s 2>/dev/null)" || die "BACKUP_ATTESTATION_TIMESTAMP_INVALID"
-  now_epoch="$(date -u +%s)"
-  (( issued_epoch < expires_epoch && expires_epoch > now_epoch )) || die "BACKUP_ATTESTATION_EXPIRED"
+  validate_backup_attestation_window "${backup_receipt[ISSUED_AT_UTC]}" "${backup_receipt[EXPIRES_AT_UTC]}"
 }
 
 preflight_attestation_inputs() {
@@ -242,7 +250,7 @@ preflight_attestation_inputs() {
   require_receipt_keys CANDIDATE candidate_receipt CANDIDATE_PATH PACKAGE_VERSION GIT_HEAD GIT_TREE ARCHIVE_SHA256 VERIFIER_SHA256 IMAGE_TAG IMAGE_ID COMPOSE_SHA256 ENVIRONMENT_SHA256 MIGRATIONS_SHA256
   parse_attestation BACKUP "$backup_attestation" "CANDIDATE_ATTESTATION_PATH CANDIDATE_ATTESTATION_SHA256 CANDIDATE_VERSION CANDIDATE_IMAGE_ID DUMP_FILE DUMP_SHA256 SOURCE_RECEIPT_FILE SOURCE_RECEIPT_SHA256 SOURCE_COUNTS SOURCE_LEDGER_SHA256 RESTORE_SOURCE_COMPARISON RESTORE_DATABASE_CLEANUP REMOTE_STAGING_CLEANUP ISSUED_AT_UTC EXPIRES_AT_UTC" backup_receipt
   require_receipt_keys BACKUP backup_receipt CANDIDATE_ATTESTATION_PATH CANDIDATE_ATTESTATION_SHA256 CANDIDATE_VERSION CANDIDATE_IMAGE_ID DUMP_FILE DUMP_SHA256 SOURCE_RECEIPT_FILE SOURCE_RECEIPT_SHA256 SOURCE_COUNTS SOURCE_LEDGER_SHA256 RESTORE_SOURCE_COMPARISON RESTORE_DATABASE_CLEANUP REMOTE_STAGING_CLEANUP ISSUED_AT_UTC EXPIRES_AT_UTC
-  local attested_candidate_path candidate_version_from_disk attested_candidate_receipt_path issued_epoch expires_epoch now_epoch
+  local attested_candidate_path candidate_version_from_disk attested_candidate_receipt_path
   attested_candidate_path="$(canonical_existing_path "${candidate_receipt[CANDIDATE_PATH]}")" || die "CANDIDATE_ATTESTATION_PATH_MISMATCH"
   [[ "$attested_candidate_path" == "$candidate" ]] || die "CANDIDATE_ATTESTATION_PATH_MISMATCH"
   candidate_version_from_disk="$(package_version "$candidate")"
@@ -266,10 +274,7 @@ preflight_attestation_inputs() {
   printf '%s' "${backup_receipt[SOURCE_COUNTS]}" | node -e 'const fs=require("fs"); const text=fs.readFileSync(0,"utf8"); let value; try { value=JSON.parse(text); } catch { process.exit(1) }; const keys=Object.keys(value||{}); if (Object.getPrototypeOf(value)!==Object.prototype || keys.some((key,index)=>key!==[...keys].sort()[index] || !/^(0|[1-9]\d*)$/.test(value[key])) || JSON.stringify(value)!==text) process.exit(1);' || die "BACKUP_ATTESTATION_SOURCE_COUNTS_INVALID"
   [[ "${backup_receipt[RESTORE_SOURCE_COMPARISON]}" == "match" && "${backup_receipt[RESTORE_DATABASE_CLEANUP]}" == "ok" && "${backup_receipt[REMOTE_STAGING_CLEANUP]}" == "ok" ]] || die "BACKUP_ATTESTATION_RESTORE_INVALID"
   [[ "${backup_receipt[ISSUED_AT_UTC]}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$ && "${backup_receipt[EXPIRES_AT_UTC]}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$ ]] || die "BACKUP_ATTESTATION_TIMESTAMP_INVALID"
-  issued_epoch="$(date -u -d "${backup_receipt[ISSUED_AT_UTC]}" +%s 2>/dev/null)" || die "BACKUP_ATTESTATION_TIMESTAMP_INVALID"
-  expires_epoch="$(date -u -d "${backup_receipt[EXPIRES_AT_UTC]}" +%s 2>/dev/null)" || die "BACKUP_ATTESTATION_TIMESTAMP_INVALID"
-  now_epoch="$(date -u +%s)"
-  (( issued_epoch < expires_epoch && expires_epoch > now_epoch )) || die "BACKUP_ATTESTATION_EXPIRED"
+  validate_backup_attestation_window "${backup_receipt[ISSUED_AT_UTC]}" "${backup_receipt[EXPIRES_AT_UTC]}"
 }
 
 release_file_checks() {

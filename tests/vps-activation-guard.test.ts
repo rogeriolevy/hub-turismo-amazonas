@@ -292,6 +292,8 @@ async function createFixture() {
   await chmod(candidateAttestation, 0o600);
   const candidateAttestationSha256 = sha256(candidateContents);
   const backupAttestation = path.join(attestations, "backup-fixture.env");
+  const receiptIssuedAt = new Date(Date.now() - 60_000);
+  const receiptExpiresAt = new Date(receiptIssuedAt.getTime() + 60 * 60 * 1000);
   const backupContents = [
     `CANDIDATE_ATTESTATION_PATH=${toPosixPath(candidateAttestation)}`,
     `CANDIDATE_ATTESTATION_SHA256=${candidateAttestationSha256}`,
@@ -306,8 +308,8 @@ async function createFixture() {
     "RESTORE_SOURCE_COMPARISON=match",
     "RESTORE_DATABASE_CLEANUP=ok",
     "REMOTE_STAGING_CLEANUP=ok",
-    "ISSUED_AT_UTC=2026-11-05T00:00:00.0000000Z",
-    "EXPIRES_AT_UTC=2099-11-05T01:00:00.0000000Z",
+    `ISSUED_AT_UTC=${receiptIssuedAt.toISOString()}`,
+    `EXPIRES_AT_UTC=${receiptExpiresAt.toISOString()}`,
     "",
   ].join("\n");
   await writeFile(backupAttestation, backupContents);
@@ -487,8 +489,13 @@ test("SHA-256 Git object IDs pass the complete candidate and backup attestation 
 for (const [name, transform, expectedError] of [
   [
     "expired backup",
-    (contents: string) => contents.replace("2099-11-05T01:00:00.0000000Z", "2000-11-05T01:00:00.0000000Z"),
+    (contents: string) => contents.replace(/^EXPIRES_AT_UTC=.*$/m, "EXPIRES_AT_UTC=2000-11-05T01:00:00.000Z"),
     "BACKUP_ATTESTATION_EXPIRED",
+  ],
+  [
+    "backup lifetime beyond 60 minutes",
+    (contents: string) => contents.replace(/^EXPIRES_AT_UTC=.*$/m, "EXPIRES_AT_UTC=2099-11-05T01:00:00.000Z"),
+    "BACKUP_ATTESTATION_LIFETIME_INVALID",
   ],
   [
     "backup candidate binding mismatch",
