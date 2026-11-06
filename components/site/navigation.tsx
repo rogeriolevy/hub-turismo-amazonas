@@ -1,12 +1,4 @@
-import {
-  ArrowUpRight,
-  ContactRound,
-  Grid2X2,
-  LogIn,
-  Settings2,
-  UserRound,
-  Waves,
-} from "lucide-react";
+import { ArrowUpRight, Grid2X2, LogIn, Settings2, UserRound } from "lucide-react";
 import Link from "next/link";
 import { PlatformBrand } from "@/components/platform/brand";
 import { AccountMenu } from "@/components/site/account-menu";
@@ -19,8 +11,11 @@ import { PlatformNavigation } from "./platform-navigation";
 import "./navigation.css";
 
 const institutionalLinks = [
-  { href: "/sobre", key: "header.about", icon: Waves },
-  { href: "/contato", key: "header.contact", icon: ContactRound },
+  { href: "/#inicio", key: "header.home" },
+  { href: "/#sobre", key: "header.about" },
+  { href: "/#solucoes", key: "header.solutions" },
+  { href: "/#impacto", key: "header.impact" },
+  { href: "/contato", key: "header.contact" },
 ] as const;
 
 const platformLinks = [
@@ -80,9 +75,8 @@ export async function Header({ variant = "platform" }: { variant?: NavigationVar
               className="header-primary-nav header-primary-nav--institutional"
               aria-label={t("header.nav")}
             >
-              {institutionalLinks.map(({ href, key, icon: Icon }) => (
+              {institutionalLinks.map(({ href, key }) => (
                 <Link className="header-primary-link" href={href} key={href}>
-                  <Icon size={17} strokeWidth={1.8} aria-hidden="true" />
                   <span>{t(key)}</span>
                 </Link>
               ))}
