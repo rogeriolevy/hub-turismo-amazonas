@@ -165,12 +165,16 @@ printf 'curl' >> "$FIXTURE_ROOT/calls.log"
 for argument in "$@"; do printf '|%s' "$argument" >> "$FIXTURE_ROOT/calls.log"; done
 printf '\\n' >> "$FIXTURE_ROOT/calls.log"
 version="$(awk -F '"' '/^[[:space:]]*"version"[[:space:]]*:/ { print $4; exit }' "$(readlink -f "$FIXTURE_ROOT/current")/package.json")"
+url="\${@: -1}"
 status=ok
 if [[ ( "\${HUB_GUARD_SCENARIO:-}" == health-fail-candidate || "\${HUB_GUARD_SCENARIO:-}" == health-fail-rollback-fail ) && "$version" == 0.12.14 ]]; then status=degraded; fi
 database=postgresql
 if [[ "\${HUB_GUARD_SCENARIO:-}" == database-not-postgres-candidate && "$version" == 0.12.14 ]]; then database=sqlite; fi
 if [[ "\${HUB_GUARD_SCENARIO:-}" == version-mismatch-candidate && "$version" == 0.12.14 ]]; then version=0.12.13; fi
 printf '{"status":"%s","version":"%s","database":"%s"}\\n' "$status" "$version" "$database"
+if [[ "$url" == https://* ]]; then
+  if [[ "\${HUB_GUARD_SCENARIO:-}" == public-status-fail-candidate && "$version" == 0.12.14 ]]; then printf '503\\n'; else printf '200\\n'; fi
+fi
 `;
 
 const fixtureSetCurrent = `param(
@@ -564,6 +568,7 @@ for (const scenario of [
   "post-ledger-hash-drift",
   "database-not-postgres-candidate",
   "version-mismatch-candidate",
+  "public-status-fail-candidate",
 ]) {
   test(`${scenario} rolls current back and restarts only web and worker`, async () => {
     const fixture = await createFixture();
@@ -577,6 +582,19 @@ for (const scenario of [
     assert.ok(upCalls.every((line) => line.endsWith("|web booking-email-worker")));
   });
 }
+
+test("canonical public HTTPS failure rolls back only web and worker", async () => {
+  const fixture = await createFixture();
+  const result = runGuard(fixture, { simulate: true, scenario: "public-status-fail-candidate" });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /ERROR=PUBLIC_HEALTH_STATUS_INVALID/);
+  assert.match(result.stderr, /ROLLBACK=passed/);
+  assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+  const upCalls = (await callLog(fixture)).split("\n").filter((line) => line.startsWith("up|"));
+  assert.equal(upCalls.length, 2);
+  assert.ok(upCalls.every((line) => line.endsWith("|web booking-email-worker")));
+});
 
 test("rollback failure returns the distinct terminal code 90", async () => {
   const fixture = await createFixture();

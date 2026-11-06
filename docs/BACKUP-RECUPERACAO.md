@@ -33,6 +33,10 @@ Revise no resultado as contagens agregadas de usuários, reservas, lembretes e e
 
 Se o SSH, o hash, o restore ou a limpeza falhar, mantenha os arquivos locais e interrompa qualquer limpeza de dados ou publicação. Esta cópia protege contra perda apenas da VPS enquanto o arquivo permanecer íntegro neste computador; mantenha também a retenção diária já configurada na VPS.
 
+## Evidência para ativação
+
+Depois do ensaio íntegro, guarde os marcadores `BACKUP_ATTESTATION_REMOTE_PATH`, `BACKUP_ATTESTATION_SHA256` e `BACKUP_ATTESTATION_EXPIRES_AT_UTC` do mesmo run, junto dos valores de candidata correspondentes. A ativação requer esses argumentos, comprova a comparação fonte/restauração e as limpezas, e recusa atestado expirado ou ligado a outra candidata. Não reutilize evidência de uma release anterior.
+
 ## Limites de segurança
 
 - O backup diário e sua retenção local na VPS permanecem sob o mecanismo atual.

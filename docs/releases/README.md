@@ -8,6 +8,7 @@ Use esta estrutura para registrar cada entrega pequena, delimitada por domínio.
 - [ ] Referenciar o plano GSD e as verificações executadas, com resultados e limites observados.
 - [ ] Registrar migrations adicionadas, classificando cada uma como compartilhada (`db/migrations/`) ou exclusiva de PostgreSQL (`db/postgres-migrations/`); quando não houver, declarar isso.
 - [ ] Antes da ativação, identificar o backup protegido armazenado localmente fora da VPS, registrar o SHA-256 conferido de forma independente e documentar o ensaio de restauração em banco isolado.
+- [ ] Registrar `CANDIDATE_ATTESTATION_PATH`/`CANDIDATE_ATTESTATION_SHA256` e `BACKUP_ATTESTATION_REMOTE_PATH`/`BACKUP_ATTESTATION_SHA256`/`BACKUP_ATTESTATION_EXPIRES_AT_UTC` do mesmo run, incluindo vínculo candidata, paridade fonte/restauração e limpezas.
 - [ ] Registrar proveniência do código e da imagem, a versão ativa, e as evidências do ledger e dos dados agregados antes e depois.
 - [ ] Registrar saúde da aplicação e heartbeat do worker, quando aplicável, além da versão anterior preservada.
 - [ ] Descrever o retorno permitido pela compatibilidade do schema e marcar claramente se foi apenas preparado ou realmente executado.
@@ -61,6 +62,7 @@ Copie os títulos abaixo para o arquivo da versão. Substitua cada instrução e
 - Ativação: [versão, troca e serviços afetados]
 - Dados agregados antes/depois: [contagens relevantes e resultado]
 - Saúde: [HTTP/status/versão/banco] e [heartbeat do worker, se aplicável]
+- Saúde HTTPS canônica: [SITE_URL protegido, 200, status=ok, versão candidata, database=postgresql; sem redirect]
 - Versão anterior preservada: [tag/imagem e confirmação]
 
 ## Retorno

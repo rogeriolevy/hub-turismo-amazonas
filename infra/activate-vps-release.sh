@@ -418,7 +418,23 @@ verify_app_health() {
   worker_report="$(docker_cmd exec "$worker_id" node --experimental-strip-types /app/scripts/check-booking-worker-health.ts 2>/dev/null)" || die "WORKER_HEARTBEAT_FAILED"
   grep -Fq 'booking_email_worker_health_check_ok' <<<"$worker_report" || die "WORKER_HEARTBEAT_FAILED"
   verify_migration_ledger "$web_id"
+  verify_public_health "$release" "$expected_version"
   printf '%s|%s' "$web_id" "$worker_id"
+}
+
+verify_public_health() {
+  local release="$1"
+  local expected_version="$2"
+  local site_url payload status response escaped_version version_pattern
+  site_url="$(awk -F= '$1 == "SITE_URL" { count++; value=substr($0, index($0, "=") + 1) } END { if (count != 1) exit 1; print value }' "$release/infra/vps.env")" || die "SITE_URL_INVALID"
+  [[ "$site_url" =~ ^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?$ ]] || die "SITE_URL_INVALID"
+  response="$(curl_cmd --silent --show-error --connect-timeout 5 --max-time 10 --proto '=https' --proto-redir '=https' --max-redirs 0 --write-out $'\n%{http_code}' "$site_url/api/health" 2>/dev/null)" || die "PUBLIC_HEALTH_TRANSPORT_FAILED"
+  status="${response##*$'\n'}"
+  payload="${response%$'\n'*}"
+  [[ "$status" == "200" ]] || die "PUBLIC_HEALTH_STATUS_INVALID"
+  escaped_version="${expected_version//./\\.}"
+  version_pattern="^\\{\"status\":\"ok\",\"version\":\"$escaped_version\",\"database\":\"postgresql\"\\}$"
+  grep -Eq "$version_pattern" <<<"$payload" || die "PUBLIC_HEALTH_PAYLOAD_INVALID"
 }
 
 validate_release() {
