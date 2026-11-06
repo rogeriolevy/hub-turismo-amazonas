@@ -12,7 +12,7 @@ import "./navigation.css";
 
 const institutionalLinks = [
   { href: "/#inicio", key: "header.home" },
-  { href: "/#sobre", key: "header.about" },
+  { href: "/sobre", key: "header.about" },
   { href: "/#solucoes", key: "header.solutions" },
   { href: "/#impacto", key: "header.impact" },
   { href: "/contato", key: "header.contact" },
