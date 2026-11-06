@@ -14,28 +14,32 @@ Este fluxo copia o dump PostgreSQL da VPS para uma pasta protegida neste computa
         .\infra\export-vps-backup-to-local.ps1
 
    Para escolher outra pasta local, defina `$backupRoot = 'D:\HubBackups'` e use `-BackupDirectory $backupRoot` nos dois scripts. A pasta não pode ficar dentro do repositório ou da área temporária do Windows.
-3. O script localiza o dump mais recente na VPS, verifica o manifesto SHA-256, baixa o dump e o manifesto por SCP e confere novamente o hash. Ele publica cada cópia em uma pasta nova, protege as permissões locais para a conta atual, SYSTEM e administradores, e recusa sobrescrever um destino ou recibo existente. Guarde os caminhos `LOCAL_BACKUP_FILE` e `RECEIPT_FILE` exibidos.
+3. O script localiza o conjunto mais recente de quatro arquivos na VPS (dump, manifesto, recibo de origem e manifesto do recibo), verifica os SHA-256 na origem, baixa cada arquivo por SCP e confere novamente os hashes. Ele publica cada cópia em uma pasta nova, protege as permissões locais para a conta atual, SYSTEM e administradores, e recusa sobrescrever um destino ou recibo existente. Guarde os marcadores `LOCAL_BACKUP_FILE`, `RECEIPT_FILE`, `LOCAL_SOURCE_RECEIPT_FILE` e `LOCAL_SOURCE_RECEIPT_SHA256` exibidos.
 
 O dump contém dados de produção, inclusive dados pessoais. Mantenha a cópia e o computador protegidos e não envie esses arquivos por mensagem.
 
 ## Ensaiar a restauração isolada
 
-Execute no mesmo PowerShell, usando os caminhos retornados pela exportação:
+Execute o fluxo suportado no mesmo PowerShell. Ele encadeia exportação e verificação e exige os dois valores da atestação da candidata que será ativada:
 
         $backupRoot = Join-Path $env:LOCALAPPDATA 'HubTurismo\Backups'
-        $dump = Join-Path $backupRoot 'hub-AAAA...\hub-AAAA...dump'
-        $receipt = Join-Path $env:LOCALAPPDATA 'HubTurismo\BackupReceipts\hub-AAAA...dump.json'
-        .\infra\verify-vps-local-backup.ps1 -DownloadedBackupPath $dump -ReceiptPath $receipt -BackupDirectory $backupRoot -ConfirmLocalBackup
+        $candidateAttestationPath = '/opt/hub-turismo/attestations/candidate-X.Y.Z.env'
+        $candidateAttestationSha256 = '...SHA-256 de 64 caracteres da atestação candidata...'
+        .\infra\prepare-and-verify-vps-backup.ps1 `
+          -BackupDirectory $backupRoot `
+          -CandidateAttestationPath $candidateAttestationPath `
+          -CandidateAttestationSha256 $candidateAttestationSha256 `
+          -ConfirmLocalBackup
 
-O verificador exige que o dump esteja na pasta local protegida, compara o SHA-256 do arquivo com o manifesto `.sha256` e o recibo independente, envia a cópia a um staging único em `/var/tmp` por SSH e usa `infra/restore-postgres.sh` para restaurar em um banco temporário novo `hub_restore_local_...`. O staging e o banco temporário são removidos ao final.
+O fluxo usa os caminhos de dump, recibo independente e recibo de origem retornados pela exportação; não os substitua manualmente. Ele exige que o dump esteja na pasta local protegida, compara os SHA-256 do dump e do recibo de origem com os manifestos e o recibo independente, envia a cópia a um staging único em `/var/tmp` por SSH e usa `infra/restore-postgres.sh` para restaurar em um banco temporário novo `hub_restore_local_...`. O staging e o banco temporário são removidos ao final.
 
-Revise no resultado as contagens agregadas de usuários, reservas, lembretes e entradas Cadastur. Para concluir, devem aparecer `LOCAL_BACKUP_VERIFICATION=passed`, `RESTORE_DATABASE_CLEANUP=ok`, `REMOTE_STAGING_CLEANUP=ok` e as quatro contagens. Guarde o nome do dump, SHA-256 e resultado agregado; não registre nomes de pessoas, detalhes de reservas, credenciais ou conteúdo de `vps.env`.
+Para concluir, devem aparecer `LOCAL_BACKUP_VERIFICATION=passed`, `RESTORE_SOURCE_COMPARISON=match`, `RESTORE_DATABASE_CLEANUP=ok`, `REMOTE_STAGING_CLEANUP=ok`, `BACKUP_ATTESTATION_REMOTE_PATH`, `BACKUP_ATTESTATION_SHA256` e `BACKUP_ATTESTATION_EXPIRES_AT_UTC`. A comparação só passa com paridade exata entre o mapa canônico completo de contagens da fonte e da restauração, e com o mesmo `SOURCE_LEDGER_SHA256`; não reduza essa conferência a uma lista fixa de tabelas. Guarde o nome do dump, SHA-256, mapa/ledger verificados e resultado agregado; não registre nomes de pessoas, detalhes de reservas, credenciais ou conteúdo de `vps.env`.
 
 Se o SSH, o hash, o restore ou a limpeza falhar, mantenha os arquivos locais e interrompa qualquer limpeza de dados ou publicação. Esta cópia protege contra perda apenas da VPS enquanto o arquivo permanecer íntegro neste computador; mantenha também a retenção diária já configurada na VPS.
 
 ## Evidência para ativação
 
-Depois do ensaio íntegro, guarde os marcadores `BACKUP_ATTESTATION_REMOTE_PATH`, `BACKUP_ATTESTATION_SHA256` e `BACKUP_ATTESTATION_EXPIRES_AT_UTC` do mesmo run, junto dos valores de candidata correspondentes. A ativação requer esses argumentos, comprova a comparação fonte/restauração e as limpezas, e recusa atestado expirado ou ligado a outra candidata. Não reutilize evidência de uma release anterior.
+Depois do ensaio íntegro, guarde os marcadores `BACKUP_ATTESTATION_REMOTE_PATH`, `BACKUP_ATTESTATION_SHA256` e `BACKUP_ATTESTATION_EXPIRES_AT_UTC` do mesmo run, junto de `CandidateAttestationPath` e `CandidateAttestationSha256` usados no comando. A ativação requer esses argumentos, comprova a comparação fonte/restauração e as limpezas, e recusa atestado expirado ou ligado a outra candidata. Não reutilize evidência de uma release anterior.
 
 ## Limites de segurança
 
