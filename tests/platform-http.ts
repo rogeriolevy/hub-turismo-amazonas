@@ -105,6 +105,7 @@ export async function verifyPlatformHttp(
     city: "Maués",
     description: "Dados fictícios usados somente para testar o catálogo e o fluxo de reservas.",
     status: "published",
+    provider_data_confirmed: true,
   };
   assert.equal((await post("/api/plataforma/empresas", company, visitor)).status, 403);
   const hotel = (await data(await post("/api/plataforma/empresas", company, root))).id;
