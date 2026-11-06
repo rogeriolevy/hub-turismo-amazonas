@@ -145,6 +145,20 @@ prior_version="$(awk -F= '$1 == "APP_VERSION" { count++; value = substr($0, inde
 [[ "$prior_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "CURRENT_APP_VERSION_INVALID"
 prior_image="hub-turismo-amazonas:$prior_version"
 
+read_json_with_node() {
+  local json_path="$1" script="$2" canonical_json
+  shift 2
+  canonical_json="$(canonical_existing "$json_path")" || die "JSON_INPUT_UNRESOLVED"
+  [[ -f "$canonical_json" && ! -L "$json_path" ]] || die "JSON_INPUT_INVALID"
+  if [[ "$test_only" == true ]]; then
+    node -e "$script" "$canonical_json" "$@"
+  else
+    "$DOCKER_BIN" run --pull=never --rm --network none --read-only \
+      --mount "type=bind,src=$canonical_json,dst=/tmp/hub-input.json,readonly" \
+      --entrypoint node "$prior_image" -e "$script" /tmp/hub-input.json "$@"
+  fi
+}
+
 actual_archive_sha256="$(sha256sum "$archive" | awk '{print $1}')"
 [[ "$actual_archive_sha256" == "$archive_sha256" ]] || die "ARCHIVE_SHA256_MISMATCH"
 actual_verifier_sha256="$(sha256sum "$verifier" | awk '{print $1}')"
@@ -173,7 +187,7 @@ if ((${#helper_args[@]})); then
     assert_under "$staging" "$tarball" "HELPER_OUTSIDE_STAGING"
     assert_regular_input "$tarball" "HELPER_TARBALL_INVALID"
     package_path="node_modules/$package_name"
-    expected_helper="$(node -e 'const lock=require(process.argv[1]); const entry=lock.packages?.[process.argv[2]]; if (!entry?.version || !entry?.integrity) process.exit(2); process.stdout.write(`${entry.version}|${entry.integrity}`)' "$current/package-lock.json" "$package_path")" || die "HELPER_NOT_PINNED_IN_CURRENT_LOCK"
+    expected_helper="$(read_json_with_node "$current/package-lock.json" 'const lock=require(process.argv[1]); const entry=lock.packages?.[process.argv[2]]; if (!entry?.version || !entry?.integrity) process.exit(2); process.stdout.write(`${entry.version}|${entry.integrity}`)' "$package_path")" || die "HELPER_NOT_PINNED_IN_CURRENT_LOCK"
     helper_version="${expected_helper%%|*}"; helper_integrity="${expected_helper#*|}"
     [[ "$helper_integrity" == sha512-* ]] || die "HELPER_SRI_INVALID"
     expected_b64="${helper_integrity#sha512-}"
@@ -186,8 +200,8 @@ if ((${#helper_args[@]})); then
     "$TAR_BIN" -xzf "$tarball" -C "$helper_extract" || die "HELPER_EXTRACTION_FAILED"
     helper_directory="$helper_extract/package"
     [[ -f "$helper_directory/package.json" && ! -L "$helper_directory/package.json" ]] || die "HELPER_PACKAGE_INVALID"
-    node -e 'const p=require(process.argv[1]); if (p.name !== process.argv[2] || p.version !== process.argv[3] || typeof p.main !== "string" || !p.main) process.exit(2)' "$helper_directory/package.json" "$package_name" "$helper_version" || die "HELPER_METADATA_MISMATCH"
-    helper_entry="$(node -e 'const p=require(process.argv[1]); process.stdout.write(p.main)' "$helper_directory/package.json")"
+    read_json_with_node "$helper_directory/package.json" 'const p=require(process.argv[1]); if (p.name !== process.argv[2] || p.version !== process.argv[3] || typeof p.main !== "string" || !p.main) process.exit(2)' "$package_name" "$helper_version" || die "HELPER_METADATA_MISMATCH"
+    helper_entry="$(read_json_with_node "$helper_directory/package.json" 'const p=require(process.argv[1]); process.stdout.write(p.main)')"
     [[ -f "$helper_directory/$helper_entry" && ! -L "$helper_directory/$helper_entry" ]] || die "HELPER_ENTRYPOINT_INVALID"
     helper_mounts+=(--mount "type=bind,src=$helper_directory,dst=/app/node_modules/$package_name,readonly")
   done
@@ -207,7 +221,7 @@ mkdir -m 700 -- "$release_temporary"
 cleanup_paths+=("$release_temporary")
 "$UNZIP_BIN" -q "$archive" -d "$release_temporary" || die "SOURCE_EXTRACTION_FAILED"
 [[ -f "$release_temporary/package.json" && ! -L "$release_temporary/package.json" ]] || die "CANDIDATE_PACKAGE_INVALID"
-package_version="$(node -e 'const p=require(process.argv[1]); if (!/^\d+\.\d+\.\d+$/.test(p.version)) process.exit(2); process.stdout.write(p.version)' "$release_temporary/package.json")" || die "CANDIDATE_VERSION_INVALID"
+package_version="$(read_json_with_node "$release_temporary/package.json" 'const p=require(process.argv[1]); if (!/^\d+\.\d+\.\d+$/.test(p.version)) process.exit(2); process.stdout.write(p.version)')" || die "CANDIDATE_VERSION_INVALID"
 final_release="$RELEASE_ROOT/release-$package_version"
 [[ ! -e "$ATTESTATION_ROOT/candidate-$package_version.env" && ! -L "$ATTESTATION_ROOT/candidate-$package_version.env" ]] || die "ATTESTATION_ALREADY_EXISTS"
 [[ ! -e "$final_release" && ! -L "$final_release" ]] || die "FINAL_RELEASE_ALREADY_EXISTS"
