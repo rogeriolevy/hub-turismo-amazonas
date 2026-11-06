@@ -152,6 +152,7 @@ test(
           city: "Maués",
           description: "Empresa temporária para validar operações simultâneas.",
           status: "published",
+          provider_data_confirmed: true,
         })
       ).id;
       await saveMember(pool, root, {
@@ -192,6 +193,7 @@ test(
           city: "Manaus",
           description: "Empresa temporária para validar o isolamento entre empresas.",
           status: "published",
+          provider_data_confirmed: true,
         })
       ).id;
       const foreignRoomId = (
@@ -455,6 +457,7 @@ test(
           city: "Maués",
           description: "Operador temporário para validar operações simultâneas.",
           status: "published",
+          provider_data_confirmed: true,
         })
       ).id;
       const tourId = (

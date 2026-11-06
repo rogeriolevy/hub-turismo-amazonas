@@ -58,6 +58,7 @@ test("booking email outbox retries delivery without duplicating the booking", as
       city: "Maués",
       description: "Hotel fictício para validar o outbox de reservas.",
       status: "published",
+      provider_data_confirmed: true,
     });
     await saveMember(db, root, {
       company_id: company.id,

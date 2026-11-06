@@ -71,6 +71,7 @@ async function fixture() {
       city: "Maués",
       description: "Empresa fictícia para testes automatizados.",
       status: "published",
+      provider_data_confirmed: true,
     })
   ).id;
   const otherHotel = (
@@ -81,6 +82,7 @@ async function fixture() {
       city: "Manaus",
       description: "Outra empresa fictícia para testes automatizados.",
       status: "published",
+      provider_data_confirmed: true,
     })
   ).id;
   const operator = (
@@ -91,6 +93,7 @@ async function fixture() {
       city: "Maués",
       description: "Operador fictício para testes automatizados.",
       status: "published",
+      provider_data_confirmed: true,
     })
   ).id;
   await saveMember(db, root, { company_id: hotel, email: manager.email, role: "hotel_manager" });
@@ -237,6 +240,7 @@ test("companies use trade names in listings, searches and bookings without losin
       city: "Maués",
       description: "Empresa fictícia para testes automatizados.",
       status: "published",
+      provider_data_confirmed: true,
     };
     await saveCompany(f.db, f.root, { ...input, trade_name: "  A Pousada do Rio  " });
     const found = await publicHotels(f.db, "Pousada do Rio");
@@ -279,6 +283,7 @@ test("companies use trade names in listings, searches and bookings without losin
       city: "Maués",
       description: "Operador fictício para testar nome fantasia.",
       status: "published",
+      provider_data_confirmed: true,
     });
     assert.equal((await publicTours(f.db))[0].company_name, "Rios da Amazônia");
     assert.equal((await publicTour(f.db, "passeio-teste"))!.company_name, "Rios da Amazônia");
@@ -521,6 +526,7 @@ test("resource identifiers cannot move inventory between tenants", async () => {
         city: "Manaus",
         description: "Empresa fictícia para isolar passeios e guias.",
         status: "published",
+        provider_data_confirmed: true,
       })
     ).id;
     await assert.rejects(

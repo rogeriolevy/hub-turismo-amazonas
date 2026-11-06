@@ -56,6 +56,7 @@ test("confirmed bookings create one private in-app reminder at the configured sc
       city: "Manaus",
       description: "Hotel fictício para validar avisos de reserva.",
       status: "published",
+      provider_data_confirmed: true,
     });
     const room = await saveRoom(db, root, {
       company_id: hotel.id,
@@ -72,6 +73,7 @@ test("confirmed bookings create one private in-app reminder at the configured sc
       city: "Manaus",
       description: "Operador fictício para validar avisos de reserva.",
       status: "published",
+      provider_data_confirmed: true,
     });
     const tour = await saveTour(db, root, {
       company_id: tourCompany.id,
