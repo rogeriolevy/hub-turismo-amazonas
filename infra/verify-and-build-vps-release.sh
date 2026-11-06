@@ -170,7 +170,7 @@ cleanup_paths=()
 cleanup() {
   local status=$?
   for path in "${cleanup_paths[@]:-}"; do
-    case "$path" in "$RELEASE_ROOT"/.release-*|"$RELEASE_ROOT"/.helpers-*|"$ATTESTATION_ROOT"/.candidate-*) [[ -e "$path" || -L "$path" ]] && rm -rf -- "$path" ;; esac
+    case "$path" in "$RELEASE_ROOT"/.release-*|"$RELEASE_ROOT"/staging/*/.helpers-*|"$ATTESTATION_ROOT"/.candidate-*) [[ -e "$path" || -L "$path" ]] && rm -rf -- "$path" ;; esac
   done
   exit "$status"
 }
