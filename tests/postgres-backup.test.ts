@@ -196,6 +196,12 @@ case "$*" in
   *service=postgres*)
     printf 'postgres-fixture\\n'
     ;;
+  *State.Status*)
+    printf 'running\\n'
+    ;;
+  *State.Health*)
+    printf 'healthy\\n'
+    ;;
   *pg_dump*)
     printf 'PGDMP-mock-archive\\n'
     ;;
