@@ -95,8 +95,7 @@ if [[ "$1" == "compose" ]]; then
 fi
 
 if [[ "$1" == "image" && "$2" == "inspect" ]]; then
-  image="\${@: -1}"
-  printf 'sha256:fixture-%s\\n' "\${image##*:}"
+  printf 'sha256:0000000000000000000000000000000000000000000000000000000000000001\\n'
   exit 0
 fi
 
@@ -274,7 +273,7 @@ async function createFixture() {
     `ARCHIVE_SHA256=${"c".repeat(64)}`,
     `VERIFIER_SHA256=${"d".repeat(64)}`,
     "IMAGE_TAG=hub-turismo-amazonas:0.12.14",
-    "IMAGE_ID=sha256:fixture-0.12.14",
+    `IMAGE_ID=sha256:${"0".repeat(63)}1`,
     `COMPOSE_SHA256=${candidateComposeHash}`,
     `ENVIRONMENT_SHA256=${candidateEnvironmentHash}`,
     `MIGRATIONS_SHA256=${candidateMigrationsHash}`,
@@ -288,7 +287,7 @@ async function createFixture() {
     `CANDIDATE_ATTESTATION_PATH=${toPosixPath(candidateAttestation)}`,
     `CANDIDATE_ATTESTATION_SHA256=${candidateAttestationSha256}`,
     "CANDIDATE_VERSION=0.12.14",
-    "CANDIDATE_IMAGE_ID=sha256:fixture-0.12.14",
+    `CANDIDATE_IMAGE_ID=sha256:${"0".repeat(63)}1`,
     "DUMP_FILE=fixture.dump",
     `DUMP_SHA256=${"e".repeat(64)}`,
     "SOURCE_RECEIPT_FILE=fixture.source.json",
@@ -412,6 +411,31 @@ for (const [name, receipt, expectedError] of [
     const fixture = await createFixture();
     const original = await readFile(fixture.candidateAttestation, "utf8");
     const changed = original.replace(/^PACKAGE_VERSION=.*$/m, receipt.trim());
+    await writeFile(fixture.candidateAttestation, changed);
+    const result = runGuard(fixture, {
+      simulate: true,
+      candidateAttestationSha256: sha256(changed),
+    });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, new RegExp(`ERROR=${expectedError}`));
+    assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+    assert.equal(await callLog(fixture), "");
+  });
+}
+
+for (const [name, field, invalidValue, expectedError] of [
+  ["candidate image id", "IMAGE_ID", "sha256:not-a-digest", "CANDIDATE_ATTESTATION_IMAGE_ID_INVALID"],
+  ["candidate Compose hash", "COMPOSE_SHA256", "not-a-hash", "CANDIDATE_ATTESTATION_COMPOSE_HASH_INVALID"],
+  ["candidate environment hash", "ENVIRONMENT_SHA256", "not-a-hash", "CANDIDATE_ATTESTATION_ENVIRONMENT_HASH_INVALID"],
+  ["candidate migrations hash", "MIGRATIONS_SHA256", "not-a-hash", "CANDIDATE_ATTESTATION_MIGRATIONS_HASH_INVALID"],
+  ["candidate Git head", "GIT_HEAD", "not-a-pin", "CANDIDATE_ATTESTATION_GIT_HEAD_INVALID"],
+  ["candidate Git tree", "GIT_TREE", "not-a-pin", "CANDIDATE_ATTESTATION_GIT_TREE_INVALID"],
+] as const) {
+  test(`${name} syntax fails before Docker or Compose inspection`, async () => {
+    const fixture = await createFixture();
+    const original = await readFile(fixture.candidateAttestation, "utf8");
+    const changed = original.replace(new RegExp(`^${field}=.*$`, "m"), `${field}=${invalidValue}`);
     await writeFile(fixture.candidateAttestation, changed);
     const result = runGuard(fixture, {
       simulate: true,
