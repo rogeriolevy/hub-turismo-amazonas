@@ -65,8 +65,12 @@ env_file="$(realpath -e -- "$env_file")" || die "ENV_FILE_UNRESOLVED"
 command -v docker >/dev/null 2>&1 || die "DOCKER_UNAVAILABLE"
 command -v realpath >/dev/null 2>&1 || die "REALPATH_UNAVAILABLE"
 
-# Do not honor caller-selected daemon/context values for a destructive command.
-unset DOCKER_CONTEXT DOCKER_HOST COMPOSE_FILE COMPOSE_PROJECT_NAME
+# Force the local daemon even when hub has a persisted Docker CLI context for another host.
+unset DOCKER_HOST DOCKER_CONFIG COMPOSE_FILE COMPOSE_PROJECT_NAME
+export DOCKER_CONTEXT=default
+docker_endpoint="$(docker context inspect default --format '{{ (index .Endpoints "docker").Host }}' 2>/dev/null)" \
+  || die "DOCKER_CONTEXT_UNAVAILABLE"
+[[ "$docker_endpoint" == "unix:///var/run/docker.sock" ]] || die "DOCKER_ENDPOINT_NOT_LOCAL"
 docker info >/dev/null 2>&1 || die "DOCKER_DAEMON_UNAVAILABLE"
 
 compose_args=(-p "$project" --env-file "$env_file" -f "$compose_file")

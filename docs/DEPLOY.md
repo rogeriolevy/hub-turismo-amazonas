@@ -2,7 +2,7 @@
 
 ## Estado publicado
 
-A versão 0.12.16 está publicada na VPS com Docker Compose, PostgreSQL e Nginx em `https://hubamazonas.vps12233.panel.icontainer.site`. Em 05/11/2026, `/api/health` respondeu HTTP 200 com `status=ok`, `version=0.12.16` e `database=postgresql`; web, worker e PostgreSQL estão saudáveis. `/opt/hub-turismo/current` aponta para `/opt/hub-turismo/release-0.12.16`. A release 0.12.15 permanece disponível para retorno. Os detalhes de backup, snapshot, imagem, contagens, migrations e retorno estão na [nota da release 0.12.16](releases/0.12.16.md).
+A versão 0.12.17 está publicada na VPS com Docker Compose, PostgreSQL e Nginx em `https://hubamazonas.vps12233.panel.icontainer.site`. Em 06/11/2026, `/api/health` respondeu HTTP 200 com `status=ok`, `version=0.12.17` e `database=postgresql`; web, worker e PostgreSQL estão saudáveis. `/opt/hub-turismo/current` aponta para `/opt/hub-turismo/release-0.12.17`. A release 0.12.16 permanece disponível para retorno. Os detalhes de backup, snapshot, imagem, contagens, migrations e retorno estão na [nota da release 0.12.17](releases/0.12.17.md).
 
 Na verificação pública da 0.12.16, `/plataforma` responde HTTP 200 e sua navegação principal lista os seis módulos sem “Início”; `/hospedagens` mostra “Início” antes dos módulos. `/contato` responde HTTP 200, informa que o telefone e e-mail de demonstração são fictícios, mantém o formulário e não transforma os dados em links de chamada, WhatsApp ou e-mail. Os links institucionais “Sobre a Hub” e “Contato” não aparecem na plataforma. A navegação pública `/navegacao` renderiza os quadros Maués → Parintins e Parintins → Maués transcritos da imagem; campos vazios aparecem como “Não informado”.
 
@@ -10,13 +10,13 @@ Uma consulta agregada read-only na produção confirmou `cadastur_maues=42`, `ca
 
 Antes da ativação 0.12.16, o dump `hub-20261105T224215Z-2923292.dump` foi copiado por SSH para a pasta local protegida, validado por SHA-256 e restaurado em banco isolado. O checksum é `cb4f67ab1ea947712162df4521d8c2a0c124cdbfc0008b5d8cae4dfbfbee01b6`; a restauração confirmou `users=2`, `bookings=0`, `booking_reminders=0` e `cadastur_entries=42`, e limpou banco e staging temporários. A cópia fica em `%LOCALAPPDATA%\HubTurismo\Backups`; o recibo independente fica em `%LOCALAPPDATA%\HubTurismo\BackupReceipts`. Consulte o [runbook de backup local e recuperação](BACKUP-RECUPERACAO.md).
 
-A 0.12.16 foi construída exclusivamente no Docker da VPS a partir do snapshot ancorado ao commit `8ea8b23352705d7f813c5f4f4d80f48d6988051d`, árvore `f6b6865a58945990121fb7fbd4777e13b86dadfb`, cujo ZIP SHA-256 é `ae086a80fb503a87d79a902691bdfc4bd381f847afc63e3308144435847b27cb`. O digest da imagem é `sha256:848c7fdac5410a245efb1eeed742926f9a71a5df60ece3aabca7ae8b2e336f65`. PostgreSQL, volume, dados e as migrations permaneceram iguais; a importação SQLite→PostgreSQL não foi repetida. A release 0.12.15 e sua imagem continuam disponíveis para retorno. Consulte também a [baseline de proveniência](../.planning/phases/01-baseline-e-candidata/01-BASELINE.md), o [registro da versão 0.12.15](releases/0.12.15.md) e a [nota da versão 0.12.16](releases/0.12.16.md).
+Na publicação da 0.12.16, a imagem foi construída exclusivamente no Docker da VPS a partir do snapshot ancorado ao commit `8ea8b23352705d7f813c5f4f4d80f48d6988051d`, árvore `f6b6865a58945990121fb7fbd4777e13b86dadfb`, cujo ZIP SHA-256 é `ae086a80fb503a87d79a902691bdfc4bd381f847afc63e3308144435847b27cb`. O digest da imagem foi `sha256:848c7fdac5410a245efb1eeed742926f9a71a5df60ece3aabca7ae8b2e336f65`. PostgreSQL, volume, dados e migrations permaneceram iguais; a importação SQLite→PostgreSQL não foi repetida. Consulte também a [baseline de proveniência](../.planning/phases/01-baseline-e-candidata/01-BASELINE.md), o [registro da versão 0.12.15](releases/0.12.15.md), a [nota da versão 0.12.16](releases/0.12.16.md) e a [nota da versão 0.12.17](releases/0.12.17.md).
 
 O serviço Sites existente permanece independente da VPS. A origem oficial foi confirmada e validada em uma transferência descartável antes da publicação. Consulte também [USO-LOCAL.md](USO-LOCAL.md) para continuar usando a instalação local.
 
 Para copiar o backup da VPS para este computador por SSH e ensaiar a restauração isolada, consulte o [runbook de backup local e recuperação](BACKUP-RECUPERACAO.md). A exportação sozinha não libera publicação; checksum, ensaio e preflight continuam obrigatórios.
 
-## Operação da release 0.12.16
+## Histórico operacional: release 0.12.16
 
 O proxy e o PostgreSQL não foram incluídos na atualização. O guard trocou `current` atomicamente e recriou somente `web` e `booking-email-worker` com `--no-deps --no-build`. A verificação comparou o mesmo container/volume PostgreSQL, ledger de migrations e contagens agregadas antes e depois. O rollback não foi acionado; a release 0.12.15 continua disponível. A nota da [release 0.12.16](releases/0.12.16.md) contém o resultado observado.
 
