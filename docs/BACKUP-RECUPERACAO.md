@@ -9,11 +9,13 @@ Este fluxo copia o dump PostgreSQL da VPS para uma pasta protegida neste computa
         ssh hub-turismo-vps "id"
 
    A saída deve identificar a conta `hub`.
+
 2. No PowerShell, na raiz do repositório, execute:
 
         .\infra\export-vps-backup-to-local.ps1
 
    Para escolher outra pasta local, defina `$backupRoot = 'D:\HubBackups'` e use `-BackupDirectory $backupRoot` nos dois scripts. A pasta não pode ficar dentro do repositório ou da área temporária do Windows.
+
 3. O script localiza o conjunto mais recente de quatro arquivos na VPS (dump, manifesto, recibo de origem e manifesto do recibo), verifica os SHA-256 na origem, baixa cada arquivo por SCP e confere novamente os hashes. Ele publica cada cópia em uma pasta nova, protege as permissões locais para a conta atual, SYSTEM e administradores, e recusa sobrescrever um destino ou recibo existente. Guarde os marcadores `LOCAL_BACKUP_FILE`, `RECEIPT_FILE`, `LOCAL_SOURCE_RECEIPT_FILE` e `LOCAL_SOURCE_RECEIPT_SHA256` exibidos.
 
 O dump contém dados de produção, inclusive dados pessoais. Mantenha a cópia e o computador protegidos e não envie esses arquivos por mensagem.

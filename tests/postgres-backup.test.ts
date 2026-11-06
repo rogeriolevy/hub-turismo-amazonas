@@ -41,15 +41,22 @@ function createActiveBackupFixture() {
   mkdirSync(fakeBin, { recursive: true, mode: 0o700 });
   mkdirSync(backupDirectory, { recursive: true, mode: 0o700 });
   writeFileSync(join(root, ".hub-backup-fixture"), "hub-backup-test-fixture-v1\n", { mode: 0o600 });
-  writeFileSync(join(release, "infra", "backup-postgres.sh"), "#!/usr/bin/env bash\n", { mode: 0o500 });
+  writeFileSync(join(release, "infra", "backup-postgres.sh"), "#!/usr/bin/env bash\n", {
+    mode: 0o500,
+  });
   writeFileSync(
     join(release, "infra", "vps.env"),
     "APP_VERSION=0.12.16\nPOSTGRES_USER=hub_backup_admin\nHUB_DB_USER=hub_app_owner\n",
     { mode: 0o600 },
   );
-  writeFileSync(join(release, "scripts", "capture-postgres-backup-source.mjs"), "// fixture marker\n", { mode: 0o500 });
+  writeFileSync(
+    join(release, "scripts", "capture-postgres-backup-source.mjs"),
+    "// fixture marker\n",
+    { mode: 0o500 },
+  );
   symlinkSync(release, join(root, "current"), process.platform === "win32" ? "junction" : "dir");
-  const sourceRecord = '{"schema":"hub-postgres-source-v1","capturedAtUtc":"2026-01-02T03:04:05.006Z","counts":{"accounts":"1","bookings":"2"},"ledgerSha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","releaseVersion":"0.12.16"}';
+  const sourceRecord =
+    '{"schema":"hub-postgres-source-v1","capturedAtUtc":"2026-01-02T03:04:05.006Z","counts":{"accounts":"1","bookings":"2"},"ledgerSha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","releaseVersion":"0.12.16"}';
   writeFileSync(
     join(fakeBin, "docker"),
     `#!/usr/bin/env bash
@@ -91,7 +98,10 @@ exit 46
   return { root, backupDirectory, fakeBin };
 }
 
-function runActiveBackupFixture(fixture: ReturnType<typeof createActiveBackupFixture>, failure = "") {
+function runActiveBackupFixture(
+  fixture: ReturnType<typeof createActiveBackupFixture>,
+  failure = "",
+) {
   return spawnSync(gitBash, [activeBackupScript], {
     encoding: "utf8",
     windowsHide: true,
@@ -152,7 +162,10 @@ test("distinct application and administrative roles produce the complete snapsho
 test("atomic backup receipt publishes all four receipt files", () => {
   const activeBackup = readFileSync(activeBackupScript, "utf8");
   assert.ok(activeBackup.includes("source_receipt_file"), "receipt file publication is missing");
-  assert.ok(activeBackup.includes("source_receipt_checksum_file"), "receipt sidecar publication is missing");
+  assert.ok(
+    activeBackup.includes("source_receipt_checksum_file"),
+    "receipt sidecar publication is missing",
+  );
 });
 
 test("backup receipt failure cleans owned partial files", () => {

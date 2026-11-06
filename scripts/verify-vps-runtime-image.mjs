@@ -4,8 +4,7 @@ import { resolve } from "node:path";
 
 const usage = "Uso: node scripts/verify-vps-runtime-image.mjs --manifest <manifest.json>";
 const args = process.argv.slice(2);
-if (args.length !== 2 || args[0] !== "--manifest" || !args[1])
-  throw new Error(usage);
+if (args.length !== 2 || args[0] !== "--manifest" || !args[1]) throw new Error(usage);
 
 const manifestPath = resolve(args[1]);
 let manifest;
@@ -42,8 +41,14 @@ const metadata = runDocker([
 ]).split("|");
 const [imageId, sizeText, runtimeUser] = metadata;
 const imageSizeText = Number(sizeText).toLocaleString("pt-BR");
-if (imageId !== manifest.imageId || Number(sizeText) !== manifest.imageBytes || runtimeUser !== "node")
-  throw new Error(`A imagem local ${expectedTag} diverge do ID, tamanho ou usuário registrados no manifesto.`);
+if (
+  imageId !== manifest.imageId ||
+  Number(sizeText) !== manifest.imageBytes ||
+  runtimeUser !== "node"
+)
+  throw new Error(
+    `A imagem local ${expectedTag} diverge do ID, tamanho ou usuário registrados no manifesto.`,
+  );
 
 const runtimeInspection = String.raw`
 const fs = require("node:fs");
@@ -151,8 +156,11 @@ function runDocker(dockerArgs) {
       .filter(Boolean)
       .join("\n")
       .trim();
-    throw new Error(`Docker não conseguiu verificar ${expectedTag}.${details ? `\n${details}` : ""}`, {
-      cause: error,
-    });
+    throw new Error(
+      `Docker não conseguiu verificar ${expectedTag}.${details ? `\n${details}` : ""}`,
+      {
+        cause: error,
+      },
+    );
   }
 }

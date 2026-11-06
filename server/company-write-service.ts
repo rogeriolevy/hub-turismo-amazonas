@@ -26,14 +26,14 @@ export async function saveCompany(db: DatabaseExecutor, actor: Actor, input: unk
     const tradeName = data.trade_name ?? old?.trade_name ?? "";
     const publicFieldsChanged = Boolean(
       old &&
-        old.status === "published" &&
-        data.status === "published" &&
-        ((old.name ?? "").trim() !== data.name ||
-          (old.trade_name ?? "").trim() !== tradeName.trim() ||
-          (old.slug ?? "") !== data.slug ||
-          (old.city ?? "").trim() !== data.city ||
-          (old.description ?? "").trim() !== data.description ||
-          (old.activity_type ?? (old.kind === "hotel" ? "hotel" : "passeios")) !== activityType),
+      old.status === "published" &&
+      data.status === "published" &&
+      ((old.name ?? "").trim() !== data.name ||
+        (old.trade_name ?? "").trim() !== tradeName.trim() ||
+        (old.slug ?? "") !== data.slug ||
+        (old.city ?? "").trim() !== data.city ||
+        (old.description ?? "").trim() !== data.description ||
+        (old.activity_type ?? (old.kind === "hotel" ? "hotel" : "passeios")) !== activityType),
     );
     const confirmationRequired =
       data.status === "published" && (!old || old.status !== "published" || publicFieldsChanged);

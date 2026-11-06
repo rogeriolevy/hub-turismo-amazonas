@@ -43,7 +43,9 @@ if (
 if (manifest.databaseMigration !== false)
   throw new Error("O pacote declara migração de banco; revisão de compatibilidade necessária.");
 if (manifest.externalBackupValidated !== false)
-  throw new Error("A candidata precisa manter externalBackupValidated:false até a validação do backup externo.");
+  throw new Error(
+    "A candidata precisa manter externalBackupValidated:false até a validação do backup externo.",
+  );
 if (
   manifest.imageArchive !== expectedImageArchive ||
   manifest.imageArchiveSha256Sidecar !== `${expectedImageArchive}.sha256` ||
@@ -118,8 +120,13 @@ if (
 )
   throw new Error("Manifesto de fontes inconsistente com o pacote ou com a versão.");
 
-if (!Array.isArray(manifest.sourceFiles) || manifest.sourceFiles.length !== sourceManifest.files.length)
-  throw new Error("O manifesto do pacote precisa registrar hash, tamanho e estado Git de cada fonte.");
+if (
+  !Array.isArray(manifest.sourceFiles) ||
+  manifest.sourceFiles.length !== sourceManifest.files.length
+)
+  throw new Error(
+    "O manifesto do pacote precisa registrar hash, tamanho e estado Git de cada fonte.",
+  );
 for (let index = 0; index < sourceManifest.files.length; index += 1) {
   const source = sourceManifest.files[index];
   const bundled = manifest.sourceFiles[index];
@@ -134,7 +141,9 @@ for (let index = 0; index < sourceManifest.files.length; index += 1) {
     bundled.gitStatusLabel !== source.gitStatusLabel ||
     bundled.gitTracked !== source.gitTracked
   )
-    throw new Error(`O estado Git ou o conteúdo da fonte diverge no manifesto do pacote: ${source.path}.`);
+    throw new Error(
+      `O estado Git ou o conteúdo da fonte diverge no manifesto do pacote: ${source.path}.`,
+    );
 }
 
 const expectedAdoptedTools = [

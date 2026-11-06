@@ -490,8 +490,7 @@ export const en: Record<MessageKey, string> = {
   "contact.intro":
     "Tell us a little about yourself. All fields are required except the organization.",
   "contactPage.metaTitle": "Contact",
-  "contactPage.metaDescription":
-    "Contact Hub Turismo Amazonas through the institutional form.",
+  "contactPage.metaDescription": "Contact Hub Turismo Amazonas through the institutional form.",
   "contactPage.eyebrow": "CONTACT HUB",
   "contactPage.title": "Let’s talk?",
   "contactPage.description":
@@ -508,8 +507,7 @@ export const en: Record<MessageKey, string> = {
   "contactPage.demoLabel": "Fictional",
   "contactPage.formEyebrow": "SEND US A MESSAGE",
   "contactPage.formTitle": "How can we help?",
-  "contactPage.formDescription":
-    "Use the form to share a question, idea, or request with Hub.",
+  "contactPage.formDescription": "Use the form to share a question, idea, or request with Hub.",
   "contact.yourName": "Your name",
   "contact.namePlaceholder": "What should we call you?",
   "contact.email": "Email",
@@ -556,7 +554,8 @@ export const en: Record<MessageKey, string> = {
   "form.publishedStatus": "Published — visible in the catalog",
   "form.suspendedStatus": "Suspended — team access disabled",
   "form.providerConfirmation": "I confirm that I reviewed these details with the provider.",
-  "form.providerConfirmationHint": "Publishing or changing public details requires a fresh confirmation.",
+  "form.providerConfirmationHint":
+    "Publishing or changing public details requires a fresh confirmation.",
   "form.saveCompany": "Save company",
   "form.registerCompanyAction": "Register company",
   "form.roomCode": "Room number or code",
@@ -808,7 +807,8 @@ export const en: Record<MessageKey, string> = {
   "audit.pagination": "Audit log pagination",
   "audit.action.unknown": "Administrative action",
   "audit.action.company.saved": "Company details saved",
-  "audit.action.company.publish_confirmed": "Provider details confirmed before publication or change",
+  "audit.action.company.publish_confirmed":
+    "Provider details confirmed before publication or change",
   "audit.action.member.granted": "Access granted or role updated",
   "audit.action.member.revoked": "Access revoked",
   "audit.action.room.saved": "Room saved",

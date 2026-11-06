@@ -44,7 +44,9 @@ async function main() {
     await client.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
     transactionOpen = true;
 
-    const snapshotResult = await client.query("SELECT pg_export_snapshot() AS snapshot_id, current_user AS role");
+    const snapshotResult = await client.query(
+      "SELECT pg_export_snapshot() AS snapshot_id, current_user AS role",
+    );
     const snapshotId = snapshotResult.rows[0]?.snapshot_id;
     const sourceRole = snapshotResult.rows[0]?.role;
     if (typeof snapshotId !== "string" || !snapshotPattern.test(snapshotId)) {
@@ -60,7 +62,9 @@ async function main() {
     const counts = {};
     for (const row of tablesResult.rows) {
       const tableName = row.table_name;
-      const countResult = await client.query(`SELECT count(*)::text AS count FROM public.${quoteIdentifier(tableName)}`);
+      const countResult = await client.query(
+        `SELECT count(*)::text AS count FROM public.${quoteIdentifier(tableName)}`,
+      );
       const count = countResult.rows[0]?.count;
       if (typeof count !== "string" || !countPattern.test(count)) {
         throw new Error(`invalid aggregate count for ${tableName}`);
@@ -68,7 +72,9 @@ async function main() {
       counts[tableName] = count;
     }
 
-    const ledgerResult = await client.query("SELECT name, checksum FROM schema_migrations ORDER BY name");
+    const ledgerResult = await client.query(
+      "SELECT name, checksum FROM schema_migrations ORDER BY name",
+    );
     const ledger = ledgerResult.rows.map(({ name, checksum }) => ({ name, checksum }));
     const sourceRecord = {
       schema: "hub-postgres-source-v1",
@@ -90,4 +96,6 @@ async function main() {
   }
 }
 
-main().catch((error) => fail(error instanceof Error ? error.message : "unknown source capture failure"));
+main().catch((error) =>
+  fail(error instanceof Error ? error.message : "unknown source capture failure"),
+);

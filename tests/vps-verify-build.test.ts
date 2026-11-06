@@ -76,13 +76,13 @@ const fakeTar = [
   "#!/usr/bin/env bash",
   "# hub-verify-build-fake-runtime-v1",
   "set -euo pipefail",
-  "[[ \"$1\" == -xzf && \"$3\" == -C ]] || exit 61",
-  "entrypoint=\"$(cat \"$2\")\"",
-  "package_name=\"$(basename \"$2\" .tgz)\"",
-  "target=\"$4/package\"",
-  "mkdir -p \"$target\"",
-  "printf '{\"name\":\"%s\",\"version\":\"1.0.0\",\"main\":\"%s\"}\\n' \"$package_name\" \"$entrypoint\" > \"$target/package.json\"",
-  "if [[ \"$entrypoint\" == index.js ]]; then printf 'export default {};\\n' > \"$target/index.js\"; fi",
+  '[[ "$1" == -xzf && "$3" == -C ]] || exit 61',
+  'entrypoint="$(cat "$2")"',
+  'package_name="$(basename "$2" .tgz)"',
+  'target="$4/package"',
+  'mkdir -p "$target"',
+  'printf \'{"name":"%s","version":"1.0.0","main":"%s"}\\n\' "$package_name" "$entrypoint" > "$target/package.json"',
+  'if [[ "$entrypoint" == index.js ]]; then printf \'export default {};\\n\' > "$target/index.js"; fi',
 ].join("\n");
 
 async function createFixture() {
@@ -95,7 +95,10 @@ async function createFixture() {
   await mkdir(staging, { recursive: true });
   await mkdir(fakeBin, { recursive: true });
   await mkdir(path.join(current, "infra"), { recursive: true });
-  await writeFile(path.join(root, ".hub-verify-build-fixture"), "hub-verify-build-test-fixture-v1\n");
+  await writeFile(
+    path.join(root, ".hub-verify-build-fixture"),
+    "hub-verify-build-test-fixture-v1\n",
+  );
   await writeFile(path.join(fakeBin, ".hub-fake-runtime"), "hub-verify-build-fake-runtime-v1\n");
   await writeFile(path.join(fakeBin, "docker"), fakeDocker);
   await writeFile(path.join(fakeBin, "unzip"), fakeUnzip);
@@ -103,8 +106,14 @@ async function createFixture() {
   await chmod(path.join(fakeBin, "docker"), 0o755);
   await chmod(path.join(fakeBin, "unzip"), 0o755);
   await chmod(path.join(fakeBin, "tar"), 0o755);
-  await writeFile(path.join(current, "infra", "vps.env"), "APP_VERSION=0.0.1\nSITE_URL=https://fixture.invalid\n");
-  await writeFile(path.join(current, "package-lock.json"), JSON.stringify({ lockfileVersion: 3, packages: {} }) + "\n");
+  await writeFile(
+    path.join(current, "infra", "vps.env"),
+    "APP_VERSION=0.0.1\nSITE_URL=https://fixture.invalid\n",
+  );
+  await writeFile(
+    path.join(current, "package-lock.json"),
+    JSON.stringify({ lockfileVersion: 3, packages: {} }) + "\n",
+  );
   const archive = path.join(staging, "source.zip");
   const manifest = path.join(staging, "SOURCE-MANIFEST.json");
   const verifier = path.join(staging, "verify-vps-source-snapshot.mjs");
@@ -121,20 +130,28 @@ async function addHelperTarball(
 ) {
   const tarball = path.join(fixture.root, "staging", packageName.replaceAll("/", "-") + ".tgz");
   await writeFile(tarball, entrypoint + "\n");
-  const integrity = "sha512-" + createHash("sha512").update(await readFile(tarball)).digest("base64");
+  const integrity =
+    "sha512-" +
+    createHash("sha512")
+      .update(await readFile(tarball))
+      .digest("base64");
   const lockPath = path.join(fixture.root, "current", "package-lock.json");
   const lock = JSON.parse(await readFile(lockPath, "utf8"));
   lock.packages["node_modules/" + packageName] = { version: "1.0.0", integrity };
-  await writeFile(
-    lockPath,
-    JSON.stringify(lock) + "\n",
-  );
+  await writeFile(lockPath, JSON.stringify(lock) + "\n");
   return packageName + "=" + toPosixPath(tarball);
 }
 
 function runExecutor(
   fixture: Awaited<ReturnType<typeof createFixture>>,
-  options: { scenario?: string; archiveHash?: string; verifierHash?: string; gitHead?: string; gitTree?: string; helpers?: string[] } = {},
+  options: {
+    scenario?: string;
+    archiveHash?: string;
+    verifierHash?: string;
+    gitHead?: string;
+    gitTree?: string;
+    helpers?: string[];
+  } = {},
 ) {
   const args = [
     executor,
@@ -164,7 +181,11 @@ function runExecutor(
   return spawnSync(gitBash, args, {
     encoding: "utf8",
     windowsHide: true,
-    env: { ...process.env, FIXTURE_ROOT: fixture.posixRoot, HUB_VERIFY_BUILD_SCENARIO: options.scenario ?? "" },
+    env: {
+      ...process.env,
+      FIXTURE_ROOT: fixture.posixRoot,
+      HUB_VERIFY_BUILD_SCENARIO: options.scenario ?? "",
+    },
   });
 }
 
@@ -179,9 +200,15 @@ test("verify-and-build happy path produces one measured candidate attestation", 
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /CANDIDATE_ATTESTATION=.*candidate-1\.2\.3\.env/);
   assert.match(result.stdout, /CANDIDATE_ATTESTATION_SHA256=[a-f0-9]{64}/);
-  assert.match(await calls(fixture), /docker\|run\|.*\|--network\|none.*\|--read-only.*\|--self-check/m);
+  assert.match(
+    await calls(fixture),
+    /docker\|run\|.*\|--network\|none.*\|--read-only.*\|--self-check/m,
+  );
   assert.match(await calls(fixture), /build\|web/);
-  const attestation = await readFile(path.join(fixture.root, "attestations", "candidate-1.2.3.env"), "utf8");
+  const attestation = await readFile(
+    path.join(fixture.root, "attestations", "candidate-1.2.3.env"),
+    "utf8",
+  );
   assert.match(attestation, /CANDIDATE_PATH=.*release-1\.2\.3/);
   assert.match(attestation, /^IMAGE_ID=sha256:fixture-image$/m);
   assert.match(attestation, /^ENVIRONMENT_SHA256=[a-f0-9]{64}$/m);
@@ -259,5 +286,7 @@ test("source packager invokes the verifier with an explicit self-check", async (
 });
 
 after(async () => {
-  await Promise.all(fixtureDirectories.map((directory) => rm(directory, { recursive: true, force: true })));
+  await Promise.all(
+    fixtureDirectories.map((directory) => rm(directory, { recursive: true, force: true })),
+  );
 });

@@ -59,7 +59,9 @@ export async function verifyVpsSourceSnapshot(archivePathInput, manifestPathInpu
     (expected.gitObjectFormat && manifest.gitObjectFormat !== expected.gitObjectFormat) ||
     (expected.packageVersion && manifest.packageVersion !== expected.packageVersion)
   )
-    throw new Error("O commit, a árvore ou o formato Git do manifesto diverge da aprovação esperada.");
+    throw new Error(
+      "O commit, a árvore ou o formato Git do manifesto diverge da aprovação esperada.",
+    );
 
   const archiveDigest = await hashFile(archivePath);
   const sidecar = await readFile(`${archivePath}.sha256`, "utf8");
@@ -88,7 +90,9 @@ export async function verifyVpsSourceSnapshot(archivePathInput, manifestPathInpu
       file.gitStatusLabel !== "tracked" ||
       sourceFiles.has(file.path)
     )
-      throw new Error(`Entrada inválida ou duplicada no manifesto de fontes: ${file?.path ?? "desconhecida"}.`);
+      throw new Error(
+        `Entrada inválida ou duplicada no manifesto de fontes: ${file?.path ?? "desconhecida"}.`,
+      );
     declaredSourceBytes += file.bytes;
     if (declaredSourceBytes > maximumSourceBytes)
       throw new Error("O manifesto declara mais fontes do que o limite de auditoria permite.");
@@ -112,7 +116,10 @@ export async function verifyVpsSourceSnapshot(archivePathInput, manifestPathInpu
       .update(Buffer.from(`blob ${verifierBytes.length}\0`, "utf8"))
       .update(verifierBytes)
       .digest("hex");
-    if (sha256(verifierBytes) !== verifierRecord.sha256 || verifierGitBlob !== verifierRecord.gitBlob)
+    if (
+      sha256(verifierBytes) !== verifierRecord.sha256 ||
+      verifierGitBlob !== verifierRecord.gitBlob
+    )
       throw new Error("O verificador executado não corresponde ao arquivo aprovado no commit.");
   }
 
@@ -191,7 +198,14 @@ async function hashFile(path) {
   return { bytes, sha256: hash.digest("hex") };
 }
 
-function verifyGitTreeProof({ entries, rootTree, objectFormat, objectIdPattern, excludedPathPattern, sourceFiles }) {
+function verifyGitTreeProof({
+  entries,
+  rootTree,
+  objectFormat,
+  objectIdPattern,
+  excludedPathPattern,
+  sourceFiles,
+}) {
   const seenPaths = new Set();
   const directories = new Map([["", { objectId: rootTree }]]);
   const childrenByDirectory = new Map([["", []]]);
@@ -212,7 +226,9 @@ function verifyGitTreeProof({ entries, rootTree, objectFormat, objectIdPattern, 
       !objectIdPattern.test(entry.objectId) ||
       seenPaths.has(entry.path)
     )
-      throw new Error(`Entrada inválida ou duplicada na prova da árvore Git: ${entry?.path ?? "desconhecida"}.`);
+      throw new Error(
+        `Entrada inválida ou duplicada na prova da árvore Git: ${entry?.path ?? "desconhecida"}.`,
+      );
 
     let mode = entry.mode;
     const isTree = entry.objectType === "tree" && ["040000", "40000"].includes(mode);
@@ -239,7 +255,9 @@ function verifyGitTreeProof({ entries, rootTree, objectFormat, objectIdPattern, 
     }
 
     if (entry.path === "SOURCE-MANIFEST.json")
-      throw new Error("A raiz do commit reserva SOURCE-MANIFEST.json para o manifesto do snapshot.");
+      throw new Error(
+        "A raiz do commit reserva SOURCE-MANIFEST.json para o manifesto do snapshot.",
+      );
     if (excludedPath.test(entry.path)) continue;
     if (!isBlob || !["100644", "100755"].includes(mode))
       throw new Error(`A fonte selecionada não é um arquivo regular: ${entry.path}.`);
@@ -266,7 +284,9 @@ function verifyGitTreeProof({ entries, rootTree, objectFormat, objectIdPattern, 
   if (hashGitTree(childrenByDirectory.get("") ?? [], objectFormat) !== rootTree)
     throw new Error("As entradas da árvore Git não produzem a árvore aprovada.");
   if (includedFiles.size !== sourceFiles.size)
-    throw new Error("A lista de fontes não corresponde aos arquivos selecionáveis na árvore Git aprovada.");
+    throw new Error(
+      "A lista de fontes não corresponde aos arquivos selecionáveis na árvore Git aprovada.",
+    );
   for (const [path, expected] of includedFiles) {
     const actual = sourceFiles.get(path);
     if (!actual || actual.gitBlob !== expected.gitBlob || actual.gitMode !== expected.gitMode)
@@ -293,8 +313,7 @@ function compareGitTreeEntries(left, right) {
   const rightName = Buffer.from(right.name, "utf8");
   const maxLength = Math.max(leftName.length, rightName.length);
   for (let index = 0; index <= maxLength; index += 1) {
-    const leftByte =
-      index < leftName.length ? leftName[index] : left.mode === "40000" ? 0x2f : 0;
+    const leftByte = index < leftName.length ? leftName[index] : left.mode === "40000" ? 0x2f : 0;
     const rightByte =
       index < rightName.length ? rightName[index] : right.mode === "40000" ? 0x2f : 0;
     if (leftByte !== rightByte) return leftByte - rightByte;
@@ -329,9 +348,13 @@ function assertSidecar(contents, expectedHash, fileName) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const [, , archivePath, manifestPath, gitHead, gitTree, ...flags] = process.argv;
   if (!archivePath || !manifestPath)
-    throw new Error("Uso: node scripts/verify-vps-source-snapshot.mjs <arquivo.zip> <SOURCE-MANIFEST.json> [commit-aprovado] [árvore-aprovada] [--self-check]");
+    throw new Error(
+      "Uso: node scripts/verify-vps-source-snapshot.mjs <arquivo.zip> <SOURCE-MANIFEST.json> [commit-aprovado] [árvore-aprovada] [--self-check]",
+    );
   if (!flags.includes("--self-check"))
-    throw new Error("SELF_CHECK_REQUIRED: a execução direta exige --self-check antes de ler o snapshot.");
+    throw new Error(
+      "SELF_CHECK_REQUIRED: a execução direta exige --self-check antes de ler o snapshot.",
+    );
   const result = await verifyVpsSourceSnapshot(archivePath, manifestPath, {
     gitHead,
     gitTree,

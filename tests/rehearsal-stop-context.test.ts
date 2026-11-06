@@ -23,7 +23,10 @@ function createFixture(endpoint: string) {
   mkdirSync(fakeBin, { recursive: true });
   writeFileSync(join(root, "compose.yaml"), "services: {}\n");
   writeFileSync(join(root, ".env"), "APP_VERSION=0.12.17\n");
-  writeFileSync(join(root, "bash-env.sh"), "id() { [[ \"$1\" == -un ]] && { printf 'hub\\n'; return 0; }; return 1; }\n");
+  writeFileSync(
+    join(root, "bash-env.sh"),
+    "id() { [[ \"$1\" == -un ]] && { printf 'hub\\n'; return 0; }; return 1; }\n",
+  );
 
   const dockerPath = join(fakeBin, "docker");
   writeFileSync(
@@ -78,7 +81,10 @@ test("rehearsal stop ignores a persisted remote context and pins the local Docke
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /ERROR=DOCKER_DAEMON_UNAVAILABLE/);
     const calls = readFileSync(join(fixture.root, "docker.log"), "utf8");
-    assert.match(calls, /context=default\|host=<unset>\|config=<unset>\|args=context inspect default/);
+    assert.match(
+      calls,
+      /context=default\|host=<unset>\|config=<unset>\|args=context inspect default/,
+    );
     assert.match(calls, /context=default\|host=<unset>\|config=<unset>\|args=info/);
     assert.doesNotMatch(calls, /remote-selected-context|198\.51\.100\.42|untrusted-docker-config/);
   } finally {

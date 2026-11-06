@@ -47,7 +47,9 @@ export default async function ContactPage() {
                       <h3>{t("contactPage.whatsappTitle")}</h3>
                       <p>{t("contactPage.whatsappDescription")}</p>
                     </div>
-                    <span className="contact-page-channel-status">{t("contactPage.demoLabel")}</span>
+                    <span className="contact-page-channel-status">
+                      {t("contactPage.demoLabel")}
+                    </span>
                   </article>
                   <article className="contact-page-channel-card">
                     <span className="contact-page-channel-icon" aria-hidden="true">
@@ -57,7 +59,9 @@ export default async function ContactPage() {
                       <h3>{t("contactPage.emailTitle")}</h3>
                       <p>{t("contactPage.emailDescription")}</p>
                     </div>
-                    <span className="contact-page-channel-status">{t("contactPage.demoLabel")}</span>
+                    <span className="contact-page-channel-status">
+                      {t("contactPage.demoLabel")}
+                    </span>
                   </article>
                 </div>
               </div>

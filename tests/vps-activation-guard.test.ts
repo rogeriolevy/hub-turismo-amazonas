@@ -440,10 +440,30 @@ for (const [name, receipt, expectedError] of [
 }
 
 for (const [name, field, invalidValue, expectedError] of [
-  ["candidate image id", "IMAGE_ID", "sha256:not-a-digest", "CANDIDATE_ATTESTATION_IMAGE_ID_INVALID"],
-  ["candidate Compose hash", "COMPOSE_SHA256", "not-a-hash", "CANDIDATE_ATTESTATION_COMPOSE_HASH_INVALID"],
-  ["candidate environment hash", "ENVIRONMENT_SHA256", "not-a-hash", "CANDIDATE_ATTESTATION_ENVIRONMENT_HASH_INVALID"],
-  ["candidate migrations hash", "MIGRATIONS_SHA256", "not-a-hash", "CANDIDATE_ATTESTATION_MIGRATIONS_HASH_INVALID"],
+  [
+    "candidate image id",
+    "IMAGE_ID",
+    "sha256:not-a-digest",
+    "CANDIDATE_ATTESTATION_IMAGE_ID_INVALID",
+  ],
+  [
+    "candidate Compose hash",
+    "COMPOSE_SHA256",
+    "not-a-hash",
+    "CANDIDATE_ATTESTATION_COMPOSE_HASH_INVALID",
+  ],
+  [
+    "candidate environment hash",
+    "ENVIRONMENT_SHA256",
+    "not-a-hash",
+    "CANDIDATE_ATTESTATION_ENVIRONMENT_HASH_INVALID",
+  ],
+  [
+    "candidate migrations hash",
+    "MIGRATIONS_SHA256",
+    "not-a-hash",
+    "CANDIDATE_ATTESTATION_MIGRATIONS_HASH_INVALID",
+  ],
   ["candidate Git head", "GIT_HEAD", "not-a-pin", "CANDIDATE_ATTESTATION_GIT_HEAD_INVALID"],
   ["candidate Git tree", "GIT_TREE", "not-a-pin", "CANDIDATE_ATTESTATION_GIT_TREE_INVALID"],
 ] as const) {
@@ -493,17 +513,23 @@ test("SHA-256 Git object IDs pass the complete candidate and backup attestation 
 for (const [name, transform, expectedError] of [
   [
     "expired backup",
-    (contents: string) => contents.replace(/^EXPIRES_AT_UTC=.*$/m, "EXPIRES_AT_UTC=2000-11-05T01:00:00.000Z"),
+    (contents: string) =>
+      contents.replace(/^EXPIRES_AT_UTC=.*$/m, "EXPIRES_AT_UTC=2000-11-05T01:00:00.000Z"),
     "BACKUP_ATTESTATION_EXPIRED",
   ],
   [
     "backup lifetime beyond 60 minutes",
-    (contents: string) => contents.replace(/^EXPIRES_AT_UTC=.*$/m, "EXPIRES_AT_UTC=2099-11-05T01:00:00.000Z"),
+    (contents: string) =>
+      contents.replace(/^EXPIRES_AT_UTC=.*$/m, "EXPIRES_AT_UTC=2099-11-05T01:00:00.000Z"),
     "BACKUP_ATTESTATION_LIFETIME_INVALID",
   ],
   [
     "backup candidate binding mismatch",
-    (contents: string) => contents.replace(/^CANDIDATE_ATTESTATION_SHA256=.*$/m, `CANDIDATE_ATTESTATION_SHA256=${"0".repeat(64)}`),
+    (contents: string) =>
+      contents.replace(
+        /^CANDIDATE_ATTESTATION_SHA256=.*$/m,
+        `CANDIDATE_ATTESTATION_SHA256=${"0".repeat(64)}`,
+      ),
     "BACKUP_ATTESTATION_CANDIDATE_BINDING_MISMATCH",
   ],
 ] as const) {
@@ -558,12 +584,48 @@ test("a second termination during rollback is deferred until previous services a
   const calls = await callLog(fixture);
   const callLines = calls.split("\n");
   assert.ok(callLines.includes("second-term|0.12.13"));
-  assert.ok(callLines.some((line) => line.startsWith("docker|compose|") && line.includes("|ps|") && line.endsWith("|web")));
-  assert.ok(callLines.some((line) => line.startsWith("docker|compose|") && line.includes("|ps|") && line.endsWith("|booking-email-worker")));
-  assert.ok(callLines.some((line) => line.startsWith("docker|inspect|") && line.includes("State.Health.Status") && line.endsWith("|web-0.12.13")));
-  assert.ok(callLines.some((line) => line.startsWith("docker|inspect|") && line.includes("State.Health.Status") && line.endsWith("|worker-0.12.13")));
-  assert.ok(callLines.some((line) => line.startsWith("docker|exec|") && line.includes("check-booking-worker-health.ts")));
-  assert.ok(callLines.some((line) => line.startsWith("curl|--fail|--silent|--show-error|--max-time|5|http://127.0.0.1:3005/api/health")));
+  assert.ok(
+    callLines.some(
+      (line) =>
+        line.startsWith("docker|compose|") && line.includes("|ps|") && line.endsWith("|web"),
+    ),
+  );
+  assert.ok(
+    callLines.some(
+      (line) =>
+        line.startsWith("docker|compose|") &&
+        line.includes("|ps|") &&
+        line.endsWith("|booking-email-worker"),
+    ),
+  );
+  assert.ok(
+    callLines.some(
+      (line) =>
+        line.startsWith("docker|inspect|") &&
+        line.includes("State.Health.Status") &&
+        line.endsWith("|web-0.12.13"),
+    ),
+  );
+  assert.ok(
+    callLines.some(
+      (line) =>
+        line.startsWith("docker|inspect|") &&
+        line.includes("State.Health.Status") &&
+        line.endsWith("|worker-0.12.13"),
+    ),
+  );
+  assert.ok(
+    callLines.some(
+      (line) => line.startsWith("docker|exec|") && line.includes("check-booking-worker-health.ts"),
+    ),
+  );
+  assert.ok(
+    callLines.some((line) =>
+      line.startsWith(
+        "curl|--fail|--silent|--show-error|--max-time|5|http://127.0.0.1:3005/api/health",
+      ),
+    ),
+  );
   const upCalls = callLines.filter((line) => line.startsWith("up|"));
   assert.deepEqual(upCalls, ["up|0.12.13|web booking-email-worker"]);
 });
@@ -723,7 +785,9 @@ for (const [scenario, expectedError] of [
     assert.match(result.stderr, /ROLLBACK=passed/);
     assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
     const calls = await callLog(fixture);
-    const publicCurlCall = calls.split("\n").find((line) => line.startsWith("curl|") && line.includes("|--proto|=https|"));
+    const publicCurlCall = calls
+      .split("\n")
+      .find((line) => line.startsWith("curl|") && line.includes("|--proto|=https|"));
     assert.ok(publicCurlCall, "public HTTPS health probe was not invoked");
     assert.match(publicCurlCall, /\|--proto\|=https\|--proto-redir\|=https\|--max-redirs\|0\|/);
     assert.doesNotMatch(publicCurlCall, /\|--location\|/);

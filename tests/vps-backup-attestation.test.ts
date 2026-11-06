@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -10,7 +18,10 @@ import { spawnSync } from "node:child_process";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const exportScript = readFileSync(resolve(root, "infra/export-vps-backup-to-local.ps1"), "utf8");
 const verifyScript = readFileSync(resolve(root, "infra/verify-vps-local-backup.ps1"), "utf8");
-const prepareScript = readFileSync(resolve(root, "infra/prepare-and-verify-vps-backup.ps1"), "utf8");
+const prepareScript = readFileSync(
+  resolve(root, "infra/prepare-and-verify-vps-backup.ps1"),
+  "utf8",
+);
 
 function sha256(value: string) {
   return createHash("sha256").update(value).digest("hex");
@@ -23,15 +34,23 @@ function createFixture() {
   const backupRoot = join(fixtureRoot, "backups");
   const localAppData = join(fixtureRoot, "localappdata");
   const temp = join(fixtureRoot, "temp");
-  for (const directory of [fakeBin, remote, backupRoot, localAppData, temp]) mkdirSync(directory, { recursive: true });
-  writeFileSync(join(fixtureRoot, ".hub-vps-backup-attestation-fixture"), "hub-vps-backup-attestation-fixture-v1\n");
+  for (const directory of [fakeBin, remote, backupRoot, localAppData, temp])
+    mkdirSync(directory, { recursive: true });
+  writeFileSync(
+    join(fixtureRoot, ".hub-vps-backup-attestation-fixture"),
+    "hub-vps-backup-attestation-fixture-v1\n",
+  );
   const dumpName = "hub-20261105T120000Z-4242.dump";
   const dump = "PGDMP-fixture-archive\n";
-  const source = '{"schema":"hub-postgres-source-v1","capturedAtUtc":"2026-11-05T12:00:00.000Z","counts":{"accounts":"1"},"ledgerSha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","releaseVersion":"0.12.16"}';
+  const source =
+    '{"schema":"hub-postgres-source-v1","capturedAtUtc":"2026-11-05T12:00:00.000Z","counts":{"accounts":"1"},"ledgerSha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","releaseVersion":"0.12.16"}';
   writeFileSync(join(remote, dumpName), dump);
   writeFileSync(join(remote, `${dumpName}.sha256`), `${sha256(dump)}\n`);
   writeFileSync(join(remote, "hub-20261105T120000Z-4242.source.json"), source);
-  writeFileSync(join(remote, "hub-20261105T120000Z-4242.source.json.sha256"), `${sha256(source)}\n`);
+  writeFileSync(
+    join(remote, "hub-20261105T120000Z-4242.source.json.sha256"),
+    `${sha256(source)}\n`,
+  );
   const fakeRunner = `import { appendFileSync, copyFileSync, existsSync, mkdirSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 const root = process.env.FIXTURE_ROOT;
@@ -70,31 +89,72 @@ if (decoded.includes('candidate="$(find')) {
 `;
   writeFileSync(join(fakeBin, "fake-runner.mjs"), fakeRunner);
   for (const command of ["ssh", "scp"]) {
-    writeFileSync(join(fakeBin, `${command}.cmd`), `@echo off\r\nREM hub-vps-backup-attestation-fake-v1\r\nset FAKE_COMMAND=${command}\r\nnode "%~dp0fake-runner.mjs" %*\r\n`);
+    writeFileSync(
+      join(fakeBin, `${command}.cmd`),
+      `@echo off\r\nREM hub-vps-backup-attestation-fake-v1\r\nset FAKE_COMMAND=${command}\r\nnode "%~dp0fake-runner.mjs" %*\r\n`,
+    );
   }
   return { fixtureRoot, fakeBin, backupRoot, localAppData, temp };
 }
 
 function runPrepare(fixture: ReturnType<typeof createFixture>, scenario = "success") {
-  return spawnSync("pwsh.exe", [
-    "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", resolve(root, "infra/prepare-and-verify-vps-backup.ps1"),
-    "-BackupDirectory", fixture.backupRoot,
-    "-CandidateAttestationPath", "/opt/hub-turismo/attestations/candidate-0.12.16.env",
-    "-CandidateAttestationSha256", "b".repeat(64),
-    "-ConfirmLocalBackup", "-TestOnly", "-FixtureRoot", fixture.fixtureRoot, "-FakeBin", fixture.fakeBin,
-  ], { encoding: "utf8", windowsHide: true, env: { ...process.env, FIXTURE_ROOT: fixture.fixtureRoot, FAKE_SCENARIO: scenario, LOCALAPPDATA: fixture.localAppData, TEMP: fixture.temp } });
+  return spawnSync(
+    "pwsh.exe",
+    [
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-File",
+      resolve(root, "infra/prepare-and-verify-vps-backup.ps1"),
+      "-BackupDirectory",
+      fixture.backupRoot,
+      "-CandidateAttestationPath",
+      "/opt/hub-turismo/attestations/candidate-0.12.16.env",
+      "-CandidateAttestationSha256",
+      "b".repeat(64),
+      "-ConfirmLocalBackup",
+      "-TestOnly",
+      "-FixtureRoot",
+      fixture.fixtureRoot,
+      "-FakeBin",
+      fixture.fakeBin,
+    ],
+    {
+      encoding: "utf8",
+      windowsHide: true,
+      env: {
+        ...process.env,
+        FIXTURE_ROOT: fixture.fixtureRoot,
+        FAKE_SCENARIO: scenario,
+        LOCALAPPDATA: fixture.localAppData,
+        TEMP: fixture.temp,
+      },
+    },
+  );
 }
 
 test("export fixture contract requires a complete dump and source receipt set", () => {
   assert.ok(exportScript.includes("source_receipt_path"), "source receipt remote path is required");
-  assert.ok(exportScript.includes("LOCAL_SOURCE_RECEIPT_FILE="), "source receipt marker is required");
+  assert.ok(
+    exportScript.includes("LOCAL_SOURCE_RECEIPT_FILE="),
+    "source receipt marker is required",
+  );
   assert.ok(exportScript.includes("sourceReceiptSha256"), "source receipt hash is required");
 });
 
 test("restore fixture contract compares canonical source facts before a pass marker", () => {
-  assert.ok(verifyScript.includes("RESTORE_SOURCE_COMPARISON=match"), "exact comparison marker is required");
-  assert.ok(verifyScript.includes("CandidateAttestationSha256"), "candidate hash input is required");
-  assert.ok(verifyScript.includes("BACKUP_ATTESTATION_EXPIRES_AT_UTC="), "expiry marker is required");
+  assert.ok(
+    verifyScript.includes("RESTORE_SOURCE_COMPARISON=match"),
+    "exact comparison marker is required",
+  );
+  assert.ok(
+    verifyScript.includes("CandidateAttestationSha256"),
+    "candidate hash input is required",
+  );
+  assert.ok(
+    verifyScript.includes("BACKUP_ATTESTATION_EXPIRES_AT_UTC="),
+    "expiry marker is required",
+  );
 });
 
 test("candidate mismatch or cleanup failure cannot produce an activation attestation", () => {
@@ -114,17 +174,24 @@ test("sentinel fake ssh/scp fixture proves export, parity, cleanup, and candidat
   const fixture = createFixture();
   try {
     const result = runPrepare(fixture);
-    const debugCalls = existsSync(join(fixture.fixtureRoot, "calls.log")) ? readFileSync(join(fixture.fixtureRoot, "calls.log"), "utf8") : "<no fake calls>";
+    const debugCalls = existsSync(join(fixture.fixtureRoot, "calls.log"))
+      ? readFileSync(join(fixture.fixtureRoot, "calls.log"), "utf8")
+      : "<no fake calls>";
     assert.equal(result.status, 0, `${result.stderr}\n${debugCalls}`);
     assert.match(result.stdout, /LOCAL_BACKUP_FILE=/);
     assert.match(result.stdout, /LOCAL_SOURCE_RECEIPT_FILE=/);
     assert.match(result.stdout, /RESTORE_SOURCE_COMPARISON=match/);
-    assert.match(result.stdout, /BACKUP_ATTESTATION_REMOTE_PATH=\/opt\/hub-turismo\/attestations\/backup-/);
+    assert.match(
+      result.stdout,
+      /BACKUP_ATTESTATION_REMOTE_PATH=\/opt\/hub-turismo\/attestations\/backup-/,
+    );
     assert.match(result.stdout, /BACKUP_ATTESTATION_EXPIRES_AT_UTC=/);
     const calls = readFileSync(join(fixture.fixtureRoot, "calls.log"), "utf8");
     assert.match(calls, /^scp\|.*hub-20261105T120000Z-4242\.source\.json/m);
     assert.match(calls, /^ssh\|.*restore-local-backup\.sh/m);
-  } finally { rmSync(fixture.fixtureRoot, { recursive: true, force: true }); }
+  } finally {
+    rmSync(fixture.fixtureRoot, { recursive: true, force: true });
+  }
 });
 
 for (const scenario of ["mismatch", "cleanup"]) {
@@ -134,10 +201,21 @@ for (const scenario of ["mismatch", "cleanup"]) {
       const result = runPrepare(fixture, scenario);
       assert.notEqual(result.status, 0);
       assert.doesNotMatch(result.stdout, /BACKUP_ATTESTATION_REMOTE_PATH=/);
-      const attestationDirectory = join(fixture.localAppData, "HubTurismo", "BackupReceipts", "BackupActivationAttestations");
-      assert.ok(!existsSync(attestationDirectory) || readdirSync(attestationDirectory).length === 0);
-      const calls = existsSync(join(fixture.fixtureRoot, "calls.log")) ? readFileSync(join(fixture.fixtureRoot, "calls.log"), "utf8") : "";
+      const attestationDirectory = join(
+        fixture.localAppData,
+        "HubTurismo",
+        "BackupReceipts",
+        "BackupActivationAttestations",
+      );
+      assert.ok(
+        !existsSync(attestationDirectory) || readdirSync(attestationDirectory).length === 0,
+      );
+      const calls = existsSync(join(fixture.fixtureRoot, "calls.log"))
+        ? readFileSync(join(fixture.fixtureRoot, "calls.log"), "utf8")
+        : "";
       assert.doesNotMatch(calls, /backup-[a-f0-9]{64}\.env/);
-    } finally { rmSync(fixture.fixtureRoot, { recursive: true, force: true }); }
+    } finally {
+      rmSync(fixture.fixtureRoot, { recursive: true, force: true });
+    }
   });
 }

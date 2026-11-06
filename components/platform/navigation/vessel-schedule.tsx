@@ -167,8 +167,8 @@ export function NavigationVesselSchedule({
         </div>
         <p>
           Horários conforme a imagem enviada. Ela não informa a validade do quadro nem os contatos.
-          Nos dias sem dados, “Não informado” significa que a imagem não preenche esse campo; confirme
-          a programação com a embarcação antes de viajar.
+          Nos dias sem dados, “Não informado” significa que a imagem não preenche esse campo;
+          confirme a programação com a embarcação antes de viajar.
         </p>
         {parintinsDirections.map(({ id, label }) => (
           <div className="nav-parintins-direction" key={id}>
