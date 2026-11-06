@@ -274,7 +274,7 @@ try {
       $targetPath = Join-Path $stageSource ($relativePath.Replace('/', [System.IO.Path]::DirectorySeparatorChar))
       Assert-ContainedPath -Parent $stageSource -Child $targetPath -Description "A fonte extraída do commit"
       $targetParent = Split-Path -Parent $targetPath
-      New-Item -ItemType Directory -Path $targetParent -Force | Out-Null
+      [System.IO.Directory]::CreateDirectory($targetParent) | Out-Null
       $entryStream = $entry.Open()
       $targetStream = [System.IO.File]::Open($targetPath, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
       try {
