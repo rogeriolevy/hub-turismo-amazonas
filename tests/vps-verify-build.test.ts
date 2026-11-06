@@ -28,6 +28,10 @@ function runCommand(file: string, args: string[]) {
   return result.stdout.trim();
 }
 
+function toPosixPath(windowsPath: string) {
+  return runCommand(cygpath, ["-u", windowsPath]);
+}
+
 const fakeDocker = `#!/usr/bin/env bash
 # hub-verify-build-fake-runtime-v1
 set -euo pipefail
@@ -68,6 +72,19 @@ printf 'SELECT 1;\n' > "$target/db/migrations/001-fixture.sql"
 printf 'SELECT 2;\n' > "$target/db/postgres-migrations/002-fixture.sql"
 `;
 
+const fakeTar = [
+  "#!/usr/bin/env bash",
+  "# hub-verify-build-fake-runtime-v1",
+  "set -euo pipefail",
+  "[[ \"$1\" == -xzf && \"$3\" == -C ]] || exit 61",
+  "entrypoint=\"$(cat \"$2\")\"",
+  "package_name=\"$(basename \"$2\" .tgz)\"",
+  "target=\"$4/package\"",
+  "mkdir -p \"$target\"",
+  "printf '{\"name\":\"%s\",\"version\":\"1.0.0\",\"main\":\"%s\"}\\n' \"$package_name\" \"$entrypoint\" > \"$target/package.json\"",
+  "if [[ \"$entrypoint\" == index.js ]]; then printf 'export default {};\\n' > \"$target/index.js\"; fi",
+].join("\n");
+
 async function createFixture() {
   const root = await mkdtemp(path.join(os.tmpdir(), "hub-vps-verify-build-"));
   fixtureDirectories.push(root);
@@ -82,8 +99,10 @@ async function createFixture() {
   await writeFile(path.join(fakeBin, ".hub-fake-runtime"), "hub-verify-build-fake-runtime-v1\n");
   await writeFile(path.join(fakeBin, "docker"), fakeDocker);
   await writeFile(path.join(fakeBin, "unzip"), fakeUnzip);
+  await writeFile(path.join(fakeBin, "tar"), fakeTar);
   await chmod(path.join(fakeBin, "docker"), 0o755);
   await chmod(path.join(fakeBin, "unzip"), 0o755);
+  await chmod(path.join(fakeBin, "tar"), 0o755);
   await writeFile(path.join(current, "infra", "vps.env"), "APP_VERSION=0.0.1\nSITE_URL=https://fixture.invalid\n");
   await writeFile(path.join(current, "package-lock.json"), JSON.stringify({ lockfileVersion: 3, packages: {} }) + "\n");
   const archive = path.join(staging, "source.zip");
@@ -95,9 +114,27 @@ async function createFixture() {
   return { root, posixRoot, archive, manifest, verifier };
 }
 
+async function addHelperTarball(
+  fixture: Awaited<ReturnType<typeof createFixture>>,
+  packageName: string,
+  entrypoint = "index.js",
+) {
+  const tarball = path.join(fixture.root, "staging", packageName.replaceAll("/", "-") + ".tgz");
+  await writeFile(tarball, entrypoint + "\n");
+  const integrity = "sha512-" + createHash("sha512").update(await readFile(tarball)).digest("base64");
+  const lockPath = path.join(fixture.root, "current", "package-lock.json");
+  const lock = JSON.parse(await readFile(lockPath, "utf8"));
+  lock.packages["node_modules/" + packageName] = { version: "1.0.0", integrity };
+  await writeFile(
+    lockPath,
+    JSON.stringify(lock) + "\n",
+  );
+  return packageName + "=" + toPosixPath(tarball);
+}
+
 function runExecutor(
   fixture: Awaited<ReturnType<typeof createFixture>>,
-  options: { scenario?: string; archiveHash?: string; verifierHash?: string; gitHead?: string; gitTree?: string } = {},
+  options: { scenario?: string; archiveHash?: string; verifierHash?: string; gitHead?: string; gitTree?: string; helpers?: string[] } = {},
 ) {
   const args = [
     executor,
@@ -122,6 +159,7 @@ function runExecutor(
     options.archiveHash ?? sha256("fixture-source-archive\n"),
     "--verifier-sha256",
     options.verifierHash ?? sha256("// fixture verifier\n"),
+    ...(options.helpers ?? []).flatMap((helper) => ["--helper-tarball", helper]),
   ];
   return spawnSync(gitBash, args, {
     encoding: "utf8",
@@ -173,6 +211,30 @@ test("verifier self-check is required and an attestation is never overwritten", 
   const second = runExecutor(fixture);
   assert.notEqual(second.status, 0);
   assert.match(second.stderr, /ERROR=ATTESTATION_ALREADY_EXISTS/);
+});
+
+test("multiple SRI-pinned helper tarballs mount independently before verification", async () => {
+  const fixture = await createFixture();
+  const helpers = [
+    await addHelperTarball(fixture, "unzipper-esm"),
+    await addHelperTarball(fixture, "graceful-fs"),
+  ];
+  const result = runExecutor(fixture, { helpers });
+
+  assert.equal(result.status, 0, result.stderr);
+  const log = await calls(fixture);
+  assert.match(log, /dst=\/app\/node_modules\/unzipper-esm,readonly/);
+  assert.match(log, /dst=\/app\/node_modules\/graceful-fs,readonly/);
+});
+
+test("missing helper entrypoint fails before extraction or build", async () => {
+  const fixture = await createFixture();
+  const helper = await addHelperTarball(fixture, "unzipper-esm", "missing.js");
+  const result = runExecutor(fixture, { helpers: [helper] });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /ERROR=HELPER_ENTRYPOINT_INVALID/);
+  assert.doesNotMatch(await calls(fixture), /^unzip$|build\|web/m);
 });
 
 test("direct source verifier CLI rejects a missing self-check before source reads", () => {

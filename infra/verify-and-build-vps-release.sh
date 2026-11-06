@@ -104,7 +104,7 @@ if [[ "$test_only" == true ]]; then
   assert_under "$fixture_root" "$fake_bin" "FAKE_BIN_OUTSIDE_FIXTURE"
   [[ -f "$fake_bin/.hub-fake-runtime" && ! -L "$fake_bin/.hub-fake-runtime" ]] || die "FAKE_RUNTIME_SENTINEL_MISSING"
   grep -Fxq "$EXPECTED_FAKE_SENTINEL" "$fake_bin/.hub-fake-runtime" || die "FAKE_RUNTIME_SENTINEL_INVALID"
-  for command in docker unzip; do
+  for command in docker unzip tar; do
     [[ -f "$fake_bin/$command" && -x "$fake_bin/$command" && ! -L "$fake_bin/$command" ]] || die "FAKE_COMMAND_INVALID"
     grep -Fq "$EXPECTED_FAKE_SENTINEL" "$fake_bin/$command" || die "FAKE_COMMAND_SENTINEL_INVALID"
   done
@@ -113,11 +113,13 @@ if [[ "$test_only" == true ]]; then
   ATTESTATION_ROOT="$fixture_root/attestations"
   DOCKER_BIN="$fake_bin/docker"
   UNZIP_BIN="$fake_bin/unzip"
+  TAR_BIN="$fake_bin/tar"
 else
   [[ -z "$fixture_root_arg" && -z "$fake_bin_arg" ]] || die "TEST_FLAGS_FORBIDDEN_IN_PRODUCTION_MODE"
   [[ "$(id -un)" == hub ]] || die "RUN_AS_HUB_OPERATOR"
   DOCKER_BIN=docker
   UNZIP_BIN=unzip
+  TAR_BIN=tar
   unset DOCKER_HOST DOCKER_CONTEXT COMPOSE_FILE COMPOSE_PROJECT_NAME
 fi
 
@@ -177,8 +179,12 @@ if ((${#helper_args[@]})); then
     expected_b64="${helper_integrity#sha512-}"
     actual_b64="$(openssl dgst -sha512 -binary "$tarball" | openssl base64 -A)" || die "HELPER_HASH_UNREADABLE"
     [[ "$actual_b64" == "$expected_b64" ]] || die "HELPER_SRI_MISMATCH"
-    tar -xzf "$tarball" -C "$helper_root" || die "HELPER_EXTRACTION_FAILED"
-    helper_directory="$helper_root/package"
+    helper_key="${package_name//@/_}"
+    helper_key="${helper_key//\//_}"
+    helper_extract="$helper_root/$helper_key"
+    mkdir -m 700 -- "$helper_extract"
+    "$TAR_BIN" -xzf "$tarball" -C "$helper_extract" || die "HELPER_EXTRACTION_FAILED"
+    helper_directory="$helper_extract/package"
     [[ -f "$helper_directory/package.json" && ! -L "$helper_directory/package.json" ]] || die "HELPER_PACKAGE_INVALID"
     node -e 'const p=require(process.argv[1]); if (p.name !== process.argv[2] || p.version !== process.argv[3] || typeof p.main !== "string" || !p.main) process.exit(2)' "$helper_directory/package.json" "$package_name" "$helper_version" || die "HELPER_METADATA_MISMATCH"
     helper_entry="$(node -e 'const p=require(process.argv[1]); process.stdout.write(p.main)' "$helper_directory/package.json")"
@@ -245,9 +251,9 @@ cleanup_paths+=("$attestation_temporary")
 } > "$attestation_temporary"
 chmod 600 "$attestation_temporary"
 if [[ "$test_only" != true ]]; then chown hub:hub "$attestation_temporary" || die "ATTESTATION_OWNER_INVALID"; fi
-mv -T -- "$release_temporary" "$final_release" || die "FINAL_RELEASE_PUBLICATION_FAILED"
-cleanup_paths=("$attestation_temporary")
 mv -T -- "$attestation_temporary" "$attestation" || die "ATTESTATION_PUBLICATION_FAILED"
+cleanup_paths=("$release_temporary" "$attestation")
+mv -T -- "$release_temporary" "$final_release" || die "FINAL_RELEASE_PUBLICATION_FAILED"
 cleanup_paths=()
 attestation_sha256="$(sha256sum "$attestation" | awk '{print $1}')"
 printf 'CANDIDATE_ATTESTATION=%s\n' "$attestation"
