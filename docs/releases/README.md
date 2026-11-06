@@ -1,6 +1,6 @@
 # Registro de releases
 
-Use esta estrutura para registrar cada entrega pequena, delimitada por domínio. Os campos entre colchetes são valores a coletar para a release em questão: confirme-os a partir de evidências atuais e não copie hashes, contagens ou resultados de saúde de outra versão. A release [0.12.13](0.12.13.md) demonstra a estrutura com fatos daquela publicação.
+Use esta estrutura para registrar cada entrega pequena, delimitada por domínio. Os campos entre colchetes são valores a coletar para a release em questão: confirme-os a partir de evidências atuais e não copie hashes, contagens ou resultados de saúde de outra versão. A nota [0.12.18](0.12.18.md) registra a publicação mais recente; a [0.12.13](0.12.13.md) permanece como exemplo histórico.
 
 ## Checklist do autor
 
