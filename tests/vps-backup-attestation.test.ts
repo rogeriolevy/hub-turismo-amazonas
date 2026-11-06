@@ -10,7 +10,7 @@ const verifyScript = readFileSync(resolve(root, "infra/verify-vps-local-backup.p
 const prepareScript = readFileSync(resolve(root, "infra/prepare-and-verify-vps-backup.ps1"), "utf8");
 
 test("export fixture contract requires a complete dump and source receipt set", () => {
-  assert.ok(exportScript.includes("sourceReceiptPath"), "source receipt remote path is required");
+  assert.ok(exportScript.includes("source_receipt_path"), "source receipt remote path is required");
   assert.ok(exportScript.includes("LOCAL_SOURCE_RECEIPT_FILE="), "source receipt marker is required");
   assert.ok(exportScript.includes("sourceReceiptSha256"), "source receipt hash is required");
 });

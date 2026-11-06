@@ -4,6 +4,14 @@ param(
   [string]$DownloadedBackupPath,
   [Parameter(Mandatory = $true)]
   [string]$ReceiptPath,
+  [Parameter(Mandatory = $true)]
+  [string]$SourceReceiptPath,
+  [Parameter(Mandatory = $true)]
+  [ValidatePattern('^[a-fA-F0-9]{64}$')]
+  [string]$CandidateAttestationSha256,
+  [Parameter(Mandatory = $true)]
+  [ValidatePattern('^/opt/hub-turismo/attestations/candidate-[0-9]+\.[0-9]+\.[0-9]+\.env$')]
+  [string]$CandidateAttestationPath,
   [string]$BackupDirectory = (Join-Path $env:LOCALAPPDATA "HubTurismo\Backups"),
   [switch]$ConfirmLocalBackup
 )
@@ -27,8 +35,12 @@ if (-not (Test-Path -LiteralPath $DownloadedBackupPath -PathType Leaf)) {
 if (-not (Test-Path -LiteralPath $ReceiptPath -PathType Leaf)) {
   throw "O recibo local de origem não foi encontrado: $ReceiptPath"
 }
+if (-not (Test-Path -LiteralPath $SourceReceiptPath -PathType Leaf)) {
+  throw "O recibo de origem do snapshot não foi encontrado: $SourceReceiptPath"
+}
 $downloadedBackup = (Resolve-Path -LiteralPath $DownloadedBackupPath -ErrorAction Stop).Path
 $receiptFile = (Resolve-Path -LiteralPath $ReceiptPath -ErrorAction Stop).Path
+$sourceReceiptFile = (Resolve-Path -LiteralPath $SourceReceiptPath -ErrorAction Stop).Path
 function Test-PathWithinDirectory {
   param(
     [Parameter(Mandatory = $true)][string]$CandidatePath,
@@ -49,6 +61,9 @@ if (-not (Test-PathWithinDirectory -CandidatePath $downloadedBackup -DirectoryPa
 if (-not (Test-PathWithinDirectory -CandidatePath $receiptFile -DirectoryPath $receiptDirectory)) {
   throw "O recibo deve estar dentro de $receiptDirectory."
 }
+if (-not (Test-PathWithinDirectory -CandidatePath $sourceReceiptFile -DirectoryPath $backupRoot)) {
+  throw "O recibo de origem precisa acompanhar o dump dentro da pasta local protegida."
+}
 $repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
 if (Test-PathWithinDirectory -CandidatePath $downloadedBackup -DirectoryPath $repositoryRoot) {
   throw "A cópia precisa ficar fora do repositório para não ser incluída em um pacote de release."
@@ -65,12 +80,14 @@ foreach ($protectedRoot in @($backupRoot, $receiptDirectory)) {
 $downloadedDirectory = Split-Path -Parent $downloadedBackup
 $downloadedName = Split-Path -Leaf $downloadedBackup
 $downloadedSidecar = Join-Path $downloadedDirectory ($downloadedName + ".sha256")
+$sourceReceiptSidecar = $sourceReceiptFile + ".sha256"
 if ($downloadedName -notmatch '^hub-\d{8}T\d{6}Z-\d+\.dump$') {
   throw "O nome da cópia baixada não corresponde ao formato de backup Hub esperado."
 }
 if (-not (Test-Path -LiteralPath $downloadedSidecar -PathType Leaf) -or (Get-Item -LiteralPath $downloadedBackup).Length -lt 1) {
   throw "A cópia baixada precisa ser não vazia e estar acompanhada pelo arquivo .sha256 correspondente."
 }
+if (-not (Test-Path -LiteralPath $sourceReceiptSidecar -PathType Leaf)) { throw "O recibo de origem precisa estar acompanhado por seu manifesto SHA-256." }
 
 try {
   $receipt = [System.IO.File]::ReadAllText($receiptFile) | ConvertFrom-Json -ErrorAction Stop
@@ -91,6 +108,15 @@ if ($downloadedHash -ne $receiptHash -or
     $sidecarHash.ToLowerInvariant() -ne $receiptHash) {
   throw "A cópia baixada não corresponde ao SHA-256 independente do recibo e do manifesto."
 }
+$sourceReceiptHash = (Get-FileHash -LiteralPath $sourceReceiptFile -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+$sourceReceiptSidecarHash = [System.IO.File]::ReadAllText($sourceReceiptSidecar).Trim().ToLowerInvariant()
+if ($receipt.sourceReceiptFile -cne (Split-Path -Leaf $sourceReceiptFile) -or
+    $receipt.sourceReceiptSha256 -cne $sourceReceiptHash -or
+    $sourceReceiptSidecarHash -cne $sourceReceiptHash) { throw "O recibo independente, o recibo de origem e seu manifesto não descrevem o mesmo snapshot." }
+try {
+  $sourceRecord = [System.IO.File]::ReadAllText($sourceReceiptFile) | ConvertFrom-Json -ErrorAction Stop
+} catch { throw "O recibo de origem não contém JSON canônico válido." }
+if ($sourceRecord.schema -cne 'hub-postgres-source-v1' -or $sourceRecord.ledgerSha256 -notmatch '^[a-f0-9]{64}$' -or $sourceRecord.releaseVersion -notmatch '^\d+\.\d+\.\d+$') { throw "O recibo de origem não contém a forma canônica esperada." }
 
 function Invoke-OpenSsh {
   param(
@@ -172,6 +198,8 @@ stage="/var/tmp/hub-local-backup-__STAGE_TOKEN__"
 dump_name='__DUMP_NAME__'
 restore_database='__DATABASE_NAME__'
 expected_hash='__EXPECTED_HASH__'
+source_name='__SOURCE_NAME__'
+expected_source_hash='__EXPECTED_SOURCE_HASH__'
 database_created=0
 postgres_container_id=""
 
@@ -235,6 +263,11 @@ if [[ ! -f "$stage/$dump_name" || -L "$stage/$dump_name" ||
   echo "O dump ou o manifesto enviado ao staging está ausente, vazio ou inválido." >&2
   exit 1
 fi
+if [[ ! "$source_name" =~ ^hub-[0-9]{8}T[0-9]{6}Z-[0-9]+\.source\.json$ || ! -f "$stage/$source_name" || -L "$stage/$source_name" || ! -f "$stage/$source_name.sha256" || -L "$stage/$source_name.sha256" ]]; then
+  echo "O recibo de origem enviado ao staging está ausente ou inválido." >&2
+  exit 1
+fi
+[[ "$(sha256sum < "$stage/$source_name" | awk '{print $1}')" == "$expected_source_hash" && "$(tr -d '\r\n' < "$stage/$source_name.sha256")" == "$expected_source_hash" ]] || { echo "O recibo de origem enviado ao staging não corresponde ao hash esperado." >&2; exit 1; }
 sidecar_hash="$(tr -d '\r\n' < "$stage/$dump_name.sha256")"
 actual_hash="$(sha256sum < "$stage/$dump_name" | awk '{ print $1 }')"
 if [[ "$sidecar_hash" != "$expected_hash" || "$actual_hash" != "$expected_hash" ]]; then
@@ -284,6 +317,14 @@ if [[ "$count_lines" -ne 4 ]]; then
   echo "A consulta agregada não retornou as quatro contagens esperadas." >&2
   exit 1
 fi
+web_container_id="$(docker ps --filter 'label=com.docker.compose.project=hub-turismo' --filter 'label=com.docker.compose.service=web' --format '{{.ID}}' | head -n 1)"
+[[ -n "$web_container_id" ]] || { echo "O container web não está disponível para a comparação canônica." >&2; exit 1; }
+restore_database_url="$(docker exec "$web_container_id" node -e 'const value=process.env.DATABASE_URL; if (!value) process.exit(2); const url=new URL(value); url.pathname="/"+process.argv[1]; process.stdout.write(url.toString())' "$restore_database")" || { echo "Não foi possível derivar a conexão isolada." >&2; exit 1; }
+restored_capture="$(printf 'COMPLETE\n' | docker exec -i -e DATABASE_URL="$restore_database_url" "$web_container_id" node /app/scripts/capture-postgres-backup-source.mjs)" || { echo "A captura canônica do restore falhou." >&2; exit 1; }
+restored_record="$(sed -n 's/^SOURCE_RECORD=//p' <<< "$restored_capture")"
+[[ "$(grep -Ec '^SOURCE_RECORD=' <<< "$restored_capture")" == 1 && -n "$restored_record" ]] || { echo "A captura do restore não retornou um único recibo canônico." >&2; exit 1; }
+node -e 'const fs=require("fs"); const [source, restored]=process.argv.slice(1).map(JSON.parse); if (JSON.stringify(source.counts)!==JSON.stringify(restored.counts) || source.ledgerSha256!==restored.ledgerSha256) process.exit(1);' "$(cat "$stage/$source_name")" "$restored_record" || { echo "A restauração não corresponde exatamente ao snapshot de origem." >&2; exit 1; }
+echo "RESTORE_SOURCE_COMPARISON=match"
 printf '%s\n' "$restore_counts"
 echo "RESTORE_DATABASE=$restore_database"
 echo "RESTORE_DATABASE_CLEANUP=pending"
@@ -292,6 +333,8 @@ $remoteRestoreScript = $remoteRestoreScript.Replace("__STAGE_TOKEN__", $stageTok
 $remoteRestoreScript = $remoteRestoreScript.Replace("__DUMP_NAME__", $downloadedName)
 $remoteRestoreScript = $remoteRestoreScript.Replace("__DATABASE_NAME__", $restoreDatabase)
 $remoteRestoreScript = $remoteRestoreScript.Replace("__EXPECTED_HASH__", $receiptHash)
+$remoteRestoreScript = $remoteRestoreScript.Replace("__SOURCE_NAME__", (Split-Path -Leaf $sourceReceiptFile))
+$remoteRestoreScript = $remoteRestoreScript.Replace("__EXPECTED_SOURCE_HASH__", $sourceReceiptHash)
 $localRestoreScript = Join-Path $localStage "restore-local-backup.sh"
 
 try {
@@ -312,18 +355,71 @@ mkdir -m 700 -- "/var/tmp/hub-local-backup-__STAGE_TOKEN__"
   Invoke-OpenSsh -Executable $ssh -Arguments @("-T", "-o", "ForwardAgent=no", "-o", "ConnectTimeout=15", $sshAlias, $createStageCommand) -Description "A criação do staging remoto"
   $remoteStageCreated = $true
 
-  Invoke-OpenSsh -Executable $scp -Arguments @("-q", $downloadedBackup, $downloadedSidecar, $localRestoreScript, ($sshAlias + ":" + $remoteStage + "/")) -Description "O envio da cópia baixada ao staging remoto"
+  Invoke-OpenSsh -Executable $scp -Arguments @("-q", $downloadedBackup, $downloadedSidecar, $sourceReceiptFile, $sourceReceiptSidecar, $localRestoreScript, ($sshAlias + ":" + $remoteStage + "/")) -Description "O envio da cópia baixada ao staging remoto"
   $remoteRestoreStarted = $true
   try {
-    Invoke-OpenSsh -Executable $ssh -Arguments @("-T", "-o", "ForwardAgent=no", "-o", "ConnectTimeout=15", $sshAlias, "bash '$remoteStage/restore-local-backup.sh'") -Description "O ensaio de restauração isolada"
+    $restoreOutput = Invoke-OpenSsh -Executable $ssh -Arguments @("-T", "-o", "ForwardAgent=no", "-o", "ConnectTimeout=15", $sshAlias, "bash '$remoteStage/restore-local-backup.sh'") -Description "O ensaio de restauração isolada" -CaptureOutput
   } catch {
     Write-Warning ("O roteiro remoto foi iniciado ou a conexão foi interrompida. Confira a saída do SSH para a limpeza do banco {0} e revise somente o staging {1}." -f $restoreDatabase, $remoteStage)
     throw
   }
+  $restoreLines = @($restoreOutput | ForEach-Object { [string]$_ })
+  foreach ($requiredMarker in @("RESTORE_SOURCE_COMPARISON=match", "RESTORE_DATABASE_CLEANUP=ok", "REMOTE_STAGING_CLEANUP=ok")) {
+    if (@($restoreLines | Where-Object { $_ -ceq $requiredMarker }).Count -ne 1) { throw "O ensaio não confirmou $requiredMarker; nenhum atestado de ativação foi criado." }
+  }
+  $candidateReadScript = @'
+set -euo pipefail
+candidate='__CANDIDATE_PATH__'
+expected='__CANDIDATE_SHA256__'
+[[ -f "$candidate" && ! -L "$candidate" && "$(stat -c '%a' "$candidate")" == 600 ]] || exit 1
+actual="$(sha256sum < "$candidate" | awk '{print $1}')"
+[[ "$actual" == "$expected" ]] || exit 1
+version="$(awk -F= '$1=="PACKAGE_VERSION" {print $2}' "$candidate")"
+image="$(awk -F= '$1=="IMAGE_ID" {print $2}' "$candidate")"
+[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ && -n "$image" ]] || exit 1
+printf '%s|%s\n' "$version" "$image"
+'@
+  $candidateReadScript = $candidateReadScript.Replace("__CANDIDATE_PATH__", $CandidateAttestationPath).Replace("__CANDIDATE_SHA256__", $CandidateAttestationSha256.ToLowerInvariant())
+  $candidateMetadata = @(Invoke-OpenSsh -Executable $ssh -Arguments @("-T", "-o", "ForwardAgent=no", "-o", "ConnectTimeout=15", $sshAlias, (ConvertTo-RemoteBashCommand -Script $candidateReadScript)) -Description "A leitura do atestado candidato" -CaptureOutput)
+  if ($candidateMetadata.Count -ne 1 -or $candidateMetadata[0] -notmatch '^[0-9]+\.[0-9]+\.[0-9]+\|.+$') { throw "O atestado candidato não contém os campos medidos esperados." }
+  $candidateParts = $candidateMetadata[0] -split '\|', 2
+  $issuedAt = [DateTime]::UtcNow
+  $expiresAt = $issuedAt.AddMinutes(60)
+  $attestationDirectory = Join-Path $receiptDirectory "BackupActivationAttestations"
+  [System.IO.Directory]::CreateDirectory($attestationDirectory) | Out-Null
+  Set-PrivateDirectoryAcl -Path $attestationDirectory
+  $attestationFile = Join-Path $attestationDirectory ("backup-" + $downloadedName + ".env")
+  $sourceCountsJson = $sourceRecord.counts | ConvertTo-Json -Compress
+  $attestation = @(
+    "CANDIDATE_ATTESTATION_PATH=$CandidateAttestationPath",
+    "CANDIDATE_ATTESTATION_SHA256=$($CandidateAttestationSha256.ToLowerInvariant())",
+    "CANDIDATE_VERSION=$($candidateParts[0])",
+    "CANDIDATE_IMAGE_ID=$($candidateParts[1])",
+    "DUMP_FILE=$downloadedName",
+    "DUMP_SHA256=$receiptHash",
+    "SOURCE_RECEIPT_FILE=$(Split-Path -Leaf $sourceReceiptFile)",
+    "SOURCE_RECEIPT_SHA256=$sourceReceiptHash",
+    "SOURCE_COUNTS=$sourceCountsJson",
+    "SOURCE_LEDGER_SHA256=$($sourceRecord.ledgerSha256)",
+    "RESTORE_SOURCE_COMPARISON=match",
+    "RESTORE_DATABASE_CLEANUP=ok",
+    "REMOTE_STAGING_CLEANUP=ok",
+    "ISSUED_AT_UTC=$($issuedAt.ToString('o'))",
+    "EXPIRES_AT_UTC=$($expiresAt.ToString('o'))"
+  ) -join [Environment]::NewLine
+  Write-NewUtf8File -Path $attestationFile -Content ($attestation + [Environment]::NewLine)
+  $attestationHash = (Get-FileHash -LiteralPath $attestationFile -Algorithm SHA256).Hash.ToLowerInvariant()
+  $remoteAttestationPath = "/opt/hub-turismo/attestations/backup-" + $attestationHash + ".env"
+  $remoteAttestationScript = "set -euo pipefail; test ! -e '$remoteAttestationPath' -a ! -L '$remoteAttestationPath'; install -o hub -g hub -m 600 /dev/stdin '$remoteAttestationPath'; test `"`$(sha256sum < '$remoteAttestationPath' | awk '{print `$1}')`" = '$attestationHash'"
+  $remoteAttestationCommand = "printf '%s' '" + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes([System.IO.File]::ReadAllText($attestationFile))) + "' | base64 -d | bash -c " + [Management.Automation.Language.CodeGeneration]::QuoteArgument($remoteAttestationScript)
+  Invoke-OpenSsh -Executable $ssh -Arguments @("-T", "-o", "ForwardAgent=no", "-o", "ConnectTimeout=15", $sshAlias, $remoteAttestationCommand) -Description "A publicação do atestado de backup"
   Write-Output "LOCAL_BACKUP_VERIFICATION=passed"
   Write-Output "OFFSITE_BACKUP_VERIFICATION=passed"
   Write-Output "OFFSITE_BACKUP_SHA256=$receiptHash"
   Write-Output "OFFSITE_RESTORE_COUNTS_REVIEW_REQUIRED=true"
+  Write-Output "BACKUP_ATTESTATION_REMOTE_PATH=$remoteAttestationPath"
+  Write-Output "BACKUP_ATTESTATION_SHA256=$attestationHash"
+  Write-Output "BACKUP_ATTESTATION_EXPIRES_AT_UTC=$($expiresAt.ToString('o'))"
 } finally {
   if ($remoteStageCreated -and -not $remoteRestoreStarted) {
     $cleanupScript = @'
