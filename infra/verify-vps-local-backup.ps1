@@ -477,7 +477,8 @@ printf '%s|%s\n' "$version" "$image"
     "ISSUED_AT_UTC=$($issuedAt.ToString('o'))",
     "EXPIRES_AT_UTC=$($expiresAt.ToString('o'))"
   ) -join [Environment]::NewLine
-  Write-NewUtf8File -Path $attestationFile -Content ($attestation + [Environment]::NewLine)
+  $attestationLf = ($attestation -replace "`r`n?", "`n") + "`n"
+  Write-NewUtf8File -Path $attestationFile -Content $attestationLf
   $attestationHash = (Get-FileHash -LiteralPath $attestationFile -Algorithm SHA256).Hash.ToLowerInvariant()
   $remoteAttestationPath = "/opt/hub-turismo/attestations/backup-" + $attestationHash + ".env"
   $attestationPayload = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes([System.IO.File]::ReadAllText($attestationFile)))
