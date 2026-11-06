@@ -160,14 +160,26 @@ mv -- "$source_receipt_checksum_temporary" "$source_receipt_checksum_file"
 published=true
 trap - EXIT
 
-# Retention removes only complete, owned four-file sets. A partial set blocks deletion.
+# Retention removes complete four-file sets independently. Incomplete legacy sets
+# are preserved without preventing cleanup of other expired complete sets.
+retention_pruned=0
+retention_incomplete_preserved=0
 while IFS= read -r old_dump; do
   old_base="${old_dump%.dump}"; old_source="$old_base.source.json"
-  [[ -f "$old_dump.sha256" && ! -L "$old_dump.sha256" && -f "$old_source" && ! -L "$old_source" && -f "$old_source.sha256" && ! -L "$old_source.sha256" ]] || die "RETENTION_PARTIAL_SET"
-  rm -f -- "$old_dump" "$old_dump.sha256" "$old_source" "$old_source.sha256"
+  if [[ -f "$old_dump" && ! -L "$old_dump" &&
+    -f "$old_dump.sha256" && ! -L "$old_dump.sha256" &&
+    -f "$old_source" && ! -L "$old_source" &&
+    -f "$old_source.sha256" && ! -L "$old_source.sha256" ]]; then
+    rm -f -- "$old_dump" "$old_dump.sha256" "$old_source" "$old_source.sha256"
+    retention_pruned=$((retention_pruned + 1))
+  else
+    retention_incomplete_preserved=$((retention_incomplete_preserved + 1))
+  fi
 done < <(find "$backup_directory" -maxdepth 1 -type f -name 'hub-*.dump' -mmin "+$((retention_days * 1440))" -print)
 
 echo "Backup PostgreSQL criado: $backup_file"
 echo "Manifesto SHA-256 criado: $checksum_file"
 echo "SOURCE_RECEIPT_FILE=$source_receipt_file"
 echo "SOURCE_RECEIPT_SHA256=$source_checksum"
+echo "RETENTION_PRUNED=$retention_pruned"
+echo "RETENTION_INCOMPLETE_PRESERVED=$retention_incomplete_preserved"
