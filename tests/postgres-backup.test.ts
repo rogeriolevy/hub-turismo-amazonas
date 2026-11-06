@@ -18,6 +18,31 @@ import { spawnSync } from "node:child_process";
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const backupScript = resolve(repositoryRoot, "infra/backup-postgres.sh");
 const restoreScript = resolve(repositoryRoot, "infra/restore-postgres.sh");
+const activeBackupScript = resolve(repositoryRoot, "infra/backup-postgres-active.sh");
+
+test("source snapshot receipt contract is present", () => {
+  const activeBackup = readFileSync(activeBackupScript, "utf8");
+  assert.ok(activeBackup.includes("SOURCE_RECEIPT_FILE="), "source receipt marker is missing");
+  assert.ok(activeBackup.includes("pg_dump --snapshot="), "pg_dump snapshot option is missing");
+});
+
+test("same exported snapshot is used by the active backup wrapper", () => {
+  const activeBackup = readFileSync(activeBackupScript, "utf8");
+  assert.ok(activeBackup.includes("SNAPSHOT_ID="), "snapshot marker parsing is missing");
+  assert.ok(activeBackup.includes("SOURCE_RECORD="), "source record parsing is missing");
+});
+
+test("atomic backup receipt publishes all four receipt files", () => {
+  const activeBackup = readFileSync(activeBackupScript, "utf8");
+  assert.ok(activeBackup.includes("source_receipt_file"), "receipt file publication is missing");
+  assert.ok(activeBackup.includes("source_receipt_checksum_file"), "receipt sidecar publication is missing");
+});
+
+test("backup receipt failure cleans owned partial files", () => {
+  const activeBackup = readFileSync(activeBackupScript, "utf8");
+  assert.ok(activeBackup.includes("source_receipt_temporary"), "receipt partial is missing");
+  assert.ok(activeBackup.includes("cleanup_owned_partials"), "owned-partial cleanup is missing");
+});
 
 test(
   "PostgreSQL backup retention and restore scripts fail safely",
