@@ -67,7 +67,7 @@ if [[ "$1" == inspect ]]; then
 fi
 if [[ "$1" == exec ]]; then
     if [[ "$*" == *web-fixture*capture-postgres-backup-source.mjs* ]]; then
-      printf 'SNAPSHOT_ID=A1-2\\nSOURCE_RECORD=${sourceRecord}\\nSOURCE_ROLE=hub_app_owner\\n'
+      printf 'SNAPSHOT_ID=00000055-00001B50-1\\nSOURCE_RECORD=${sourceRecord}\\nSOURCE_ROLE=hub_app_owner\\n'
     IFS= read -r completion
     [[ "$completion" == COMPLETE ]] || exit 43
     exit 0

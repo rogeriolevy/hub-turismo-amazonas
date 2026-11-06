@@ -79,7 +79,7 @@ read_source_line() { local value; IFS= read -r value <&"$source_stdout_fd" || di
 snapshot_line="$(read_source_line)"
 record_line="$(read_source_line)"
 role_line="$(read_source_line)"
-[[ "$snapshot_line" =~ ^SNAPSHOT_ID=([A-Fa-f0-9]+-[0-9]+)$ ]] || die "SOURCE_SNAPSHOT_INVALID"
+[[ "$snapshot_line" =~ ^SNAPSHOT_ID=([A-Fa-f0-9]+-[A-Fa-f0-9]+-[0-9]+)$ ]] || die "SOURCE_SNAPSHOT_INVALID"
 snapshot_id="${BASH_REMATCH[1]}"
 [[ "$record_line" == SOURCE_RECORD=* ]] || die "SOURCE_RECORD_INVALID"
 source_record="${record_line#SOURCE_RECORD=}"

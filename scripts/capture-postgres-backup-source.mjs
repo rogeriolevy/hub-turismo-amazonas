@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { Client } from "pg";
 
-const snapshotPattern = /^[A-F0-9]+-[0-9]+$/i;
+const snapshotPattern = /^[A-F0-9]+-[A-F0-9]+-[0-9]+$/i;
 const countPattern = /^(0|[1-9][0-9]*)$/;
 
 function fail(message) {
