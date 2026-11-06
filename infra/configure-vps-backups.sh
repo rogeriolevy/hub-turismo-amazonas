@@ -129,6 +129,15 @@ set -Eeuo pipefail
 unset DOCKER_CONTEXT
 export DOCKER_HOST='__HUB_DOCKER_ENDPOINT__'
 
+# The stable wrapper retains the validated Docker endpoint but delegates all backup
+# semantics to the release-owned active wrapper, including the snapshot receipt.
+release_directory="$(readlink -e -- /opt/hub-turismo/current)"
+case "$release_directory" in
+  /opt/hub-turismo/release-*) ;;
+  *) echo "O link current não aponta para uma release Hub válida." >&2; exit 1 ;;
+esac
+exec /usr/bin/bash "$release_directory/infra/backup-postgres-active.sh"
+
 release_directory="$(readlink -e -- /opt/hub-turismo/current)"
 case "$release_directory" in
   /opt/hub-turismo/release-*) ;;
@@ -331,6 +340,9 @@ if [[ -e "$active_backup_wrapper" || -L "$active_backup_wrapper" ]]; then
   elif cmp -s -- "$unit_stage/backup-postgres-active.previous.sh" "$active_backup_wrapper"; then
     replace_active_backup_wrapper=1
   elif cmp -s -- "$unit_stage/backup-postgres-active.legacy.sh" "$active_backup_wrapper"; then
+    replace_active_backup_wrapper=1
+  elif grep -Fq 'pg_dump --format=custom' "$active_backup_wrapper" && grep -Fq 'backup-postgres.sh' "$active_backup_wrapper"; then
+    # Recognize only the immediately preceding generated wrapper for its one-time migration.
     replace_active_backup_wrapper=1
   else
     echo "O wrapper de backup já existe com conteúdo diferente do gerado por este roteiro: $active_backup_wrapper. Nenhuma alteração foi feita." >&2

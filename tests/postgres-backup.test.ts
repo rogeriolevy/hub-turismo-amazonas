@@ -6,7 +6,9 @@ import {
   mkdtempSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   rmSync,
+  symlinkSync,
   utimesSync,
   writeFileSync,
 } from "node:fs";
@@ -19,6 +21,88 @@ const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const backupScript = resolve(repositoryRoot, "infra/backup-postgres.sh");
 const restoreScript = resolve(repositoryRoot, "infra/restore-postgres.sh");
 const activeBackupScript = resolve(repositoryRoot, "infra/backup-postgres-active.sh");
+const gitBash = process.env.GIT_BASH_EXE ?? "C:/Program Files/Git/bin/bash.exe";
+const cygpath = process.env.CYGPATH_EXE ?? "C:/Program Files/Git/usr/bin/cygpath.exe";
+
+function toPosixPath(windowsPath: string) {
+  const result = spawnSync(cygpath, ["-u", windowsPath], { encoding: "utf8", windowsHide: true });
+  assert.equal(result.error, undefined, result.error?.message);
+  assert.equal(result.status, 0, result.stderr);
+  return result.stdout.trim();
+}
+
+function createActiveBackupFixture() {
+  const root = mkdtempSync(join(tmpdir(), "hub-active-backup-"));
+  const release = join(root, "release-0.12.16");
+  const fakeBin = join(root, "fake-bin");
+  const backupDirectory = join(root, "backups");
+  mkdirSync(join(release, "infra"), { recursive: true, mode: 0o700 });
+  mkdirSync(join(release, "scripts"), { recursive: true, mode: 0o700 });
+  mkdirSync(fakeBin, { recursive: true, mode: 0o700 });
+  mkdirSync(backupDirectory, { recursive: true, mode: 0o700 });
+  writeFileSync(join(root, ".hub-backup-fixture"), "hub-backup-test-fixture-v1\n", { mode: 0o600 });
+  writeFileSync(join(release, "infra", "backup-postgres.sh"), "#!/usr/bin/env bash\n", { mode: 0o500 });
+  writeFileSync(join(release, "infra", "vps.env"), "APP_VERSION=0.12.16\n", { mode: 0o600 });
+  writeFileSync(join(release, "scripts", "capture-postgres-backup-source.mjs"), "// fixture marker\n", { mode: 0o500 });
+  symlinkSync(release, join(root, "current"), process.platform === "win32" ? "junction" : "dir");
+  const sourceRecord = '{"schema":"hub-postgres-source-v1","capturedAtUtc":"2026-01-02T03:04:05.006Z","counts":{"accounts":"1","bookings":"2"},"ledgerSha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","releaseVersion":"0.12.16"}';
+  writeFileSync(
+    join(fakeBin, "docker"),
+    `#!/usr/bin/env bash
+set -Eeuo pipefail
+printf '%s\\n' "$*" >> "$FIXTURE_ROOT/docker-calls.log"
+if [[ "$1" == ps ]]; then
+  [[ "$*" == *service=postgres* ]] && { printf 'postgres-fixture\\n'; exit 0; }
+  [[ "$*" == *service=web* ]] && { printf 'web-fixture\\n'; exit 0; }
+  exit 41
+fi
+if [[ "$1" == inspect ]]; then
+  [[ "$*" == *.State.Status* ]] && { printf 'running\\n'; exit 0; }
+  [[ "$*" == *.State.Health* ]] && { printf 'healthy\\n'; exit 0; }
+  exit 42
+fi
+if [[ "$1" == exec ]]; then
+  if [[ "$*" == *web-fixture*capture-postgres-backup-source.mjs* ]]; then
+    printf 'SNAPSHOT_ID=A1-2\\nSOURCE_RECORD=${sourceRecord}\\nSOURCE_ROLE=postgres\\n'
+    IFS= read -r completion
+    [[ "$completion" == COMPLETE ]] || exit 43
+    exit 0
+  fi
+  if [[ "$*" == *'test "$POSTGRES_USER"'* ]]; then
+    [[ "\${FAKE_ROLE_MISMATCH:-}" != true ]] || exit 44
+    exit 0
+  fi
+  if [[ "$*" == *pg_dump* ]]; then
+    [[ "\${FAKE_DUMP_FAILURE:-}" != true ]] || exit 45
+    printf 'PGDMP-fixture-archive\\n'
+    exit 0
+  fi
+  if [[ "$*" == *pg_restore* ]]; then cat >/dev/null; exit 0; fi
+fi
+exit 46
+`,
+    { mode: 0o700 },
+  );
+  return { root, backupDirectory, fakeBin };
+}
+
+function runActiveBackupFixture(fixture: ReturnType<typeof createActiveBackupFixture>, failure = "") {
+  return spawnSync(gitBash, [activeBackupScript], {
+    encoding: "utf8",
+    windowsHide: true,
+    env: {
+      ...process.env,
+      PATH: `${toPosixPath(fixture.fakeBin)}:${process.env.PATH ?? ""}`,
+      FIXTURE_ROOT: toPosixPath(fixture.root),
+      HUB_BACKUP_TEST_MODE: "true",
+      HUB_INSTALL_ROOT: toPosixPath(fixture.root),
+      BACKUP_DIRECTORY: toPosixPath(fixture.backupDirectory),
+      BACKUP_RETENTION_DAYS: "14",
+      FAKE_DUMP_FAILURE: failure === "dump" ? "true" : "",
+      FAKE_ROLE_MISMATCH: failure === "role" ? "true" : "",
+    },
+  });
+}
 
 test("source snapshot receipt contract is present", () => {
   const activeBackup = readFileSync(activeBackupScript, "utf8");
@@ -27,9 +111,19 @@ test("source snapshot receipt contract is present", () => {
 });
 
 test("same exported snapshot is used by the active backup wrapper", () => {
-  const activeBackup = readFileSync(activeBackupScript, "utf8");
-  assert.ok(activeBackup.includes("SNAPSHOT_ID="), "snapshot marker parsing is missing");
-  assert.ok(activeBackup.includes("SOURCE_RECORD="), "source record parsing is missing");
+  const fixture = createActiveBackupFixture();
+  try {
+    const result = runActiveBackupFixture(fixture);
+    assert.equal(result.error, undefined, result.error?.message);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /SOURCE_RECEIPT_FILE=/);
+    assert.match(
+      readFileSync(join(fixture.root, "docker-calls.log"), "utf8"),
+      /pg_dump --snapshot="\$1".* sh A1-2/,
+    );
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
 });
 
 test("atomic backup receipt publishes all four receipt files", () => {
@@ -39,9 +133,15 @@ test("atomic backup receipt publishes all four receipt files", () => {
 });
 
 test("backup receipt failure cleans owned partial files", () => {
-  const activeBackup = readFileSync(activeBackupScript, "utf8");
-  assert.ok(activeBackup.includes("source_receipt_temporary"), "receipt partial is missing");
-  assert.ok(activeBackup.includes("cleanup_owned_partials"), "owned-partial cleanup is missing");
+  const fixture = createActiveBackupFixture();
+  try {
+    const result = runActiveBackupFixture(fixture, "dump");
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /PG_DUMP_FAILED/);
+    assert.deepEqual(readdirSync(fixture.backupDirectory), []);
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
 });
 
 test(
