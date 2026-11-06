@@ -170,9 +170,18 @@ if [[ ( "\${HUB_GUARD_SCENARIO:-}" == health-fail-candidate || "\${HUB_GUARD_SCE
 database=postgresql
 if [[ "\${HUB_GUARD_SCENARIO:-}" == database-not-postgres-candidate && "$version" == 0.12.14 ]]; then database=sqlite; fi
 if [[ "\${HUB_GUARD_SCENARIO:-}" == version-mismatch-candidate && "$version" == 0.12.14 ]]; then version=0.12.13; fi
-printf '{"status":"%s","version":"%s","database":"%s"}\\n' "$status" "$version" "$database"
 if [[ "$url" == https://* ]]; then
-  if [[ "\${HUB_GUARD_SCENARIO:-}" == public-status-fail-candidate && "$version" == 0.12.14 ]]; then printf '503\\n'; else printf '200\\n'; fi
+  case "\${HUB_GUARD_SCENARIO:-}:$version" in
+    public-transport-fail-candidate:0.12.14) exit 35 ;;
+    public-redirect-candidate:0.12.14) printf '{"status":"ok","version":"%s","database":"postgresql"}\\n302\\n' "$version"; exit 0 ;;
+    public-malformed-payload-candidate:0.12.14) printf '{malformed-json}\\n200\\n'; exit 0 ;;
+    public-version-mismatch-candidate:0.12.14) printf '{"status":"ok","version":"0.12.13","database":"postgresql"}\\n200\\n'; exit 0 ;;
+    public-database-mismatch-candidate:0.12.14) printf '{"status":"ok","version":"%s","database":"sqlite"}\\n200\\n' "$version"; exit 0 ;;
+    public-status-fail-candidate:0.12.14) printf '{"status":"ok","version":"%s","database":"postgresql"}\\n503\\n' "$version"; exit 0 ;;
+  esac
+  printf '{"status":"%s","version":"%s","database":"%s"}\\n200\\n' "$status" "$version" "$database"
+else
+  printf '{"status":"%s","version":"%s","database":"%s"}\\n' "$status" "$version" "$database"
 fi
 `;
 
@@ -619,6 +628,32 @@ test("canonical public HTTPS failure rolls back only web and worker", async () =
   assert.equal(upCalls.length, 2);
   assert.ok(upCalls.every((line) => line.endsWith("|web booking-email-worker")));
 });
+
+for (const [scenario, expectedError] of [
+  ["public-transport-fail-candidate", "PUBLIC_HEALTH_TRANSPORT_FAILED"],
+  ["public-redirect-candidate", "PUBLIC_HEALTH_STATUS_INVALID"],
+  ["public-malformed-payload-candidate", "PUBLIC_HEALTH_PAYLOAD_INVALID"],
+  ["public-version-mismatch-candidate", "PUBLIC_HEALTH_PAYLOAD_INVALID"],
+  ["public-database-mismatch-candidate", "PUBLIC_HEALTH_PAYLOAD_INVALID"],
+] as const) {
+  test(`${scenario} rejects public health with HTTPS-only no-redirect transport and rolls back app services`, async () => {
+    const fixture = await createFixture();
+    const result = runGuard(fixture, { simulate: true, scenario });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, new RegExp(`ERROR=${expectedError}`));
+    assert.match(result.stderr, /ROLLBACK=passed/);
+    assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+    const calls = await callLog(fixture);
+    const publicCurlCall = calls.split("\n").find((line) => line.startsWith("curl|") && line.includes("|--proto|=https|"));
+    assert.ok(publicCurlCall, "public HTTPS health probe was not invoked");
+    assert.match(publicCurlCall, /\|--proto\|=https\|--proto-redir\|=https\|--max-redirs\|0\|/);
+    assert.doesNotMatch(publicCurlCall, /\|--location\|/);
+    const upCalls = calls.split("\n").filter((line) => line.startsWith("up|"));
+    assert.equal(upCalls.length, 2);
+    assert.ok(upCalls.every((line) => line.endsWith("|web booking-email-worker")));
+  });
+}
 
 test("rollback failure returns the distinct terminal code 90", async () => {
   const fixture = await createFixture();
