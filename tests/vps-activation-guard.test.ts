@@ -293,6 +293,16 @@ test("test-only preflight checks compatibility without changing current or start
   assert.match(await callLog(fixture), /^docker\|/m);
 });
 
+test("preflight requires independently hashed candidate and backup attestations before runtime inspection", async () => {
+  const fixture = await createFixture();
+  const result = runGuard(fixture, { simulate: true });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /ERROR=CANDIDATE_ATTESTATION_REQUIRED/);
+  assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+  assert.equal(await callLog(fixture), "");
+});
+
 test("test-only simulated activation switches only the fixture and only web/worker", async () => {
   const fixture = await createFixture();
   const result = runGuard(fixture, { simulate: true });
