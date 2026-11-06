@@ -8,7 +8,7 @@ const [packageLock, platformGuide, releaseLog] = await Promise.all([
   readFile(new URL(`docs/releases/${packageJson.version}.md`, root), "utf8").catch(() => null),
 ]);
 
-const documentedVersion = /^Versão ([0-9]+\.[0-9]+\.[0-9]+),/m.exec(platformGuide)?.[1];
+const documentedVersion = /^Versão ([0-9]+\.[0-9]+\.[0-9]+)\b/m.exec(platformGuide)?.[1];
 const releaseVersion = releaseLog
   ? /^# (?:Candidata|Release) ([0-9]+\.[0-9]+\.[0-9]+)\b/m.exec(releaseLog)?.[1]
   : undefined;
