@@ -218,7 +218,7 @@ validate_attestations() {
   [[ "${candidate_receipt[COMPOSE_SHA256]}" == "$candidate_compose_hash" ]] || die "CANDIDATE_ATTESTATION_COMPOSE_MISMATCH"
   [[ "${candidate_receipt[ENVIRONMENT_SHA256]}" == "$candidate_env_fingerprint" ]] || die "CANDIDATE_ATTESTATION_ENVIRONMENT_MISMATCH"
   [[ "${candidate_receipt[MIGRATIONS_SHA256]}" == "$candidate_migrations" ]] || die "CANDIDATE_ATTESTATION_MIGRATIONS_MISMATCH"
-  [[ "${candidate_receipt[GIT_HEAD]}" =~ ^[a-f0-9]{40}$ && "${candidate_receipt[GIT_TREE]}" =~ ^[a-f0-9]{40}$ && "${candidate_receipt[ARCHIVE_SHA256]}" =~ ^[a-f0-9]{64}$ && "${candidate_receipt[VERIFIER_SHA256]}" =~ ^[a-f0-9]{64}$ ]] || die "CANDIDATE_ATTESTATION_VALUE_INVALID"
+  [[ "${candidate_receipt[GIT_HEAD]}" =~ ^([a-f0-9]{40}|[a-f0-9]{64})$ && "${candidate_receipt[GIT_TREE]}" =~ ^([a-f0-9]{40}|[a-f0-9]{64})$ && "${candidate_receipt[ARCHIVE_SHA256]}" =~ ^[a-f0-9]{64}$ && "${candidate_receipt[VERIFIER_SHA256]}" =~ ^[a-f0-9]{64}$ ]] || die "CANDIDATE_ATTESTATION_VALUE_INVALID"
 
   parse_attestation BACKUP "$backup_attestation" "CANDIDATE_ATTESTATION_PATH CANDIDATE_ATTESTATION_SHA256 CANDIDATE_VERSION CANDIDATE_IMAGE_ID DUMP_FILE DUMP_SHA256 SOURCE_RECEIPT_FILE SOURCE_RECEIPT_SHA256 SOURCE_COUNTS SOURCE_LEDGER_SHA256 RESTORE_SOURCE_COMPARISON RESTORE_DATABASE_CLEANUP REMOTE_STAGING_CLEANUP ISSUED_AT_UTC EXPIRES_AT_UTC" backup_receipt
   require_receipt_keys BACKUP backup_receipt CANDIDATE_ATTESTATION_PATH CANDIDATE_ATTESTATION_SHA256 CANDIDATE_VERSION CANDIDATE_IMAGE_ID DUMP_FILE DUMP_SHA256 SOURCE_RECEIPT_FILE SOURCE_RECEIPT_SHA256 SOURCE_COUNTS SOURCE_LEDGER_SHA256 RESTORE_SOURCE_COMPARISON RESTORE_DATABASE_CLEANUP REMOTE_STAGING_CLEANUP ISSUED_AT_UTC EXPIRES_AT_UTC
@@ -249,8 +249,8 @@ preflight_attestation_inputs() {
   [[ "${candidate_receipt[PACKAGE_VERSION]}" == "$candidate_version_from_disk" && "${backup_receipt[CANDIDATE_VERSION]}" == "$candidate_version_from_disk" ]] || die "CANDIDATE_ATTESTATION_VERSION_MISMATCH"
   [[ "${candidate_receipt[IMAGE_TAG]}" == "hub-turismo-amazonas:$candidate_version_from_disk" ]] || die "CANDIDATE_ATTESTATION_IMAGE_TAG_INVALID"
   [[ "${candidate_receipt[IMAGE_ID]}" =~ ^sha256:[a-f0-9]{64}$ ]] || die "CANDIDATE_ATTESTATION_IMAGE_ID_INVALID"
-  [[ "${candidate_receipt[GIT_HEAD]}" =~ ^[a-f0-9]{40}$ ]] || die "CANDIDATE_ATTESTATION_GIT_HEAD_INVALID"
-  [[ "${candidate_receipt[GIT_TREE]}" =~ ^[a-f0-9]{40}$ ]] || die "CANDIDATE_ATTESTATION_GIT_TREE_INVALID"
+  [[ "${candidate_receipt[GIT_HEAD]}" =~ ^([a-f0-9]{40}|[a-f0-9]{64})$ ]] || die "CANDIDATE_ATTESTATION_GIT_HEAD_INVALID"
+  [[ "${candidate_receipt[GIT_TREE]}" =~ ^([a-f0-9]{40}|[a-f0-9]{64})$ ]] || die "CANDIDATE_ATTESTATION_GIT_TREE_INVALID"
   [[ "${candidate_receipt[ARCHIVE_SHA256]}" =~ ^[a-f0-9]{64}$ ]] || die "CANDIDATE_ATTESTATION_ARCHIVE_HASH_INVALID"
   [[ "${candidate_receipt[VERIFIER_SHA256]}" =~ ^[a-f0-9]{64}$ ]] || die "CANDIDATE_ATTESTATION_VERIFIER_HASH_INVALID"
   [[ "${candidate_receipt[COMPOSE_SHA256]}" =~ ^[a-f0-9]{64}$ ]] || die "CANDIDATE_ATTESTATION_COMPOSE_HASH_INVALID"

@@ -458,6 +458,32 @@ for (const [name, field, invalidValue, expectedError] of [
   });
 }
 
+test("SHA-256 Git object IDs pass the complete candidate and backup attestation flow", async () => {
+  const fixture = await createFixture();
+  const candidateOriginal = await readFile(fixture.candidateAttestation, "utf8");
+  const candidateWithSha256Pins = candidateOriginal
+    .replace(/^GIT_HEAD=.*$/m, `GIT_HEAD=${"a".repeat(64)}`)
+    .replace(/^GIT_TREE=.*$/m, `GIT_TREE=${"b".repeat(64)}`);
+  await writeFile(fixture.candidateAttestation, candidateWithSha256Pins);
+  const candidateHash = sha256(candidateWithSha256Pins);
+  const backupOriginal = await readFile(fixture.backupAttestation, "utf8");
+  const backupWithCandidateBinding = backupOriginal.replace(
+    /^CANDIDATE_ATTESTATION_SHA256=.*$/m,
+    `CANDIDATE_ATTESTATION_SHA256=${candidateHash}`,
+  );
+  await writeFile(fixture.backupAttestation, backupWithCandidateBinding);
+
+  const result = runGuard(fixture, {
+    simulate: true,
+    candidateAttestationSha256: candidateHash,
+    backupAttestationSha256: sha256(backupWithCandidateBinding),
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /ACTIVATION=passed/);
+  assert.equal(await currentTarget(fixture), await realpath(fixture.candidate));
+});
+
 for (const [name, transform, expectedError] of [
   [
     "expired backup",
