@@ -6,7 +6,10 @@ param(
   [Parameter(Mandatory = $true)]
   [ValidatePattern('^[a-fA-F0-9]{64}$')]
   [string]$CandidateAttestationSha256,
-  [switch]$ConfirmLocalBackup
+  [switch]$ConfirmLocalBackup,
+  [switch]$TestOnly,
+  [string]$FixtureRoot,
+  [string]$FakeBin
 )
 
 $ErrorActionPreference = "Stop"
@@ -24,7 +27,7 @@ foreach ($scriptPath in @($exportScript, $verifyScript)) {
 }
 
 try {
-  $exportOutput = @(& $exportScript -BackupDirectory $BackupDirectory 2>&1)
+  $exportOutput = @(& $exportScript -BackupDirectory $BackupDirectory -TestOnly:$TestOnly -FixtureRoot $FixtureRoot -FakeBin $FakeBin 2>&1)
 } catch {
   throw "A exportação do backup local falhou; a verificação e a ativação foram interrompidas. $($_.Exception.Message)"
 }
@@ -70,4 +73,7 @@ $exportLines | ForEach-Object { Write-Output $_ }
   -CandidateAttestationPath $CandidateAttestationPath `
   -CandidateAttestationSha256 $CandidateAttestationSha256 `
   -BackupDirectory $BackupDirectory `
-  -ConfirmLocalBackup
+  -ConfirmLocalBackup `
+  -TestOnly:$TestOnly `
+  -FixtureRoot $FixtureRoot `
+  -FakeBin $FakeBin

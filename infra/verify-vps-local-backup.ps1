@@ -13,15 +13,32 @@ param(
   [ValidatePattern('^/opt/hub-turismo/attestations/candidate-[0-9]+\.[0-9]+\.[0-9]+\.env$')]
   [string]$CandidateAttestationPath,
   [string]$BackupDirectory = (Join-Path $env:LOCALAPPDATA "HubTurismo\Backups"),
-  [switch]$ConfirmLocalBackup
+  [switch]$ConfirmLocalBackup,
+  [switch]$TestOnly,
+  [string]$FixtureRoot,
+  [string]$FakeBin
 )
 
 $ErrorActionPreference = "Stop"
 $sshAlias = "hub-turismo-vps"
 $repositoryRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
 $temporaryRoot = [System.IO.Path]::GetFullPath($env:TEMP)
-$ssh = (Get-Command ssh.exe -ErrorAction Stop).Source
-$scp = (Get-Command scp.exe -ErrorAction Stop).Source
+if ($TestOnly) {
+  if ([string]::IsNullOrWhiteSpace($FixtureRoot) -or [string]::IsNullOrWhiteSpace($FakeBin)) { throw "TEST_FIXTURE_ARGUMENTS_REQUIRED" }
+  $fixtureRootResolved = (Resolve-Path -LiteralPath $FixtureRoot -ErrorAction Stop).Path
+  $fixtureMarker = Join-Path $fixtureRootResolved ".hub-vps-backup-attestation-fixture"
+  if (-not (Test-Path -LiteralPath $fixtureMarker -PathType Leaf) -or (Get-Content -LiteralPath $fixtureMarker -Raw).Trim() -cne "hub-vps-backup-attestation-fixture-v1") { throw "TEST_FIXTURE_SENTINEL_INVALID" }
+  $fakeBinResolved = (Resolve-Path -LiteralPath $FakeBin -ErrorAction Stop).Path
+  if (-not $fakeBinResolved.StartsWith($fixtureRootResolved + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw "FAKE_BIN_OUTSIDE_FIXTURE" }
+  $ssh = Join-Path $fakeBinResolved "ssh.cmd"; $scp = Join-Path $fakeBinResolved "scp.cmd"
+  foreach ($fake in @($ssh, $scp)) { if (-not (Test-Path -LiteralPath $fake -PathType Leaf) -or -not (Get-Content -LiteralPath $fake -Raw).Contains("hub-vps-backup-attestation-fake-v1")) { throw "FAKE_COMMAND_INVALID" } }
+  $sshAlias = "fixture-vps"
+} elseif (-not [string]::IsNullOrWhiteSpace($FixtureRoot) -or -not [string]::IsNullOrWhiteSpace($FakeBin)) {
+  throw "TEST_FLAGS_FORBIDDEN_IN_PRODUCTION_MODE"
+} else {
+  $ssh = (Get-Command ssh.exe -ErrorAction Stop).Source
+  $scp = (Get-Command scp.exe -ErrorAction Stop).Source
+}
 $localAppRoot = Join-Path $env:LOCALAPPDATA "HubTurismo"
 $backupRoot = (Resolve-Path -LiteralPath $BackupDirectory -ErrorAction Stop).Path
 $receiptDirectory = (Resolve-Path -LiteralPath (Join-Path $localAppRoot "BackupReceipts") -ErrorAction Stop).Path
@@ -180,6 +197,15 @@ function Write-NewUtf8File {
   } finally {
     $stream.Dispose()
   }
+}
+
+function Set-PrivateDirectoryAcl {
+  param([Parameter(Mandatory = $true)][string]$Path)
+  if ($TestOnly) { return }
+  $identitySid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+  $icacls = (Get-Command icacls.exe -ErrorAction Stop).Source
+  & $icacls $Path "/inheritance:r" "/grant:r" ("*{0}:(OI)(CI)F" -f $identitySid) "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F" | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw "Não foi possível restringir as permissões da pasta de atestados: $Path" }
 }
 
 $databaseTimestamp = [DateTime]::UtcNow.ToString("yyyyMMdd'T'HHmmss'Z'", [Globalization.CultureInfo]::InvariantCulture)
@@ -366,6 +392,7 @@ mkdir -m 700 -- "/var/tmp/hub-local-backup-__STAGE_TOKEN__"
   $restoreLines = @($restoreOutput | ForEach-Object { [string]$_ })
   foreach ($requiredMarker in @("RESTORE_SOURCE_COMPARISON=match", "RESTORE_DATABASE_CLEANUP=ok", "REMOTE_STAGING_CLEANUP=ok")) {
     if (@($restoreLines | Where-Object { $_ -ceq $requiredMarker }).Count -ne 1) { throw "O ensaio não confirmou $requiredMarker; nenhum atestado de ativação foi criado." }
+    Write-Output $requiredMarker
   }
   $candidateReadScript = @'
 set -euo pipefail
