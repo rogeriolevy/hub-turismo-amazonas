@@ -1,6 +1,6 @@
 # Plataforma local — módulos e operação
 
-Versão 0.12.20 publicada na VPS em 06/11/2026. A saúde pública respondeu HTTP 200 com PostgreSQL; web e worker estão saudáveis, e o banco, os dados e as migrations foram preservados. Consulte o [registro da release 0.12.20](releases/0.12.20.md). A plataforma evolui como monólito Node.js/Next.js: SQLite no desenvolvimento e PostgreSQL na VPS. As reservas são **solicitações sujeitas à aprovação do hotel ou operador**, sem cobrança online. O site institucional e a caixa de contatos permanecem disponíveis. A publicação anterior no Sites é independente.
+Versão 0.12.20 publicada na VPS em 06/11/2026. A saúde pública respondeu HTTP 200 com PostgreSQL; web e worker estão saudáveis, e o banco, os dados e as migrations foram preservados. O backup diário está habilitado, e a cópia local mais recente foi restaurada isoladamente com comparação aprovada. Consulte o [registro da release 0.12.20](releases/0.12.20.md). A plataforma evolui como monólito Node.js/Next.js: SQLite no desenvolvimento e PostgreSQL na VPS. As reservas são **solicitações sujeitas à aprovação do hotel ou operador**, sem cobrança online. O site institucional e a caixa de contatos permanecem disponíveis. A publicação anterior no Sites é independente.
 
 ## Rotas e permissões
 

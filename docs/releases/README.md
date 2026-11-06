@@ -1,6 +1,6 @@
 # Registro de releases
 
-Use esta estrutura para registrar cada entrega pequena, delimitada por domínio. Os campos entre colchetes são valores a coletar para a release em questão: confirme-os a partir de evidências atuais e não copie hashes, contagens ou resultados de saúde de outra versão. A [0.12.20](0.12.20.md) é a publicação atual e melhora a retenção dos backups PostgreSQL. A [0.12.19](0.12.19.md) corrige o destino de navegação “Sobre”; a [0.12.13](0.12.13.md) permanece como exemplo histórico.
+Use esta estrutura para registrar cada entrega pequena, delimitada por domínio. Os campos entre colchetes são valores a coletar para a release em questão: confirme-os a partir de evidências atuais e não copie hashes, contagens ou resultados de saúde de outra versão. A [0.12.20](0.12.20.md) é a publicação atual e melhora a retenção dos backups PostgreSQL, com recibos de origem na rotina diária. A [0.12.19](0.12.19.md) corrige o destino de navegação “Sobre”; a [0.12.13](0.12.13.md) permanece como exemplo histórico.
 
 ## Checklist do autor
 
