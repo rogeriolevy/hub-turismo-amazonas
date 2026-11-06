@@ -144,9 +144,8 @@ docker exec "$postgres_container_id" sh -ec 'exec pg_dump --snapshot="$1" --form
 docker exec -i "$postgres_container_id" pg_restore --list < "$temporary_file" > /dev/null || die "PG_DUMP_ARCHIVE_INVALID"
 printf 'COMPLETE\n' >&"$source_stdin_fd" || die "SOURCE_COMPLETION_WRITE_FAILED"
 exec {source_stdin_fd}>&-
-wait "$SOURCE_HELPER_PID" || die "SOURCE_COMPLETION_FAILED"
-if IFS= read -r extra_line <&"$source_stdout_fd"; then die "SOURCE_HELPER_EXTRA_OUTPUT"; fi
 exec {source_stdout_fd}<&-
+wait "$SOURCE_HELPER_PID" || die "SOURCE_COMPLETION_FAILED"
 
 dump_checksum="$(sha256sum < "$temporary_file" | awk '{print $1}')"
 source_checksum="$(printf '%s' "$source_record" | sha256sum | awk '{print $1}')"
