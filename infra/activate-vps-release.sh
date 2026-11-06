@@ -26,7 +26,9 @@ canonical_existing_path() {
 usage() {
   cat <<'USAGE'
 Production:
-  activate-vps-release.sh --candidate PATH --previous PATH (--dry-run|--activate)
+  activate-vps-release.sh --candidate PATH --previous PATH \
+    --candidate-attestation PATH --candidate-attestation-sha256 HASH \
+    --backup-attestation PATH --backup-attestation-sha256 HASH (--dry-run|--activate)
 
 Disposable test fixture only:
   activate-vps-release.sh --test-only --fixture-root PATH --fake-bin PATH [--simulate-activate]
@@ -35,6 +37,10 @@ USAGE
 
 candidate_arg=""
 previous_arg=""
+candidate_attestation_arg=""
+candidate_attestation_sha256_arg=""
+backup_attestation_arg=""
+backup_attestation_sha256_arg=""
 fixture_root_arg=""
 fake_bin_arg=""
 mode=""
@@ -43,7 +49,7 @@ simulate_activate=false
 
 while (($#)); do
   case "$1" in
-    --candidate|--previous|--fixture-root|--fake-bin)
+    --candidate|--previous|--candidate-attestation|--candidate-attestation-sha256|--backup-attestation|--backup-attestation-sha256|--fixture-root|--fake-bin)
       (($# >= 2)) || { usage >&2; die "MISSING_OPTION_VALUE"; }
       option="$1"
       value="$2"
@@ -51,6 +57,10 @@ while (($#)); do
       case "$option" in
         --candidate) candidate_arg="$value" ;;
         --previous) previous_arg="$value" ;;
+        --candidate-attestation) candidate_attestation_arg="$value" ;;
+        --candidate-attestation-sha256) candidate_attestation_sha256_arg="$value" ;;
+        --backup-attestation) backup_attestation_arg="$value" ;;
+        --backup-attestation-sha256) backup_attestation_sha256_arg="$value" ;;
         --fixture-root) fixture_root_arg="$value" ;;
         --fake-bin) fake_bin_arg="$value" ;;
       esac
@@ -135,6 +145,116 @@ docker_cmd() {
 
 curl_cmd() {
   "$CURL_BIN" "$@"
+}
+
+declare -A candidate_receipt=()
+declare -A backup_receipt=()
+
+attestation_file() {
+  local label="$1"
+  local supplied_path="$2"
+  local supplied_hash="$3"
+  local canonical_root canonical_path owner mode actual_hash
+  [[ -n "$supplied_path" ]] || die "${label}_ATTESTATION_REQUIRED"
+  [[ "$supplied_hash" =~ ^[a-f0-9]{64}$ ]] || die "${label}_ATTESTATION_HASH_INVALID"
+  [[ -f "$supplied_path" && ! -L "$supplied_path" ]] || die "${label}_ATTESTATION_FILE_INVALID"
+  canonical_path="$(canonical_existing_path "$supplied_path")" || die "${label}_ATTESTATION_UNRESOLVED"
+  if [[ "$test_only" == "true" ]]; then
+    canonical_root="$(canonical_existing_path "$fixture_root/attestations")" || die "TEST_ATTESTATION_ROOT_INVALID"
+  else
+    canonical_root="$(realpath -e -- "$RELEASE_ROOT/attestations")" || die "ATTESTATION_ROOT_UNRESOLVED"
+  fi
+  if [[ "$test_only" == "true" && ( "$OSTYPE" == msys* || "$OSTYPE" == cygwin* ) ]]; then
+    case "$canonical_path" in "$canonical_root"\\*) ;; *) die "${label}_ATTESTATION_OUTSIDE_ROOT" ;; esac
+  else
+    case "$canonical_path/" in "$canonical_root"/*) ;; *) die "${label}_ATTESTATION_OUTSIDE_ROOT" ;; esac
+  fi
+  owner="$(stat -c '%U:%G' "$canonical_path")" || die "${label}_ATTESTATION_METADATA_UNREADABLE"
+  mode="$(stat -c '%a' "$canonical_path")" || die "${label}_ATTESTATION_METADATA_UNREADABLE"
+  [[ "$mode" == "600" ]] || die "${label}_ATTESTATION_MODE_INVALID"
+  [[ "$test_only" == "true" || "$owner" == "hub:hub" ]] || die "${label}_ATTESTATION_OWNER_INVALID"
+  actual_hash="$(sha256sum < "$canonical_path" | awk '{print $1}')" || die "${label}_ATTESTATION_HASH_UNREADABLE"
+  [[ "$actual_hash" == "$supplied_hash" ]] || die "${label}_ATTESTATION_HASH_MISMATCH"
+  printf '%s' "$canonical_path"
+}
+
+parse_attestation() {
+  local label="$1"
+  local attestation="$2"
+  local allowed="$3"
+  local -n destination="$4"
+  local line key value
+  destination=()
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ ^[A-Z0-9_]+=[^=[:cntrl:]]+$ ]] || die "${label}_ATTESTATION_FORMAT_INVALID"
+    key="${line%%=*}"
+    value="${line#*=}"
+    case " $allowed " in *" $key "*) ;; *) die "${label}_ATTESTATION_UNKNOWN_KEY" ;; esac
+    [[ -z "${destination[$key]+present}" ]] || die "${label}_ATTESTATION_DUPLICATE_KEY"
+    destination["$key"]="$value"
+  done < "$attestation"
+}
+
+require_receipt_keys() {
+  local label="$1"
+  local -n receipt="$2"
+  shift 2
+  local key
+  for key in "$@"; do
+    [[ -n "${receipt[$key]+present}" ]] || die "${label}_ATTESTATION_MISSING_KEY"
+  done
+}
+
+validate_attestations() {
+  candidate_attestation="$(attestation_file CANDIDATE "$candidate_attestation_arg" "$candidate_attestation_sha256_arg")"
+  backup_attestation="$(attestation_file BACKUP "$backup_attestation_arg" "$backup_attestation_sha256_arg")"
+  parse_attestation CANDIDATE "$candidate_attestation" "CANDIDATE_PATH PACKAGE_VERSION GIT_HEAD GIT_TREE ARCHIVE_SHA256 VERIFIER_SHA256 IMAGE_TAG IMAGE_ID COMPOSE_SHA256 ENVIRONMENT_SHA256 MIGRATIONS_SHA256" candidate_receipt
+  require_receipt_keys CANDIDATE candidate_receipt CANDIDATE_PATH PACKAGE_VERSION GIT_HEAD GIT_TREE ARCHIVE_SHA256 VERIFIER_SHA256 IMAGE_TAG IMAGE_ID COMPOSE_SHA256 ENVIRONMENT_SHA256 MIGRATIONS_SHA256
+  local attested_candidate_path attested_candidate_receipt_path
+  attested_candidate_path="$(canonical_existing_path "${candidate_receipt[CANDIDATE_PATH]}")" || die "CANDIDATE_ATTESTATION_PATH_MISMATCH"
+  [[ "$attested_candidate_path" == "$candidate" ]] || die "CANDIDATE_ATTESTATION_PATH_MISMATCH"
+  [[ "${candidate_receipt[PACKAGE_VERSION]}" == "$candidate_version" ]] || die "CANDIDATE_ATTESTATION_VERSION_MISMATCH"
+  [[ "${candidate_receipt[IMAGE_TAG]}" == "hub-turismo-amazonas:$candidate_version" && "${candidate_receipt[IMAGE_ID]}" == "$candidate_image_id" ]] || die "CANDIDATE_ATTESTATION_IMAGE_MISMATCH"
+  [[ "${candidate_receipt[COMPOSE_SHA256]}" == "$candidate_compose_hash" ]] || die "CANDIDATE_ATTESTATION_COMPOSE_MISMATCH"
+  [[ "${candidate_receipt[ENVIRONMENT_SHA256]}" == "$candidate_env_fingerprint" ]] || die "CANDIDATE_ATTESTATION_ENVIRONMENT_MISMATCH"
+  [[ "${candidate_receipt[MIGRATIONS_SHA256]}" == "$candidate_migrations" ]] || die "CANDIDATE_ATTESTATION_MIGRATIONS_MISMATCH"
+  [[ "${candidate_receipt[GIT_HEAD]}" =~ ^[a-f0-9]{40}$ && "${candidate_receipt[GIT_TREE]}" =~ ^[a-f0-9]{40}$ && "${candidate_receipt[ARCHIVE_SHA256]}" =~ ^[a-f0-9]{64}$ && "${candidate_receipt[VERIFIER_SHA256]}" =~ ^[a-f0-9]{64}$ ]] || die "CANDIDATE_ATTESTATION_VALUE_INVALID"
+
+  parse_attestation BACKUP "$backup_attestation" "CANDIDATE_ATTESTATION_PATH CANDIDATE_ATTESTATION_SHA256 CANDIDATE_VERSION CANDIDATE_IMAGE_ID DUMP_FILE DUMP_SHA256 SOURCE_RECEIPT_FILE SOURCE_RECEIPT_SHA256 SOURCE_COUNTS SOURCE_LEDGER_SHA256 RESTORE_SOURCE_COMPARISON RESTORE_DATABASE_CLEANUP REMOTE_STAGING_CLEANUP ISSUED_AT_UTC EXPIRES_AT_UTC" backup_receipt
+  require_receipt_keys BACKUP backup_receipt CANDIDATE_ATTESTATION_PATH CANDIDATE_ATTESTATION_SHA256 CANDIDATE_VERSION CANDIDATE_IMAGE_ID DUMP_FILE DUMP_SHA256 SOURCE_RECEIPT_FILE SOURCE_RECEIPT_SHA256 SOURCE_COUNTS SOURCE_LEDGER_SHA256 RESTORE_SOURCE_COMPARISON RESTORE_DATABASE_CLEANUP REMOTE_STAGING_CLEANUP ISSUED_AT_UTC EXPIRES_AT_UTC
+  attested_candidate_receipt_path="$(canonical_existing_path "${backup_receipt[CANDIDATE_ATTESTATION_PATH]}")" || die "BACKUP_ATTESTATION_CANDIDATE_BINDING_MISMATCH"
+  [[ "$attested_candidate_receipt_path" == "$candidate_attestation" && "${backup_receipt[CANDIDATE_ATTESTATION_SHA256]}" == "$candidate_attestation_sha256_arg" ]] || die "BACKUP_ATTESTATION_CANDIDATE_BINDING_MISMATCH"
+  [[ "${backup_receipt[CANDIDATE_VERSION]}" == "$candidate_version" && "${backup_receipt[CANDIDATE_IMAGE_ID]}" == "$candidate_image_id" ]] || die "BACKUP_ATTESTATION_CANDIDATE_MISMATCH"
+  [[ "${backup_receipt[RESTORE_SOURCE_COMPARISON]}" == "match" && "${backup_receipt[RESTORE_DATABASE_CLEANUP]}" == "ok" && "${backup_receipt[REMOTE_STAGING_CLEANUP]}" == "ok" ]] || die "BACKUP_ATTESTATION_RESTORE_INVALID"
+  [[ "${backup_receipt[DUMP_SHA256]}" =~ ^[a-f0-9]{64}$ && "${backup_receipt[SOURCE_RECEIPT_SHA256]}" =~ ^[a-f0-9]{64}$ && "${backup_receipt[SOURCE_LEDGER_SHA256]}" =~ ^[a-f0-9]{64}$ && "${backup_receipt[SOURCE_COUNTS]}" =~ ^\{.*\}$ ]] || die "BACKUP_ATTESTATION_VALUE_INVALID"
+  [[ "${backup_receipt[ISSUED_AT_UTC]}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$ && "${backup_receipt[EXPIRES_AT_UTC]}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$ ]] || die "BACKUP_ATTESTATION_TIMESTAMP_INVALID"
+  local issued_epoch expires_epoch now_epoch
+  issued_epoch="$(date -u -d "${backup_receipt[ISSUED_AT_UTC]}" +%s 2>/dev/null)" || die "BACKUP_ATTESTATION_TIMESTAMP_INVALID"
+  expires_epoch="$(date -u -d "${backup_receipt[EXPIRES_AT_UTC]}" +%s 2>/dev/null)" || die "BACKUP_ATTESTATION_TIMESTAMP_INVALID"
+  now_epoch="$(date -u +%s)"
+  (( issued_epoch < expires_epoch && expires_epoch > now_epoch )) || die "BACKUP_ATTESTATION_EXPIRED"
+}
+
+preflight_attestation_inputs() {
+  candidate_attestation="$(attestation_file CANDIDATE "$candidate_attestation_arg" "$candidate_attestation_sha256_arg")"
+  backup_attestation="$(attestation_file BACKUP "$backup_attestation_arg" "$backup_attestation_sha256_arg")"
+  parse_attestation CANDIDATE "$candidate_attestation" "CANDIDATE_PATH PACKAGE_VERSION GIT_HEAD GIT_TREE ARCHIVE_SHA256 VERIFIER_SHA256 IMAGE_TAG IMAGE_ID COMPOSE_SHA256 ENVIRONMENT_SHA256 MIGRATIONS_SHA256" candidate_receipt
+  require_receipt_keys CANDIDATE candidate_receipt CANDIDATE_PATH PACKAGE_VERSION GIT_HEAD GIT_TREE ARCHIVE_SHA256 VERIFIER_SHA256 IMAGE_TAG IMAGE_ID COMPOSE_SHA256 ENVIRONMENT_SHA256 MIGRATIONS_SHA256
+  parse_attestation BACKUP "$backup_attestation" "CANDIDATE_ATTESTATION_PATH CANDIDATE_ATTESTATION_SHA256 CANDIDATE_VERSION CANDIDATE_IMAGE_ID DUMP_FILE DUMP_SHA256 SOURCE_RECEIPT_FILE SOURCE_RECEIPT_SHA256 SOURCE_COUNTS SOURCE_LEDGER_SHA256 RESTORE_SOURCE_COMPARISON RESTORE_DATABASE_CLEANUP REMOTE_STAGING_CLEANUP ISSUED_AT_UTC EXPIRES_AT_UTC" backup_receipt
+  require_receipt_keys BACKUP backup_receipt CANDIDATE_ATTESTATION_PATH CANDIDATE_ATTESTATION_SHA256 CANDIDATE_VERSION CANDIDATE_IMAGE_ID DUMP_FILE DUMP_SHA256 SOURCE_RECEIPT_FILE SOURCE_RECEIPT_SHA256 SOURCE_COUNTS SOURCE_LEDGER_SHA256 RESTORE_SOURCE_COMPARISON RESTORE_DATABASE_CLEANUP REMOTE_STAGING_CLEANUP ISSUED_AT_UTC EXPIRES_AT_UTC
+  local attested_candidate_path candidate_version_from_disk attested_candidate_receipt_path issued_epoch expires_epoch now_epoch
+  attested_candidate_path="$(canonical_existing_path "${candidate_receipt[CANDIDATE_PATH]}")" || die "CANDIDATE_ATTESTATION_PATH_MISMATCH"
+  [[ "$attested_candidate_path" == "$candidate" ]] || die "CANDIDATE_ATTESTATION_PATH_MISMATCH"
+  candidate_version_from_disk="$(package_version "$candidate")"
+  [[ "${candidate_receipt[PACKAGE_VERSION]}" == "$candidate_version_from_disk" && "${backup_receipt[CANDIDATE_VERSION]}" == "$candidate_version_from_disk" ]] || die "CANDIDATE_ATTESTATION_VERSION_MISMATCH"
+  attested_candidate_receipt_path="$(canonical_existing_path "${backup_receipt[CANDIDATE_ATTESTATION_PATH]}")" || die "BACKUP_ATTESTATION_CANDIDATE_BINDING_MISMATCH"
+  [[ "$attested_candidate_receipt_path" == "$candidate_attestation" && "${backup_receipt[CANDIDATE_ATTESTATION_SHA256]}" == "$candidate_attestation_sha256_arg" ]] || die "BACKUP_ATTESTATION_CANDIDATE_BINDING_MISMATCH"
+  [[ "${backup_receipt[RESTORE_SOURCE_COMPARISON]}" == "match" && "${backup_receipt[RESTORE_DATABASE_CLEANUP]}" == "ok" && "${backup_receipt[REMOTE_STAGING_CLEANUP]}" == "ok" ]] || die "BACKUP_ATTESTATION_RESTORE_INVALID"
+  [[ "${backup_receipt[ISSUED_AT_UTC]}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$ && "${backup_receipt[EXPIRES_AT_UTC]}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$ ]] || die "BACKUP_ATTESTATION_TIMESTAMP_INVALID"
+  issued_epoch="$(date -u -d "${backup_receipt[ISSUED_AT_UTC]}" +%s 2>/dev/null)" || die "BACKUP_ATTESTATION_TIMESTAMP_INVALID"
+  expires_epoch="$(date -u -d "${backup_receipt[EXPIRES_AT_UTC]}" +%s 2>/dev/null)" || die "BACKUP_ATTESTATION_TIMESTAMP_INVALID"
+  now_epoch="$(date -u +%s)"
+  (( issued_epoch < expires_epoch && expires_epoch > now_epoch )) || die "BACKUP_ATTESTATION_EXPIRED"
 }
 
 release_file_checks() {
@@ -381,6 +501,7 @@ rollback_release() {
   printf 'ROLLBACK=passed\nPREVIOUS_VERSION=%s\nDATABASE=preserved\nPOSTGRES=preserved\n' "$previous_version"
 }
 
+preflight_attestation_inputs
 validate_release "$candidate" >/dev/null
 candidate_info="$(validate_release "$candidate")"
 candidate_version="${candidate_info%%|*}"
@@ -396,9 +517,10 @@ previous_env_fingerprint="$(environment_fingerprint "$previous")"
 candidate_migrations="$(migration_fingerprint "$candidate")"
 previous_migrations="$(migration_fingerprint "$previous")"
 [[ "$candidate_migrations" == "$previous_migrations" ]] || die "MIGRATION_SET_OR_CHECKSUM_DRIFT"
-candidate_compose_hash="$(sha256sum "$candidate/infra/compose.vps.yaml" | awk '{print $1}')"
-previous_compose_hash="$(sha256sum "$previous/infra/compose.vps.yaml" | awk '{print $1}')"
+candidate_compose_hash="$(sha256sum < "$candidate/infra/compose.vps.yaml" | awk '{print $1}')"
+previous_compose_hash="$(sha256sum < "$previous/infra/compose.vps.yaml" | awk '{print $1}')"
 [[ "$candidate_compose_hash" == "$previous_compose_hash" ]] || die "COMPOSE_FILE_DRIFT"
+validate_attestations
 
 compose_args_for "$previous"
 docker_cmd info >/dev/null 2>&1 || die "DOCKER_DAEMON_UNAVAILABLE"

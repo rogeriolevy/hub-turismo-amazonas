@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   chmod,
   lstat,
@@ -21,6 +22,10 @@ const activationScript = path.join(repositoryRoot, "infra", "activate-vps-releas
 const gitBash = process.env.GIT_BASH_EXE ?? "C:/Program Files/Git/bin/bash.exe";
 const cygpath = process.env.CYGPATH_EXE ?? "C:/Program Files/Git/usr/bin/cygpath.exe";
 const fixtureDirectories: string[] = [];
+
+function sha256(value: string | Uint8Array) {
+  return createHash("sha256").update(value).digest("hex");
+}
 
 const fakeDocker = `#!/usr/bin/env bash
 # hub-activation-fake-runtime-v1
@@ -199,6 +204,10 @@ function toPosixPath(windowsPath: string): string {
   return commandOutput(cygpath, ["-u", windowsPath]);
 }
 
+function bashOutput(script: string): string {
+  return commandOutput(gitBash, ["-lc", script]);
+}
+
 async function createFixture() {
   const root = await mkdtemp(path.join(os.tmpdir(), "hub-vps-activation-"));
   fixtureDirectories.push(root);
@@ -239,17 +248,89 @@ async function createFixture() {
       "SELECT 2;\n",
     );
   }
+  const attestations = path.join(root, "attestations");
+  await mkdir(attestations, { recursive: true });
+  const candidatePath = toPosixPath(candidate);
+  const posixCandidate = toPosixPath(candidate);
+  const candidateComposeHash = bashOutput(
+    `sha256sum -- '${posixCandidate}/infra/compose.vps.yaml' | awk '{print $1}'`,
+  );
+  const candidateEnvironmentHash = bashOutput(
+    `grep -v '^[[:space:]]*APP_VERSION=' '${posixCandidate}/infra/vps.env' | sha256sum | awk '{print $1}'`,
+  );
+  const candidateMigrationsHash = bashOutput(
+    `cd '${posixCandidate}' && find db/migrations db/postgres-migrations -type f -name '*.sql' -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}'`,
+  );
+  const candidateAttestation = path.join(attestations, "candidate-0.12.14.env");
+  const candidateContents = [
+    `CANDIDATE_PATH=${candidatePath}`,
+    "PACKAGE_VERSION=0.12.14",
+    `GIT_HEAD=${"a".repeat(40)}`,
+    `GIT_TREE=${"b".repeat(40)}`,
+    `ARCHIVE_SHA256=${"c".repeat(64)}`,
+    `VERIFIER_SHA256=${"d".repeat(64)}`,
+    "IMAGE_TAG=hub-turismo-amazonas:0.12.14",
+    "IMAGE_ID=sha256:fixture-0.12.14",
+    `COMPOSE_SHA256=${candidateComposeHash}`,
+    `ENVIRONMENT_SHA256=${candidateEnvironmentHash}`,
+    `MIGRATIONS_SHA256=${candidateMigrationsHash}`,
+    "",
+  ].join("\n");
+  await writeFile(candidateAttestation, candidateContents);
+  await chmod(candidateAttestation, 0o600);
+  const candidateAttestationSha256 = sha256(candidateContents);
+  const backupAttestation = path.join(attestations, "backup-fixture.env");
+  const backupContents = [
+    `CANDIDATE_ATTESTATION_PATH=${toPosixPath(candidateAttestation)}`,
+    `CANDIDATE_ATTESTATION_SHA256=${candidateAttestationSha256}`,
+    "CANDIDATE_VERSION=0.12.14",
+    "CANDIDATE_IMAGE_ID=sha256:fixture-0.12.14",
+    "DUMP_FILE=fixture.dump",
+    `DUMP_SHA256=${"e".repeat(64)}`,
+    "SOURCE_RECEIPT_FILE=fixture.source.json",
+    `SOURCE_RECEIPT_SHA256=${"f".repeat(64)}`,
+    'SOURCE_COUNTS={"accounts":"7"}',
+    `SOURCE_LEDGER_SHA256=${"a".repeat(64)}`,
+    "RESTORE_SOURCE_COMPARISON=match",
+    "RESTORE_DATABASE_CLEANUP=ok",
+    "REMOTE_STAGING_CLEANUP=ok",
+    "ISSUED_AT_UTC=2026-11-05T00:00:00.0000000Z",
+    "EXPIRES_AT_UTC=2099-11-05T01:00:00.0000000Z",
+    "",
+  ].join("\n");
+  await writeFile(backupAttestation, backupContents);
+  await chmod(backupAttestation, 0o600);
   await symlink(
     previous,
     path.join(root, "current"),
     process.platform === "win32" ? "junction" : "dir",
   );
-  return { root, posixRoot, candidate, previous, fakeBin, posixFakeBin: toPosixPath(fakeBin) };
+  return {
+    root,
+    posixRoot,
+    candidate,
+    previous,
+    fakeBin,
+    posixFakeBin: toPosixPath(fakeBin),
+    candidateAttestation,
+    posixCandidateAttestation: toPosixPath(candidateAttestation),
+    candidateAttestationSha256,
+    backupAttestation,
+    posixBackupAttestation: toPosixPath(backupAttestation),
+    backupAttestationSha256: sha256(backupContents),
+  };
 }
 
 function runGuard(
   fixture: Awaited<ReturnType<typeof createFixture>>,
-  options: { simulate?: boolean; scenario?: string; extraArgs?: string[] } = {},
+  options: {
+    simulate?: boolean;
+    scenario?: string;
+    extraArgs?: string[];
+    withAttestations?: boolean;
+    candidateAttestationSha256?: string;
+    backupAttestationSha256?: string;
+  } = {},
 ) {
   const args = [
     activationScript,
@@ -258,6 +339,18 @@ function runGuard(
     fixture.posixRoot,
     "--fake-bin",
     fixture.posixFakeBin,
+    ...(options.withAttestations === false
+      ? []
+      : [
+          "--candidate-attestation",
+          fixture.posixCandidateAttestation,
+          "--candidate-attestation-sha256",
+          options.candidateAttestationSha256 ?? fixture.candidateAttestationSha256,
+          "--backup-attestation",
+          fixture.posixBackupAttestation,
+          "--backup-attestation-sha256",
+          options.backupAttestationSha256 ?? fixture.backupAttestationSha256,
+        ]),
     ...(options.simulate ? ["--simulate-activate"] : []),
     ...(options.extraArgs ?? []),
   ];
@@ -295,13 +388,67 @@ test("test-only preflight checks compatibility without changing current or start
 
 test("preflight requires independently hashed candidate and backup attestations before runtime inspection", async () => {
   const fixture = await createFixture();
-  const result = runGuard(fixture, { simulate: true });
+  const result = runGuard(fixture, { simulate: true, withAttestations: false });
 
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /ERROR=CANDIDATE_ATTESTATION_REQUIRED/);
   assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
   assert.equal(await callLog(fixture), "");
 });
+
+for (const [name, receipt, expectedError] of [
+  ["malformed candidate", "INVALID=x\n", "CANDIDATE_ATTESTATION_UNKNOWN_KEY"],
+  [
+    "candidate version mismatch",
+    "PACKAGE_VERSION=0.12.99",
+    "CANDIDATE_ATTESTATION_VERSION_MISMATCH",
+  ],
+] as const) {
+  test(`${name} receipt fails before runtime inspection or a pointer switch`, async () => {
+    const fixture = await createFixture();
+    const original = await readFile(fixture.candidateAttestation, "utf8");
+    const changed = original.replace(/^PACKAGE_VERSION=.*$/m, receipt.trim());
+    await writeFile(fixture.candidateAttestation, changed);
+    const result = runGuard(fixture, {
+      simulate: true,
+      candidateAttestationSha256: sha256(changed),
+    });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, new RegExp(`ERROR=${expectedError}`));
+    assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+    assert.equal(await callLog(fixture), "");
+  });
+}
+
+for (const [name, transform, expectedError] of [
+  [
+    "expired backup",
+    (contents: string) => contents.replace("2099-11-05T01:00:00.0000000Z", "2000-11-05T01:00:00.0000000Z"),
+    "BACKUP_ATTESTATION_EXPIRED",
+  ],
+  [
+    "backup candidate binding mismatch",
+    (contents: string) => contents.replace(/^CANDIDATE_ATTESTATION_SHA256=.*$/m, `CANDIDATE_ATTESTATION_SHA256=${"0".repeat(64)}`),
+    "BACKUP_ATTESTATION_CANDIDATE_BINDING_MISMATCH",
+  ],
+] as const) {
+  test(`${name} receipt fails before runtime inspection or a pointer switch`, async () => {
+    const fixture = await createFixture();
+    const original = await readFile(fixture.backupAttestation, "utf8");
+    const changed = transform(original);
+    await writeFile(fixture.backupAttestation, changed);
+    const result = runGuard(fixture, {
+      simulate: true,
+      backupAttestationSha256: sha256(changed),
+    });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, new RegExp(`ERROR=${expectedError}`));
+    assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+    assert.equal(await callLog(fixture), "");
+  });
+}
 
 test("test-only simulated activation switches only the fixture and only web/worker", async () => {
   const fixture = await createFixture();
