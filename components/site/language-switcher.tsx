@@ -85,6 +85,7 @@ export function LanguageSwitcher() {
         {options.map(({ locale: optionLocale, flag, short, labelKey }) => (
           <button
             aria-current={locale === optionLocale ? "true" : undefined}
+            aria-label={t(labelKey)}
             className="language-option"
             key={optionLocale}
             onClick={() => void selectLanguage(optionLocale)}

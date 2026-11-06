@@ -3,63 +3,16 @@ import { ArrowRight, ArrowUpRight, Compass, MapPin, Search } from "lucide-react"
 import { Header, Footer } from "@/components/site/navigation";
 import { getDatabase } from "@/db";
 import { normalizeLabel } from "@/lib/cadastur-schema";
-import { money } from "@/lib/platform-schema";
-import { publicCatalogItems } from "@/server/catalog-content-service";
-import { publicGuides, publicTours } from "@/server/catalog-service";
-import {
-  fromHub,
-  publicProviders,
-  regionCities,
-  type DirectorySearch,
-  type PublicProvider,
-} from "@/server/cadastur/public-directory";
+import { money } from "@/lib/platform-schema/format";
+import { regionCities, type DirectorySearch } from "@/server/cadastur/public-directory";
+import { searchExperiences, type ExperienceResult } from "@/server/experience-directory-service";
 import { CatalogCard, EmptyState } from "./shared";
-import { ProviderCard } from "./provider-directory";
+import { ProviderCard } from "./directory/provider-card";
 import { LocalizedTree } from "@/lib/i18n/localized-tree";
 import "./provider-directory.css";
 import "./experience-directory.css";
 
-type CompanyGuide = Awaited<ReturnType<typeof publicGuides>>[number];
-type PublicTour = Awaited<ReturnType<typeof publicTours>>[number];
-type ExperienceResult =
-  | {
-      key: string;
-      kind: "tour";
-      name: string;
-      city: string;
-      searchable: string;
-      tour: PublicTour;
-    }
-  | {
-      key: string;
-      kind: "activity";
-      name: string;
-      city: string;
-      searchable: string;
-      provider: PublicProvider;
-    }
-  | {
-      key: string;
-      kind: "provider";
-      name: string;
-      city: string;
-      searchable: string;
-      provider: PublicProvider;
-    }
-  | {
-      key: string;
-      kind: "guide";
-      name: string;
-      city: string;
-      searchable: string;
-      guide: CompanyGuide;
-    };
-
-function firstValue(value: string | string[] | undefined) {
-  return (Array.isArray(value) ? value[0] : value)?.trim().slice(0, 100) ?? "";
-}
-
-function GuideCard({ guide }: { guide: CompanyGuide }) {
+function GuideCard({ guide }: { guide: Extract<ExperienceResult, { kind: "guide" }>["guide"] }) {
   return (
     <article className="provider-card experience-guide-card">
       <div className="provider-card-top">
@@ -106,91 +59,8 @@ function ExperienceResultCard({ result }: { result: ExperienceResult }) {
 
 export async function ExperienceDirectory({ search = {} }: { search?: DirectorySearch }) {
   const db = getDatabase();
-  const q = firstValue(search.q);
-  const city = firstValue(search.cidade);
-  const requestedType = firstValue(search.tipo);
-  const requestedPage = firstValue(search.pagina);
-  const [tours, activities, providers, guides] = await Promise.all([
-    publicTours(db),
-    publicCatalogItems(db, "passeios"),
-    publicProviders(db, "guias"),
-    publicGuides(db),
-  ]);
-  const all: ExperienceResult[] = [
-    ...tours.map((tour) => ({
-      key: `tour:${tour.id}`,
-      kind: "tour" as const,
-      name: tour.name,
-      city: tour.city,
-      searchable: `${tour.name} ${tour.city} ${tour.description} ${tour.company_name}`,
-      tour,
-    })),
-    ...activities.map((item) => {
-      const provider = fromHub(item);
-      return {
-        key: `activity:${item.id}`,
-        kind: "activity" as const,
-        name: item.name,
-        city: item.city,
-        searchable: `${item.name} ${item.city} ${item.subtype} ${item.summary} ${item.description} ${item.details}`,
-        provider,
-      };
-    }),
-    ...providers.map((provider) => ({
-      key: `provider:${provider.id}`,
-      kind: "provider" as const,
-      name: provider.name,
-      city: provider.city,
-      searchable: `${provider.name} ${provider.city} ${provider.subtype} ${provider.summary} ${provider.description} ${provider.details} ${provider.languages}`,
-      provider,
-    })),
-    ...guides.map((guide) => ({
-      key: `guide:${guide.id}`,
-      kind: "guide" as const,
-      name: guide.name,
-      city: guide.city,
-      searchable: `${guide.name} ${guide.city} ${guide.languages} ${guide.bio} ${guide.company_name}`,
-      guide,
-    })),
-  ];
-  const cities = [
-    ...new Set([...regionCities, ...all.map((item) => item.city).filter(Boolean)]),
-  ].sort((a, b) => {
-    const aPriority = regionCities.findIndex((name) => normalizeLabel(name) === normalizeLabel(a));
-    const bPriority = regionCities.findIndex((name) => normalizeLabel(name) === normalizeLabel(b));
-    return (
-      (aPriority < 0 ? 99 : aPriority) - (bPriority < 0 ? 99 : bPriority) ||
-      a.localeCompare(b, "pt-BR")
-    );
-  });
-  const type = requestedType === "guia" || requestedType === "atividade" ? requestedType : "";
-  const results = all
-    .filter((item) => {
-      const isGuide = item.kind === "guide" || item.kind === "provider";
-      return (
-        (!type || (type === "guia" ? isGuide : !isGuide)) &&
-        (!city || normalizeLabel(city) === normalizeLabel(item.city)) &&
-        (!q || normalizeLabel(item.searchable).includes(normalizeLabel(q)))
-      );
-    })
-    .sort((a, b) => {
-      const aPriority = regionCities.findIndex(
-        (name) => normalizeLabel(name) === normalizeLabel(a.city),
-      );
-      const bPriority = regionCities.findIndex(
-        (name) => normalizeLabel(name) === normalizeLabel(b.city),
-      );
-      return (
-        (aPriority < 0 ? 99 : aPriority) - (bPriority < 0 ? 99 : bPriority) ||
-        a.name.localeCompare(b.name, "pt-BR")
-      );
-    });
-  const pages = Math.max(1, Math.ceil(results.length / 24));
-  const page = Math.max(
-    1,
-    Math.min(pages, /^\d{1,6}$/.test(requestedPage) ? Number(requestedPage) : 1),
-  );
-  const visibleResults = results.slice((page - 1) * 24, page * 24);
+  const { q, city, type, page, pages, results, total, cities, hasCadasturProviders } =
+    await searchExperiences(db, search);
   const pageHref = (target: number) => {
     const params = new URLSearchParams({ q, cidade: city, tipo: type, pagina: String(target) });
     return `/experiencias?${params.toString()}#resultados`;
@@ -290,8 +160,7 @@ export async function ExperienceDirectory({ search = {} }: { search?: DirectoryS
                   <h2 id="experience-results-title">{city || "Experiências turísticas"}</h2>
                 </div>
                 <span>
-                  {results.length.toLocaleString("pt-BR")}{" "}
-                  {results.length === 1 ? "resultado" : "resultados"}
+                  {total.toLocaleString("pt-BR")} {total === 1 ? "resultado" : "resultados"}
                   {q && ` · “${q}”`}
                   {type === "guia" && " · Guias de turismo"}
                   {type === "atividade" && " · Passeios e roteiros"}
@@ -299,7 +168,7 @@ export async function ExperienceDirectory({ search = {} }: { search?: DirectoryS
               </div>
               {results.length ? (
                 <div className="provider-grid experience-grid">
-                  {visibleResults.map((result) => (
+                  {results.map((result) => (
                     <ExperienceResultCard key={result.key} result={result} />
                   ))}
                 </div>
@@ -315,15 +184,13 @@ export async function ExperienceDirectory({ search = {} }: { search?: DirectoryS
                 <nav className="provider-pagination" aria-label="Páginas de experiências">
                   {page > 1 ? <Link href={pageHref(page - 1)}>← Anterior</Link> : <span />}
                   <span>
-                    Página {page} de {pages} · {results.length.toLocaleString("pt-BR")} resultados
+                    Página {page} de {pages} · {total.toLocaleString("pt-BR")} resultados
                   </span>
                   {page < pages ? <Link href={pageHref(page + 1)}>Próxima →</Link> : <span />}
                 </nav>
               )}
             </section>
-            {results.some(
-              (item) => item.kind === "provider" && item.provider.source === "cadastur",
-            ) && (
+            {hasCadasturProviders && (
               <p className="provider-attribution">
                 <span>
                   Perfis de guias incluem dados do Cadastur · Ministério do Turismo, sob a licença{" "}

@@ -8,29 +8,29 @@ import {
   type CatalogSourceEntry,
 } from "@/lib/catalog-content";
 import { CatalogContentForm } from "./catalog-content-form";
+import { PaginationNavigation } from "./pagination-navigation";
 import "./catalog-content.css";
 
 export function CatalogContentPanel({
   category,
   items,
   sourceEntry,
+  sourceItem,
+  counts,
+  page,
+  totalPages,
 }: {
   category: CatalogCategory;
   items: CatalogItem[];
   sourceEntry?: CatalogSourceEntry;
+  sourceItem: CatalogItem | null;
+  counts: Record<CatalogCategory, { total: number; published: number }>;
+  page: number;
+  totalPages: number;
 }) {
-  const selectedItems = items.filter((item) => item.category === category);
-  const sourceItem = sourceEntry
-    ? selectedItems.find((item) => item.source_entry_id === sourceEntry.id)
-    : undefined;
+  const selectedItems = items;
   const additionalItems = selectedItems.filter((item) => item.id !== sourceItem?.id);
-  const countByCategory = new Map(
-    catalogCategories.map((value) => [
-      value,
-      items.filter((item) => item.category === value).length,
-    ]),
-  );
-  const published = selectedItems.filter((item) => item.status === "published").length;
+  const selectedCount = counts[category];
 
   return (
     <div className="catalog-content-panel">
@@ -57,7 +57,7 @@ export function CatalogContentPanel({
             aria-current={value === category ? "page" : undefined}
           >
             {catalogCategoryLabels[value]}
-            <span>{countByCategory.get(value) || 0}</span>
+            <span>{counts[value].total}</span>
           </Link>
         ))}
       </nav>
@@ -65,15 +65,15 @@ export function CatalogContentPanel({
       <section className="catalog-content-summary" aria-label="Resumo do módulo selecionado">
         <div>
           <span>Cadastros no módulo</span>
-          <strong>{selectedItems.length}</strong>
+          <strong>{selectedCount.total}</strong>
         </div>
         <div>
           <span>Visíveis no site</span>
-          <strong>{published}</strong>
+          <strong>{selectedCount.published}</strong>
         </div>
         <div>
           <span>Em rascunho</span>
-          <strong>{selectedItems.length - published}</strong>
+          <strong>{selectedCount.total - selectedCount.published}</strong>
         </div>
       </section>
 
@@ -89,13 +89,17 @@ export function CatalogContentPanel({
             {sourceEntry.name} · {sourceEntry.city}. As informações oficiais permanecem vinculadas
             ao Cadastur; este formulário adiciona apresentação, detalhes e imagens da Hub Amazonas.
           </p>
-          <CatalogContentForm category={category} item={sourceItem} sourceEntry={sourceEntry} />
+          <CatalogContentForm
+            category={category}
+            item={sourceItem ?? undefined}
+            sourceEntry={sourceEntry}
+          />
         </section>
       )}
 
       <details
         className="editor-card catalog-content-create"
-        open={!sourceEntry && !selectedItems.length}
+        open={!sourceEntry && !selectedCount.total}
       >
         <summary>
           <span>
@@ -112,7 +116,7 @@ export function CatalogContentPanel({
             <p className="eyebrow">GERENCIAMENTO</p>
             <h2 id="catalog-content-list-title">{catalogCategoryLabels[category]}</h2>
           </div>
-          <span>{selectedItems.length} cadastro(s)</span>
+          <span>{selectedCount.total} cadastro(s)</span>
         </div>
         {additionalItems.length ? (
           <div className="editor-list">
@@ -148,6 +152,13 @@ export function CatalogContentPanel({
             <span>Use o formulário acima para adicionar a primeira apresentação da Hub.</span>
           </div>
         )}
+        <PaginationNavigation
+          page={page}
+          totalPages={totalPages}
+          hrefForPage={(nextPage) =>
+            `/painel/plataforma/conteudos?categoria=${category}&page=${nextPage}${sourceEntry ? `&cadastur=${encodeURIComponent(sourceEntry.id)}` : ""}`
+          }
+        />
       </section>
     </div>
   );

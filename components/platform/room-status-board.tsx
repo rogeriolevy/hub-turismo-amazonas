@@ -8,7 +8,8 @@ import {
   Sparkles,
   UserRound,
 } from "lucide-react";
-import { displayDate, roomOperationalStatusLabels } from "@/lib/platform-schema";
+import { displayDate } from "@/lib/platform-schema/format";
+import { roomOperationalStatusLabels } from "@/lib/platform-schema/inventory";
 import type { OperationalRoom } from "@/server/platform-models";
 import { ActionForm } from "./action-form";
 import "./room-status-board.css";
@@ -80,9 +81,11 @@ export function HotelOperationSummary({
 export function RoomStatusBoard({
   companyId,
   rooms,
+  canManageInventory = true,
 }: {
   companyId: string;
   rooms: OperationalRoom[];
+  canManageInventory?: boolean;
 }) {
   return (
     <section className="room-status-section" aria-labelledby="room-status-title">
@@ -172,13 +175,19 @@ export function RoomStatusBoard({
         </div>
       ) : (
         <div className="room-status-empty">
-          <p>Cadastre os quartos físicos da hospedagem para acompanhar sua situação aqui.</p>
-          <Link
-            className="button button-dark"
-            href={`/painel/hotel/quartos?empresa=${encodeURIComponent(companyId)}`}
-          >
-            Cadastrar quartos
-          </Link>
+          <p>
+            {canManageInventory
+              ? "Cadastre os quartos físicos da hospedagem para acompanhar sua situação aqui."
+              : "Nenhum quarto físico está cadastrado para esta hospedagem."}
+          </p>
+          {canManageInventory && (
+            <Link
+              className="button button-dark"
+              href={`/painel/hotel/quartos?empresa=${encodeURIComponent(companyId)}`}
+            >
+              Cadastrar quartos
+            </Link>
+          )}
         </div>
       )}
     </section>

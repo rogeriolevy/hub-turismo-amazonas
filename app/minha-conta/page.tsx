@@ -11,6 +11,7 @@ import {
   CalendarCheck2,
   Clock3,
   Compass,
+  Bell,
   Grid2X2,
   Settings2,
   Ship,
@@ -23,7 +24,8 @@ import { ProfileEditor } from "@/components/platform/profile-editor";
 import { pageActor } from "@/server/platform-session";
 import { getDatabase } from "@/db";
 import { companiesFor, isPlatformAdmin } from "@/server/platform-access";
-import { myBookings } from "@/server/booking-service";
+import { myBookingSummary } from "@/server/booking-read-service";
+import { unreadNotificationCount } from "@/server/notification-service";
 import { avatarKeyFromImage, defaultAvatarForUser, profileAvatarUrl } from "@/lib/profile-avatars";
 import { getLocale } from "@/lib/i18n/server";
 import { translate } from "@/lib/i18n/messages";
@@ -63,7 +65,11 @@ export default async function Page({
   const t = (key: Parameters<typeof translate>[1], values?: Record<string, string | number>) =>
     translate(locale, key, values);
   const db = getDatabase();
-  const [companies, bookings] = await Promise.all([companiesFor(db, actor), myBookings(db, actor)]);
+  const [companies, bookings, unreadNotifications] = await Promise.all([
+    companiesFor(db, actor),
+    myBookingSummary(db, actor),
+    unreadNotificationCount(db, actor),
+  ]);
   const admin = isPlatformAdmin(actor);
   const modules = publicModules.map((module) => localizeModule(module, locale));
   if (admin || companies.some((c) => c.kind === "hotel"))
@@ -89,14 +95,14 @@ export default async function Page({
   const metrics = [
     {
       label: t("account.requests"),
-      value: bookings.length,
+      value: bookings.total,
       detail: t("account.requestsDetail"),
       icon: CalendarCheck2,
       href: "/minha-conta/reservas",
     },
     {
       label: t("account.waiting"),
-      value: bookings.filter((booking) => booking.status === "pending").length,
+      value: bookings.pending,
       detail: t("account.waitingDetail"),
       icon: Clock3,
     },
@@ -105,6 +111,13 @@ export default async function Page({
       value: visibleModules.length,
       detail: t("account.modulesDetail"),
       icon: Grid2X2,
+    },
+    {
+      label: t("panel.notifications"),
+      value: unreadNotifications,
+      detail: t("notifications.accountDetail"),
+      icon: Bell,
+      href: "/minha-conta/notificacoes",
     },
   ];
 

@@ -3,23 +3,131 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      migration_base:
+        description: Base branch or commit to compare against; do not use the selected run commit.
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.6-alpine
+        env:
+          POSTGRES_DB: hub_test
+          POSTGRES_USER: hub_test
+          POSTGRES_PASSWORD: hub_test_only_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hub_test -d hub_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Resolve migration guard base
+        shell: bash
+        env:
+          PULL_REQUEST_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          MANUAL_BASE: ${{ inputs.migration_base }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          migration_base="$(node scripts/resolve-migration-base.mjs)"
+          printf 'MIGRATION_BASE=%s\n' "$migration_base" >> "$GITHUB_ENV"
+      - name: Check migration immutability
+        run: npm run check:migration-immutability -- --base-ref "$MIGRATION_BASE"
+      - name: Keep VPS secrets out of Git and Docker context
+        run: |
+          git check-ignore -q infra/vps.env
+          grep -Fxq infra/vps.env .dockerignore
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
       - run: npm ci
+      - name: Audit production dependency tree
+        run: npm audit --omit=dev --audit-level=high
+      - run: npm run check:version
+      - run: npm run check:vps-release
+      - run: npm run check:architecture
+      - run: node --check scripts/verify-vps-health.mjs
       - run: npm run setup
       - run: npm run db:migrate
       - run: npm run format:check
+      - run: node --check scripts/check-vps-env.mjs
+      - name: Check operational shell syntax
+        run: bash -n infra/*.sh
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+      - name: Verify PostgreSQL booking concurrency
+        run: node --experimental-strip-types --test tests/postgres-platform-concurrency.test.ts
+        env:
+          TEST_DATABASE_URL: postgresql://hub_test:hub_test_only_password@localhost:5432/hub_test
+      - name: Verify SQLite-to-PostgreSQL data transfer
+        run: node --experimental-strip-types --test tests/postgres-data-transfer.test.ts
+        env:
+          TEST_DATABASE_URL: postgresql://hub_test:hub_test_only_password@localhost:5432/hub_test
       - run: npm run build
       - run: npm run test:integration
+      - name: Validate VPS Compose configuration
+        run: docker compose --env-file infra/vps.env.example -f infra/compose.vps.yaml config --quiet
+      - name: Build VPS image without publishing
+        run: docker compose --env-file infra/vps.env.example -f infra/compose.vps.yaml build web
+      - name: Verify VPS runtime image contents and size
+        shell: bash
+        run: |
+          runtime_manifest="$(mktemp "$RUNNER_TEMP/hub-runtime-manifest.XXXXXX.json")"
+          trap 'rm -f "$runtime_manifest"' EXIT
+          node --input-type=module - "$runtime_manifest" <<'NODE'
+          import { execFileSync } from "node:child_process";
+          import { readFileSync, writeFileSync } from "node:fs";
+
+          const manifestPath = process.argv.at(-1);
+          if (!manifestPath) throw new Error("RUNTIME_MANIFEST_PATH_REQUIRED");
+          const version = JSON.parse(readFileSync("package.json", "utf8")).version;
+          const imageTag = `hub-turismo-amazonas:${version}`;
+          const [imageId, imageSize, runtimeUser] = execFileSync(
+            "docker",
+            ["image", "inspect", "--format", "{{.Id}}|{{.Size}}|{{.Config.User}}", imageTag],
+            { encoding: "utf8" },
+          )
+            .trim()
+            .split("|");
+          const composeImages = execFileSync(
+            "docker",
+            [
+              "compose",
+              "--env-file",
+              "infra/vps.env.example",
+              "-f",
+              "infra/compose.vps.yaml",
+              "config",
+              "--images",
+            ],
+            { encoding: "utf8" },
+          )
+            .trim()
+            .split(/\r?\n/);
+          if (!composeImages.includes(imageTag)) throw new Error("COMPOSE_IMAGE_TAG_MISMATCH");
+          writeFileSync(
+            manifestPath,
+            JSON.stringify({
+              status: "local-candidate-not-deployed",
+              appVersion: version,
+              imageTag,
+              composeExpectedTag: imageTag,
+              imageId,
+              imageBytes: Number(imageSize),
+              runtimeUser,
+            }),
+          );
+          NODE
+          npm run verify:vps-runtime-image -- --manifest "$runtime_manifest"

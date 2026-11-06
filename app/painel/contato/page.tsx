@@ -8,6 +8,7 @@ import { ContactInbox } from "@/components/site/contact-inbox";
 import { captchaRequired, turnstileSiteKey } from "@/server/turnstile";
 import { getLocale } from "@/lib/i18n/server";
 import { translate } from "@/lib/i18n/messages";
+import { emailVerificationRequired, isEmailDeliveryConfigured } from "@/server/email";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -29,7 +30,12 @@ export default async function ContactPanel() {
         {!user ? (
           <div className="admin-notice">
             <p>{t("admin.loginRequired")}</p>
-            <LoginForm turnstileSiteKey={turnstileSiteKey()} captchaRequired={captchaRequired()} />
+            <LoginForm
+              turnstileSiteKey={turnstileSiteKey()}
+              captchaRequired={captchaRequired()}
+              emailDeliveryEnabled={isEmailDeliveryConfigured()}
+              emailVerificationRequired={emailVerificationRequired()}
+            />
           </div>
         ) : !isAdmin(user.email, process.env.ADMIN_EMAILS) ? (
           <div className="admin-notice">

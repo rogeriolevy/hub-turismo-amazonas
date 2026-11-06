@@ -13,6 +13,25 @@ if (major !== 22 || minor < 13) {
   process.exit(1);
 }
 
+const bookingEmailNotifications =
+  process.env.BOOKING_EMAIL_NOTIFICATIONS?.trim().toLowerCase() ?? "false";
+if (!["true", "false"].includes(bookingEmailNotifications)) {
+  console.error("BOOKING_EMAIL_NOTIFICATIONS precisa ser true ou false.");
+  process.exit(1);
+}
+if (bookingEmailNotifications === "true") {
+  const smtpHost = process.env.SMTP_HOST?.trim() ?? "";
+  const smtpFrom = process.env.SMTP_FROM?.trim() ?? "";
+  const smtpUser = process.env.SMTP_USER?.trim() ?? "";
+  const smtpPassword = process.env.SMTP_PASSWORD ?? "";
+  if (!smtpHost || !smtpFrom || Boolean(smtpUser) !== Boolean(smtpPassword)) {
+    console.error(
+      "BOOKING_EMAIL_NOTIFICATIONS=true exige SMTP_HOST, SMTP_FROM e usuário/senha SMTP em par.",
+    );
+    process.exit(1);
+  }
+}
+
 if (process.env.VERCEL) {
   if (!process.env.DATABASE_URL && !process.env.POSTGRES_URL) {
     console.error("Configure DATABASE_URL ou POSTGRES_URL para usar PostgreSQL na Vercel.");

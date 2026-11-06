@@ -1,5 +1,6 @@
 "use client";
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { z } from "zod";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -14,10 +15,14 @@ export function LoginForm({
   destination,
   turnstileSiteKey,
   captchaRequired,
+  emailDeliveryEnabled = false,
+  emailVerificationRequired = false,
 }: {
   destination?: string;
   turnstileSiteKey: string;
   captchaRequired: boolean;
+  emailDeliveryEnabled?: boolean;
+  emailVerificationRequired?: boolean;
 }) {
   const router = useRouter();
   const { t } = useLanguage();
@@ -59,14 +64,13 @@ export function LoginForm({
           code?: string;
           error?: { code?: string };
         };
-        if (
-          ["MISSING_RESPONSE", "VERIFICATION_FAILED"].includes(
-            payload.code ?? payload.error?.code ?? "",
-          )
-        )
+        const code = payload.code ?? payload.error?.code ?? "";
+        if (["MISSING_RESPONSE", "VERIFICATION_FAILED"].includes(code))
           setError(t("auth.captchaExpired"));
         else if (response.status === 429) setError(t("auth.tooManyLogins"));
         else if (response.status === 401) setError(t("auth.badCredentials"));
+        else if (code === "EMAIL_NOT_VERIFIED" && emailVerificationRequired)
+          setError(t("auth.emailNotVerified"));
         else if (response.status === 403) setError(t("auth.originDenied"));
         else if (response.status === 503) setError(t("auth.captchaNotConfigured"));
         else setError(t("auth.loginFailed"));
@@ -133,7 +137,16 @@ export function LoginForm({
         )}
       </div>
       <p id="login-help" className="field-help">
-        {t("auth.loginHelp")}
+        {emailDeliveryEnabled ? (
+          <>
+            {t("auth.loginEmailHelp")}{" "}
+            <Link href="/recuperar-senha">{t("auth.forgotPassword")}</Link>
+            {" · "}
+            <Link href="/confirmar-email">{t("auth.resendVerification")}</Link>
+          </>
+        ) : (
+          t("auth.loginHelp")
+        )}
       </p>
       {turnstileSiteKey ? (
         <TurnstileChallenge

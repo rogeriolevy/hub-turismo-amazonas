@@ -1,0 +1,9 @@
+Host hub-turismo-vps
+    HostName VPS_IP_OR_HOSTNAME
+    User VPS_SSH_USER
+    Port 22
+    IdentityFile ~/.ssh/hub-turismo-vps
+    IdentitiesOnly yes
+    ForwardAgent no
+    ServerAliveInterval 30
+    ServerAliveCountMax 3

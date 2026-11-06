@@ -1,10 +1,11 @@
 import { del, put } from "@vercel/blob";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { getDatabase, run, write } from "../db/index.ts";
+import { getDatabase, one, run, write } from "../db/index.ts";
 
 const localCatalogImage = /^\/uploads\/catalog\/([a-f0-9-]{36}\.(?:jpg|png|webp))$/i;
 const databaseCatalogImage = /^\/api\/media\/catalog\/([a-f0-9-]{36}\.(?:jpg|png|webp))$/i;
+const allowedCatalogImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 function blobConfigured() {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
@@ -52,6 +53,22 @@ export async function saveCatalogImage(name: string, bytes: Uint8Array, contentT
   const destination = resolve(directory, name);
   await writeFile(destination, bytes, { flag: "wx", mode: 0o600 });
   return "/uploads/catalog/" + name;
+}
+
+export async function readCatalogImage(name: string) {
+  if (!databaseCatalogImage.test("/api/media/catalog/" + name)) return null;
+
+  const image = await one<{ content_type: string; content_base64: string }>(
+    getDatabase(),
+    "SELECT content_type,content_base64 FROM catalog_media WHERE name=?",
+    name,
+  );
+  if (!image || !allowedCatalogImageTypes.has(image.content_type)) return null;
+
+  return {
+    bytes: Buffer.from(image.content_base64, "base64"),
+    contentType: image.content_type,
+  };
 }
 
 export async function removeCatalogImage(url: string) {

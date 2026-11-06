@@ -20,14 +20,14 @@ export const contactSchema = z
       .max(254)
       .transform((value) => value.toLowerCase()),
     organization: z.string().trim().max(120, "Use até 120 caracteres.").default(""),
-    interest: z.enum(interests, { errorMap: () => ({ message: "Escolha um assunto." }) }),
+    interest: z.enum(interests, { error: "Escolha um assunto." }),
     message: z
       .string()
       .trim()
       .min(10, "Escreva uma mensagem com ao menos 10 caracteres.")
       .max(2000, "Use até 2.000 caracteres."),
     consent: z.literal(true, {
-      errorMap: () => ({ message: "Autorize o uso dos dados para responder ao contato." }),
+      error: "Autorize o uso dos dados para responder ao contato.",
     }),
     website: z.string().max(0, "Não foi possível validar o envio.").default(""),
   })

@@ -1,4 +1,4 @@
-import { todayInManaus } from "./platform-schema";
+import { todayInManaus } from "./platform-schema/format.ts";
 
 export type StaySearchInput = {
   entrada?: string | string[];

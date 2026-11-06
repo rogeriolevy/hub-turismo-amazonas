@@ -3,6 +3,9 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { Pool, type PoolClient } from "pg";
+import { normalizeLabel } from "../lib/normalize-label.ts";
+import { HttpError } from "../lib/http-error.ts";
+import { toPostgresSql } from "./postgres-sql.ts";
 
 export function openDatabase(filename = process.env.DATABASE_PATH || "data/hub.sqlite") {
   if (filename !== ":memory:")
@@ -11,6 +14,9 @@ export function openDatabase(filename = process.env.DATABASE_PATH || "data/hub.s
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   db.pragma("busy_timeout = 5000");
+  db.function("hub_normalize_label", { deterministic: true }, (value: string | null) =>
+    normalizeLabel(value ?? ""),
+  );
   return db;
 }
 
@@ -89,14 +95,9 @@ async function withSqliteLock<T>(db: Database.Database, action: () => T | Promis
   }
 }
 
-function postgresSql(sql: string) {
-  let index = 0;
-  return sql.replace(/\?/g, () => `$${++index}`);
-}
-
 export async function one<T>(db: DatabaseExecutor, sql: string, ...values: unknown[]) {
   if (isPostgresExecutor(db)) {
-    const result = await db.query(postgresSql(sql), values);
+    const result = await db.query(toPostgresSql(sql), values);
     return result.rows[0] as T | undefined;
   }
   return withSqliteLock(db, () => db.prepare(sql).get(...values) as T | undefined);
@@ -104,7 +105,7 @@ export async function one<T>(db: DatabaseExecutor, sql: string, ...values: unkno
 
 export async function many<T>(db: DatabaseExecutor, sql: string, ...values: unknown[]) {
   if (isPostgresExecutor(db)) {
-    const result = await db.query(postgresSql(sql), values);
+    const result = await db.query(toPostgresSql(sql), values);
     return result.rows as T[];
   }
   return withSqliteLock(db, () => db.prepare(sql).all(...values) as T[]);
@@ -112,7 +113,7 @@ export async function many<T>(db: DatabaseExecutor, sql: string, ...values: unkn
 
 export async function run(db: DatabaseExecutor, sql: string, ...values: unknown[]) {
   if (isPostgresExecutor(db)) {
-    const result = await db.query(postgresSql(sql), values);
+    const result = await db.query(toPostgresSql(sql), values);
     return { changes: result.rowCount ?? 0, rows: result.rows };
   }
   return withSqliteLock(db, () => db.prepare(sql).run(...values));
@@ -158,7 +159,6 @@ export async function write<T>(
       "code" in error &&
       ["SQLITE_CONSTRAINT_UNIQUE", "23505"].includes(String(error.code))
     ) {
-      const { HttpError } = await import("../server/http.ts");
       throw new HttpError(
         409,
         "DUPLICATE",

@@ -4,7 +4,7 @@ import {
   companyActivityKinds,
   companyActivityLabels,
   companyActivityTypes,
-} from "@/lib/platform-schema";
+} from "@/lib/platform-schema/company";
 const name: Field = { name: "name", label: "Nome", maxLength: 100 };
 const slug: Field = {
   name: "slug",
@@ -62,6 +62,13 @@ export function CompanyEditor({ company }: { company?: Company }) {
             { value: "suspended", label: "Suspenso — equipe sem acesso" },
           ],
         },
+        {
+          name: "provider_data_confirmed",
+          label: "Confirmo que revisei estes dados com o prestador.",
+          hint: "A publicação ou alteração dos dados públicos exige uma confirmação nova.",
+          type: "checkbox",
+          visibleWhen: { field: "status", value: "published" },
+        },
       ]}
       label={company ? "Salvar empresa" : "Cadastrar empresa"}
     />
@@ -110,7 +117,7 @@ export function TourEditor({
 }: {
   companyId: string;
   tour?: Tour;
-  guides: Guide[];
+  guides: Pick<Guide, "id" | "name">[];
 }) {
   return (
     <ActionForm
@@ -157,7 +164,7 @@ export function DepartureEditor({
   departure,
 }: {
   companyId: string;
-  tours: Tour[];
+  tours: Pick<Tour, "id" | "name">[];
   departure?: Departure;
 }) {
   return (

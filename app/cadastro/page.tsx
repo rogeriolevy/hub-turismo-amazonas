@@ -3,6 +3,7 @@ import { getSession } from "@/server/admin";
 import { AuthScreen } from "@/components/site/auth-screen";
 import { safeAuthDestination } from "@/lib/auth-destination";
 import { captchaRequired, turnstileSiteKey } from "@/server/turnstile";
+import { emailVerificationRequired, isEmailDeliveryConfigured } from "@/server/email";
 export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Criar conta",
@@ -22,6 +23,8 @@ export default async function Page({
       destination={destination}
       turnstileSiteKey={turnstileSiteKey()}
       captchaRequired={captchaRequired()}
+      emailDeliveryEnabled={isEmailDeliveryConfigured()}
+      emailVerificationRequired={emailVerificationRequired()}
     />
   );
 }

@@ -1,4 +1,4 @@
-import type { CompanyActivityType } from "../lib/platform-schema.ts";
+import type { CompanyActivityType } from "../lib/platform-schema/company.ts";
 
 export type Actor = { id: string; email: string; name: string };
 export type Company = {
@@ -85,6 +85,7 @@ export type Member = {
   company_id: string;
   user_id: string;
   role: "hotel_manager" | "hotel_staff" | "operator" | "guide";
+  guide_id: string | null;
   name: string;
   email: string;
 };

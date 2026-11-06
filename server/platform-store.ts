@@ -4,7 +4,7 @@ import { HttpError } from "./http.ts";
 
 export { many, one, run, write };
 
-export function parse<T extends z.ZodTypeAny>(schema: T, input: unknown): z.output<T> {
+export function parse<T extends z.ZodType>(schema: T, input: unknown): z.output<T> {
   const result = schema.safeParse(input);
   if (!result.success)
     throw new HttpError(

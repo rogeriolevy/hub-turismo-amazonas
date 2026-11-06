@@ -2,6 +2,7 @@ import type { BetterAuthOptions } from "better-auth";
 import { captcha, jwt } from "better-auth/plugins";
 import type { DatabaseHandle } from "../db/index.ts";
 import { trustedSiteOrigins } from "../lib/trusted-origins.ts";
+import { emailVerificationRequired, isEmailDeliveryConfigured, sendAccountEmail } from "./email.ts";
 import { isTurnstileConfigured, turnstileSecretKey } from "./turnstile.ts";
 
 export function authOptions(
@@ -22,6 +23,10 @@ export function authOptions(
     throw new Error("SITE_URL deve conter apenas a origem.");
   if (url.protocol !== "https:" && !["localhost", "127.0.0.1", "[::1]"].includes(url.hostname))
     throw new Error("HTTPS é obrigatório fora do ambiente local.");
+  const emailDeliveryEnabled = isEmailDeliveryConfigured();
+  const requireEmailVerification = emailVerificationRequired();
+  if (requireEmailVerification && !emailDeliveryEnabled)
+    throw new Error("Configure o envio SMTP antes de exigir a verificação de e-mail.");
   const plugins = [
     jwt({
       jwt: {
@@ -35,7 +40,12 @@ export function authOptions(
           captcha({
             provider: "cloudflare-turnstile" as const,
             secretKey: turnstileSecretKey(),
-            endpoints: ["/sign-in/email", "/sign-up/email"],
+            endpoints: [
+              "/sign-in/email",
+              "/sign-up/email",
+              "/request-password-reset",
+              "/send-verification-email",
+            ],
           }),
         ]
       : []),
@@ -52,7 +62,53 @@ export function authOptions(
       minPasswordLength: 12,
       maxPasswordLength: 128,
       autoSignIn: false,
+      requireEmailVerification,
+      resetPasswordTokenExpiresIn: 60 * 30,
+      revokeSessionsOnPasswordReset: true,
+      ...(emailDeliveryEnabled
+        ? {
+            sendResetPassword: async ({
+              user,
+              token,
+            }: {
+              user: { email: string };
+              token: string;
+            }) => {
+              const resetUrl = new URL("/redefinir-senha", url.origin);
+              resetUrl.searchParams.set("token", token);
+              await sendAccountEmail({
+                kind: "password-reset",
+                to: user.email,
+                url: resetUrl.href,
+              });
+            },
+            onPasswordReset: async ({ user }: { user: { email: string } }) => {
+              await sendAccountEmail({ kind: "password-changed", to: user.email });
+            },
+          }
+        : {}),
     },
+    ...(emailDeliveryEnabled
+      ? {
+          emailVerification: {
+            expiresIn: 60 * 60 * 24,
+            sendOnSignUp: true,
+            sendOnSignIn: requireEmailVerification,
+            sendVerificationEmail: async ({
+              user,
+              url: verificationUrl,
+            }: {
+              user: { email: string };
+              url: string;
+            }) =>
+              await sendAccountEmail({
+                kind: "verification",
+                to: user.email,
+                url: verificationUrl,
+              }),
+          },
+        }
+      : {}),
     user: {
       additionalFields: {
         phoneNumber: { type: "string", required: false, input: true, unique: true },
@@ -68,6 +124,8 @@ export function authOptions(
       customRules: {
         "/sign-in/email": { window: 60, max: 5 },
         "/sign-up/email": { window: 3600, max: 5 },
+        "/request-password-reset": { window: 3600, max: 5 },
+        "/send-verification-email": { window: 3600, max: 5 },
       },
     },
     advanced: {

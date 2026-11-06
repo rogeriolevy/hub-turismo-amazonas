@@ -50,6 +50,8 @@ O build também usa Webpack. Em unidades FAT32 ou exFAT, `npm run build` prepara
 
 `localhost:3005` não exige PostgreSQL nem Vercel Blob. Sem `DATABASE_URL`/`POSTGRES_URL` e `BLOB_READ_WRITE_TOKEN`, o app usa `data/hub.sqlite` e salva imagens em `public/uploads/catalog`. Se essas variáveis forem adicionadas ao ambiente local, os respectivos serviços passam a ser usados. Evite importar as variáveis de produção para `.env.local` se quiser preservar o modo local.
 
+`public/uploads/` contém imagens do usuário e fica fora do Git. O backup SQLite não inclui esses arquivos; copie `public/uploads/catalog/` separadamente antes de migrar ou substituir a instalação. O comando de backup também gera um manifesto `.sqlite.media.json` com nomes, datas originais, tamanhos e hashes das imagens, vinculado ao hash do banco para que a migração confira se os arquivos e o backup copiados correspondem.
+
 O banco e a configuração local ficam em arquivos ignorados pelo Git. Preserve-os ao atualizar o código. A configuração contém o segredo de autenticação e também deve ser guardada com acesso restrito.
 
 Para criar uma cópia consistente do banco, mesmo com o site em execução:
@@ -58,7 +60,9 @@ Para criar uma cópia consistente do banco, mesmo com o site em execução:
 npm run db:backup
 ```
 
-O comando informa o caminho do novo arquivo em `backups/`. Mantenha uma cópia em outro disco ou local protegido. Backups incluem mensagens e dados de autenticação; não os publique nem envie por chat. Uma cópia somente neste computador não protege contra perda do disco.
+O comando informa os caminhos do novo arquivo e do manifesto em `backups/`. Mantenha ambos, junto com `public/uploads/catalog/`, em outro disco ou local protegido. Backups incluem mensagens e dados de autenticação; não os publique nem envie por chat. Uma cópia somente neste computador não protege contra perda do disco.
+
+O banco temporário é verificado e publicado com renomeação atômica; o manifesto é escrito em arquivo temporário com permissão `0600` e publicado ao final. No Linux, ambos ficam restritos ao proprietário. Se PostgreSQL estiver configurado, use o procedimento de backup em [DEPLOY.md](DEPLOY.md), não o backup SQLite.
 
 Foi criado e verificado um backup em 29/09/2026: `backups/hub-2026-09-29T15-13-35-299Z.sqlite`. Sua restauração de teste confirmou integridade e contagens de registros. O arquivo temporário de teste foi removido; o banco ativo foi preservado.
 

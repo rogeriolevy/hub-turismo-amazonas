@@ -5,10 +5,12 @@ import {
   CalendarCheck2,
   Compass,
   MapPin,
+  MessageCircle,
   Network,
   ShieldCheck,
   Waves,
 } from "lucide-react";
+import Image from "next/image";
 import { Header, Footer } from "@/components/site/navigation";
 import { ContactForm } from "@/components/site/contact-form";
 import { getLocale } from "@/lib/i18n/server";
@@ -20,18 +22,28 @@ const solutions = [
     number: "01",
     titleKey: "home.solutionReceptionTitle",
     textKey: "home.solutionReceptionText",
+    statusKey: "home.solutionCurrentStatus",
   },
   {
     icon: BedDouble,
     number: "02",
     titleKey: "home.solutionRoomTitle",
     textKey: "home.solutionRoomText",
+    statusKey: "home.solutionPlannedStatus",
   },
   {
     icon: Network,
     number: "03",
     titleKey: "home.solutionDataTitle",
     textKey: "home.solutionDataText",
+    statusKey: "home.solutionPlannedStatus",
+  },
+  {
+    icon: MessageCircle,
+    number: "04",
+    titleKey: "home.solutionWhatsAppTitle",
+    textKey: "home.solutionWhatsAppText",
+    statusKey: "home.solutionPlannedStatus",
   },
 ] as const;
 export default async function Home() {
@@ -39,44 +51,71 @@ export default async function Home() {
   const t = (key: Parameters<typeof translate>[1]) => translate(locale, key);
   return (
     <>
-      <Header />
+      <Header variant="institutional" />
       <main id="conteudo" tabIndex={-1}>
-        <section className="hero" aria-labelledby="hero-title">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+        <section className="hero" id="inicio" aria-labelledby="hero-title">
+          <Image
             className="hero-image"
             src="/images/amazonia.webp"
-            alt="Rios entre a floresta amazônica na região de Manaus, Amazonas"
-            width="1920"
-            height="1275"
+            alt=""
+            fill
+            sizes="100vw"
+            loading="eager"
             fetchPriority="high"
           />
           <div className="hero-shade" />
+          <svg className="hero-motif" viewBox="0 0 420 420" aria-hidden="true">
+            <g fill="none" stroke="currentColor" strokeWidth="1.35">
+              <circle cx="210" cy="210" r="110" />
+              <circle cx="210" cy="100" r="110" />
+              <circle cx="305" cy="155" r="110" />
+              <circle cx="305" cy="265" r="110" />
+              <circle cx="210" cy="320" r="110" />
+              <circle cx="115" cy="265" r="110" />
+              <circle cx="115" cy="155" r="110" />
+              <circle cx="210" cy="210" r="48" opacity="0.8" />
+            </g>
+            <g fill="currentColor">
+              <circle cx="210" cy="48" r="5" />
+              <circle cx="351" cy="130" r="5" />
+              <circle cx="351" cy="290" r="5" />
+              <circle cx="210" cy="372" r="5" />
+              <circle cx="69" cy="290" r="5" />
+              <circle cx="69" cy="130" r="5" />
+            </g>
+          </svg>
           <div className="container hero-content">
-            <p className="eyebrow light">
-              <span className="short-line" /> {t("home.eyebrow")}
-            </p>
-            <h1 id="hero-title">
-              {t("home.headlineFirst")}
-              <br />
-              {t("home.headlineSecond")} <em>{t("home.headlineEmphasis")}</em>
-            </h1>
-            <p className="hero-description">{t("home.description")}</p>
-            <div className="hero-actions">
-              <a className="button button-gold" href="#solucoes">
-                {t("home.proposal")} <ArrowUpRight size={18} />
-              </a>
-              <a className="text-link light" href="#sobre">
-                {t("home.history")} <ArrowDown size={17} />
-              </a>
+            <div className="hero-copy">
+              <p className="eyebrow light">
+                <span className="short-line" /> {t("home.eyebrow")}
+              </p>
+              <h1 id="hero-title">
+                {t("home.headlineFirst")}
+                <br />
+                {t("home.headlineSecond")} <em>{t("home.headlineEmphasis")}</em>
+              </h1>
+              <p className="hero-description">{t("home.description")}</p>
+              <div className="hero-actions">
+                <a className="button button-gold" href="#solucoes">
+                  {t("home.proposal")} <ArrowUpRight size={18} />
+                </a>
+                <a className="text-link light" href="#impacto">
+                  {t("home.history")} <ArrowDown size={17} />
+                </a>
+              </div>
             </div>
+          </div>
+          <div className="hero-stamp" aria-hidden="true">
+            <span>{t("home.heroStampLabel")}</span>
+            <strong>{t("home.location")}</strong>
+            <p>{t("home.heroStampText")}</p>
           </div>
           <div className="container hero-bottom">
             <span>
               <MapPin size={16} /> {t("home.location")}
             </span>
             <span>{t("home.slogan")}</span>
-            <a href="#sobre" aria-label="Ir para a apresentação">
+            <a href="#sobre" aria-label={t("home.scrollLabel")}>
               <ArrowDown size={22} />
             </a>
           </div>
@@ -109,7 +148,7 @@ export default async function Home() {
             <p className="lead">{t("home.aboutLead")}</p>
             <p>{t("home.aboutFirst")}</p>
             <p>{t("home.aboutSecond")}</p>
-            <a className="text-link" href="#caminho">
+            <a className="text-link" href="#impacto">
               {t("home.aboutLink")} <ArrowUpRight size={18} />
             </a>
           </div>
@@ -128,12 +167,17 @@ export default async function Home() {
               <p>{t("home.techIntro")}</p>
             </div>
             <div className="solution-grid">
-              {solutions.map(({ icon: Icon, number, titleKey, textKey }) => (
+              {solutions.map(({ icon: Icon, number, titleKey, textKey, statusKey }) => (
                 <article className="solution-card" key={number}>
                   <div className="card-top">
                     <Icon size={29} strokeWidth={1.4} />
                     <span>{number}</span>
                   </div>
+                  <span
+                    className={`solution-status ${number === "01" ? "solution-status--current" : ""}`}
+                  >
+                    {t(statusKey)}
+                  </span>
                   <h3>{t(titleKey)}</h3>
                   <p>{t(textKey)}</p>
                 </article>
@@ -141,7 +185,7 @@ export default async function Home() {
             </div>
           </div>
         </section>
-        <section className="section container journey" id="caminho">
+        <section className="section container journey" id="impacto">
           <div>
             <p className="eyebrow">{t("home.journeyEyebrow")}</p>
             <h2>
@@ -201,7 +245,7 @@ export default async function Home() {
           </div>
         </section>
       </main>
-      <Footer />
+      <Footer variant="institutional" />
     </>
   );
 }

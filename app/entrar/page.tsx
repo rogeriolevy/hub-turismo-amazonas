@@ -3,6 +3,7 @@ import { getSession } from "@/server/admin";
 import { AuthScreen } from "@/components/site/auth-screen";
 import { safeAuthDestination } from "@/lib/auth-destination";
 import { captchaRequired, turnstileSiteKey } from "@/server/turnstile";
+import { emailVerificationRequired, isEmailDeliveryConfigured } from "@/server/email";
 export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Entrar",
@@ -12,9 +13,13 @@ export const metadata = {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ voltar?: string }>;
+  searchParams: Promise<{
+    voltar?: string | string[];
+    [key: string]: string | string[] | undefined;
+  }>;
 }) {
-  const destination = safeAuthDestination((await searchParams).voltar);
+  const params = await searchParams;
+  const destination = safeAuthDestination(params.voltar);
   if (await getSession()) redirect(destination);
   return (
     <AuthScreen
@@ -22,6 +27,9 @@ export default async function Page({
       destination={destination}
       turnstileSiteKey={turnstileSiteKey()}
       captchaRequired={captchaRequired()}
+      emailDeliveryEnabled={isEmailDeliveryConfigured()}
+      emailVerificationRequired={emailVerificationRequired()}
+      emailVerified={params["email-verificado"] === "1"}
     />
   );
 }
