@@ -89,6 +89,10 @@ if [[ "$1" == "compose" ]]; then
     [[ "$actual_services" == "$expected_services" ]] || exit 32
     version="$(version_from_release "$release")"
     printf 'up|%s|%s\\n' "$version" "$actual_services" >> "$FIXTURE_ROOT/calls.log"
+    if [[ "\${HUB_GUARD_SCENARIO:-}" == terminate-after-current-switch && "$version" == 0.12.13 ]]; then
+      printf 'second-term|%s\\n' "$version" >> "$FIXTURE_ROOT/calls.log"
+      kill -TERM "$PPID"
+    fi
     if [[ "\${HUB_GUARD_SCENARIO:-}" == health-fail-rollback-fail && "$version" == 0.12.13 ]]; then exit 45; fi
     exit 0
   fi
@@ -541,6 +545,26 @@ test("termination immediately after the fixture pointer switch restores previous
   assert.match(result.stderr, /ROLLBACK=passed/);
   assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
   const upCalls = (await callLog(fixture)).split("\n").filter((line) => line.startsWith("up|"));
+  assert.deepEqual(upCalls, ["up|0.12.13|web booking-email-worker"]);
+});
+
+test("a second termination during rollback is deferred until previous services are verified", async () => {
+  const fixture = await createFixture();
+  const result = runGuard(fixture, { simulate: true, scenario: "terminate-after-current-switch" });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /ROLLBACK=passed/);
+  assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+  const calls = await callLog(fixture);
+  const callLines = calls.split("\n");
+  assert.ok(callLines.includes("second-term|0.12.13"));
+  assert.ok(callLines.some((line) => line.startsWith("docker|compose|") && line.includes("|ps|") && line.endsWith("|web")));
+  assert.ok(callLines.some((line) => line.startsWith("docker|compose|") && line.includes("|ps|") && line.endsWith("|booking-email-worker")));
+  assert.ok(callLines.some((line) => line.startsWith("docker|inspect|") && line.includes("State.Health.Status") && line.endsWith("|web-0.12.13")));
+  assert.ok(callLines.some((line) => line.startsWith("docker|inspect|") && line.includes("State.Health.Status") && line.endsWith("|worker-0.12.13")));
+  assert.ok(callLines.some((line) => line.startsWith("docker|exec|") && line.includes("check-booking-worker-health.ts")));
+  assert.ok(callLines.some((line) => line.startsWith("curl|--fail|--silent|--show-error|--max-time|5|http://127.0.0.1:3005/api/health")));
+  const upCalls = callLines.filter((line) => line.startsWith("up|"));
   assert.deepEqual(upCalls, ["up|0.12.13|web booking-email-worker"]);
 });
 

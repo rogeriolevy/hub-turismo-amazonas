@@ -590,6 +590,9 @@ rollback_attempted=false
 on_exit() {
   local original_status="$?"
   local current_target=""
+  # A second catchable termination must not interrupt the recovery started by
+  # this EXIT handler. Bash defers ignored signals until the shell exits.
+  trap '' INT TERM
   trap - EXIT
   if [[ "$activated" == "true" && "$original_status" -ne 0 && "$rollback_attempted" == "false" ]]; then
     current_target="$(canonical_existing_path "$current" 2>/dev/null || true)"
