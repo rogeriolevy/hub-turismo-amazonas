@@ -271,7 +271,13 @@ preflight_attestation_inputs() {
   [[ "${backup_receipt[DUMP_FILE]}" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*\.dump$ ]] || die "BACKUP_ATTESTATION_DUMP_FILE_INVALID"
   [[ "${backup_receipt[SOURCE_RECEIPT_FILE]}" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*\.source\.json$ ]] || die "BACKUP_ATTESTATION_SOURCE_RECEIPT_FILE_INVALID"
   [[ "${backup_receipt[DUMP_SHA256]}" =~ ^[a-f0-9]{64}$ && "${backup_receipt[SOURCE_RECEIPT_SHA256]}" =~ ^[a-f0-9]{64}$ && "${backup_receipt[SOURCE_LEDGER_SHA256]}" =~ ^[a-f0-9]{64}$ ]] || die "BACKUP_ATTESTATION_HASH_INVALID"
-  printf '%s' "${backup_receipt[SOURCE_COUNTS]}" | node -e 'const fs=require("fs"); const text=fs.readFileSync(0,"utf8"); let value; try { value=JSON.parse(text); } catch { process.exit(1) }; const keys=Object.keys(value||{}); if (Object.getPrototypeOf(value)!==Object.prototype || keys.some((key,index)=>key!==[...keys].sort()[index] || !/^(0|[1-9]\d*)$/.test(value[key])) || JSON.stringify(value)!==text) process.exit(1);' || die "BACKUP_ATTESTATION_SOURCE_COUNTS_INVALID"
+  source_counts_validator='const fs=require("fs"); const text=fs.readFileSync(0,"utf8"); let value; try { value=JSON.parse(text); } catch { process.exit(1) }; const keys=Object.keys(value||{}); if (Object.getPrototypeOf(value)!==Object.prototype || keys.some((key,index)=>key!==[...keys].sort()[index] || !/^(0|[1-9]\d*)$/.test(value[key])) || JSON.stringify(value)!==text) process.exit(1);'
+  if [[ "$test_only" == "true" ]]; then
+    printf '%s' "${backup_receipt[SOURCE_COUNTS]}" | node -e "$source_counts_validator" || die "BACKUP_ATTESTATION_SOURCE_COUNTS_INVALID"
+  else
+    previous_web_id="$(service_id "$previous" "$APP_SERVICE")"
+    printf '%s' "${backup_receipt[SOURCE_COUNTS]}" | docker_cmd exec -i "$previous_web_id" node -e "$source_counts_validator" || die "BACKUP_ATTESTATION_SOURCE_COUNTS_INVALID"
+  fi
   [[ "${backup_receipt[RESTORE_SOURCE_COMPARISON]}" == "match" && "${backup_receipt[RESTORE_DATABASE_CLEANUP]}" == "ok" && "${backup_receipt[REMOTE_STAGING_CLEANUP]}" == "ok" ]] || die "BACKUP_ATTESTATION_RESTORE_INVALID"
   [[ "${backup_receipt[ISSUED_AT_UTC]}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$ && "${backup_receipt[EXPIRES_AT_UTC]}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$ ]] || die "BACKUP_ATTESTATION_TIMESTAMP_INVALID"
   validate_backup_attestation_window "${backup_receipt[ISSUED_AT_UTC]}" "${backup_receipt[EXPIRES_AT_UTC]}"
