@@ -86,11 +86,13 @@ source_record="${record_line#SOURCE_RECORD=}"
 [[ "$role_line" =~ ^SOURCE_ROLE=([A-Za-z_][A-Za-z0-9_\$-]*)$ ]] || die "SOURCE_ROLE_INVALID"
 source_role="${BASH_REMATCH[1]}"
 printf '%s' "$source_record" | node -e 'const fs=require("fs"); const text=fs.readFileSync(0,"utf8"); let value; try { value=JSON.parse(text); } catch { process.exit(1) }; const wanted=["schema","capturedAtUtc","counts","ledgerSha256","releaseVersion"]; const countKeys=Object.keys(value.counts||{}); if (JSON.stringify(Object.keys(value))!==JSON.stringify(wanted) || value.schema!=="hub-postgres-source-v1" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value.capturedAtUtc) || !/^[a-f0-9]{64}$/.test(value.ledgerSha256) || !/^\d+\.\d+\.\d+$/.test(value.releaseVersion) || countKeys.some((key,index)=>key!==[...countKeys].sort()[index] || !/^(0|[1-9]\d*)$/.test(value.counts[key])) || JSON.stringify(value)!==text) process.exit(1);' || die "SOURCE_RECORD_INVALID"
-# pg_dump can import an exported snapshot only with the transaction's role or a superuser.
-# Require exact role equality rather than assuming a production-specific privilege relation.
-docker exec "$postgres_container_id" sh -ec 'test "$POSTGRES_USER" = "$1"' sh "$source_role" || die "SNAPSHOT_ROLE_MISMATCH"
+# PostgreSQL permits importing an exported snapshot as its exporting role.  Capture
+# and dump as the dedicated application owner: it has the minimum database
+# privileges required for a consistent logical backup, while POSTGRES_USER remains
+# a distinct administrative role for bootstrap and recovery operations.
+docker exec "$postgres_container_id" sh -ec 'test "$HUB_DB_USER" = "$1"' sh "$source_role" || die "SNAPSHOT_ROLE_MISMATCH"
 
-docker exec "$postgres_container_id" sh -ec 'exec pg_dump --snapshot="$1" --format=custom --no-owner --no-privileges --username "$POSTGRES_USER" --dbname "$POSTGRES_DB"' sh "$snapshot_id" > "$temporary_file" || die "PG_DUMP_FAILED"
+docker exec "$postgres_container_id" sh -ec 'exec pg_dump --snapshot="$1" --format=custom --no-owner --no-privileges --username "$HUB_DB_USER" --dbname "$POSTGRES_DB"' sh "$snapshot_id" > "$temporary_file" || die "PG_DUMP_FAILED"
 [[ -s "$temporary_file" ]] || die "PG_DUMP_EMPTY"
 docker exec -i "$postgres_container_id" pg_restore --list < "$temporary_file" > /dev/null || die "PG_DUMP_ARCHIVE_INVALID"
 printf 'COMPLETE\n' >&"$source_stdin_fd" || die "SOURCE_COMPLETION_WRITE_FAILED"

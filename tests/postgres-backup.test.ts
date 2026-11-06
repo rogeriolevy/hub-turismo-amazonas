@@ -42,7 +42,11 @@ function createActiveBackupFixture() {
   mkdirSync(backupDirectory, { recursive: true, mode: 0o700 });
   writeFileSync(join(root, ".hub-backup-fixture"), "hub-backup-test-fixture-v1\n", { mode: 0o600 });
   writeFileSync(join(release, "infra", "backup-postgres.sh"), "#!/usr/bin/env bash\n", { mode: 0o500 });
-  writeFileSync(join(release, "infra", "vps.env"), "APP_VERSION=0.12.16\n", { mode: 0o600 });
+  writeFileSync(
+    join(release, "infra", "vps.env"),
+    "APP_VERSION=0.12.16\nPOSTGRES_USER=hub_backup_admin\nHUB_DB_USER=hub_app_owner\n",
+    { mode: 0o600 },
+  );
   writeFileSync(join(release, "scripts", "capture-postgres-backup-source.mjs"), "// fixture marker\n", { mode: 0o500 });
   symlinkSync(release, join(root, "current"), process.platform === "win32" ? "junction" : "dir");
   const sourceRecord = '{"schema":"hub-postgres-source-v1","capturedAtUtc":"2026-01-02T03:04:05.006Z","counts":{"accounts":"1","bookings":"2"},"ledgerSha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","releaseVersion":"0.12.16"}';
@@ -62,13 +66,13 @@ if [[ "$1" == inspect ]]; then
   exit 42
 fi
 if [[ "$1" == exec ]]; then
-  if [[ "$*" == *web-fixture*capture-postgres-backup-source.mjs* ]]; then
-    printf 'SNAPSHOT_ID=A1-2\\nSOURCE_RECORD=${sourceRecord}\\nSOURCE_ROLE=postgres\\n'
+    if [[ "$*" == *web-fixture*capture-postgres-backup-source.mjs* ]]; then
+      printf 'SNAPSHOT_ID=A1-2\\nSOURCE_RECORD=${sourceRecord}\\nSOURCE_ROLE=hub_app_owner\\n'
     IFS= read -r completion
     [[ "$completion" == COMPLETE ]] || exit 43
     exit 0
   fi
-  if [[ "$*" == *'test "$POSTGRES_USER"'* ]]; then
+    if [[ "$*" == *'test "$HUB_DB_USER"'* ]]; then
     [[ "\${FAKE_ROLE_MISMATCH:-}" != true ]] || exit 44
     exit 0
   fi
@@ -117,10 +121,28 @@ test("same exported snapshot is used by the active backup wrapper", () => {
     assert.equal(result.error, undefined, result.error?.message);
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /SOURCE_RECEIPT_FILE=/);
-    assert.match(
-      readFileSync(join(fixture.root, "docker-calls.log"), "utf8"),
-      /pg_dump --snapshot="\$1".* sh A1-2/,
-    );
+    const calls = readFileSync(join(fixture.root, "docker-calls.log"), "utf8");
+    assert.match(calls, /pg_dump --snapshot="\$1".* sh A1-2/);
+    assert.match(calls, /test "\$HUB_DB_USER" = "\$1".* sh hub_app_owner/);
+    assert.match(calls, /pg_dump .*--username "\$HUB_DB_USER"/);
+    assert.doesNotMatch(calls, /test "\$POSTGRES_USER"/);
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test("distinct application and administrative roles produce the complete snapshot receipt set", () => {
+  const fixture = createActiveBackupFixture();
+  try {
+    const result = runActiveBackupFixture(fixture);
+    assert.equal(result.status, 0, result.stderr);
+    assert.notEqual("hub_app_owner", "hub_backup_admin");
+    const files = readdirSync(fixture.backupDirectory).sort();
+    assert.equal(files.length, 4);
+    assert.ok(files.some((file) => file.endsWith(".dump")));
+    assert.ok(files.some((file) => file.endsWith(".dump.sha256")));
+    assert.ok(files.some((file) => file.endsWith(".source.json")));
+    assert.ok(files.some((file) => file.endsWith(".source.json.sha256")));
   } finally {
     rmSync(fixture.root, { recursive: true, force: true });
   }
