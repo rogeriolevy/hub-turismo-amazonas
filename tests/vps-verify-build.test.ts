@@ -27,38 +27,43 @@ function runCommand(file: string, args: string[]) {
 }
 
 const fakeDocker = `#!/usr/bin/env bash
+# hub-verify-build-fake-runtime-v1
 set -euo pipefail
 printf 'docker' >> "$FIXTURE_ROOT/calls.log"
 for argument in "$@"; do printf '|%s' "$argument" >> "$FIXTURE_ROOT/calls.log"; done
-printf '\\n' >> "$FIXTURE_ROOT/calls.log"
+printf '\n' >> "$FIXTURE_ROOT/calls.log"
 
 if [[ "$1" == run ]]; then
   [[ " $* " == *" --network none "* && " $* " == *" --read-only "* && " $* " == *" --self-check "* ]] || exit 41
   case "\${HUB_VERIFY_BUILD_SCENARIO:-}" in git-mismatch|manifest-mismatch) exit 42 ;; esac
   exit 0
 fi
+if [[ "$1" == compose && " $* " == *" config --quiet "* ]]; then
+  exit 0
+fi
 if [[ "$1" == compose ]]; then
   [[ " $* " == *" build web "* ]] || exit 43
-  printf 'build|web\\n' >> "$FIXTURE_ROOT/calls.log"
+  printf 'build|web\n' >> "$FIXTURE_ROOT/calls.log"
   exit 0
 fi
 if [[ "$1" == image && "$2" == inspect ]]; then
-  printf 'sha256:fixture-image\\n'
+  printf 'sha256:fixture-image\n'
   exit 0
 fi
 exit 44
 `;
 
 const fakeUnzip = `#!/usr/bin/env bash
+# hub-verify-build-fake-runtime-v1
 set -euo pipefail
-printf 'unzip\\n' >> "$FIXTURE_ROOT/calls.log"
+printf 'unzip\n' >> "$FIXTURE_ROOT/calls.log"
 [[ "$1" == -q && "$3" == -d ]] || exit 51
 target="$4"
 mkdir -p "$target/infra" "$target/db/migrations" "$target/db/postgres-migrations"
-printf '{"name":"hub-turismo-amazonas","version":"1.2.3"}\\n' > "$target/package.json"
-printf 'services: {}\\n' > "$target/infra/compose.vps.yaml"
-printf 'SELECT 1;\\n' > "$target/db/migrations/001-fixture.sql"
-printf 'SELECT 2;\\n' > "$target/db/postgres-migrations/002-fixture.sql"
+printf '{"name":"hub-turismo-amazonas","version":"1.2.3"}\n' > "$target/package.json"
+printf 'services: {}\n' > "$target/infra/compose.vps.yaml"
+printf 'SELECT 1;\n' > "$target/db/migrations/001-fixture.sql"
+printf 'SELECT 2;\n' > "$target/db/postgres-migrations/002-fixture.sql"
 `;
 
 async function createFixture() {
@@ -71,20 +76,20 @@ async function createFixture() {
   await mkdir(staging, { recursive: true });
   await mkdir(fakeBin, { recursive: true });
   await mkdir(path.join(current, "infra"), { recursive: true });
-  await writeFile(path.join(root, ".hub-verify-build-fixture"), "hub-verify-build-test-fixture-v1\\n");
-  await writeFile(path.join(fakeBin, ".hub-fake-runtime"), "hub-verify-build-fake-runtime-v1\\n");
+  await writeFile(path.join(root, ".hub-verify-build-fixture"), "hub-verify-build-test-fixture-v1\n");
+  await writeFile(path.join(fakeBin, ".hub-fake-runtime"), "hub-verify-build-fake-runtime-v1\n");
   await writeFile(path.join(fakeBin, "docker"), fakeDocker);
   await writeFile(path.join(fakeBin, "unzip"), fakeUnzip);
   await chmod(path.join(fakeBin, "docker"), 0o755);
   await chmod(path.join(fakeBin, "unzip"), 0o755);
-  await writeFile(path.join(current, "infra", "vps.env"), "APP_VERSION=0.0.1\\nSITE_URL=https://fixture.invalid\\n");
-  await writeFile(path.join(current, "package-lock.json"), JSON.stringify({ lockfileVersion: 3, packages: {} }) + "\\n");
+  await writeFile(path.join(current, "infra", "vps.env"), "APP_VERSION=0.0.1\nSITE_URL=https://fixture.invalid\n");
+  await writeFile(path.join(current, "package-lock.json"), JSON.stringify({ lockfileVersion: 3, packages: {} }) + "\n");
   const archive = path.join(staging, "source.zip");
   const manifest = path.join(staging, "SOURCE-MANIFEST.json");
   const verifier = path.join(staging, "verify-vps-source-snapshot.mjs");
-  await writeFile(archive, "fixture-source-archive\\n");
-  await writeFile(manifest, JSON.stringify({ format: "fixture" }) + "\\n");
-  await writeFile(verifier, "// fixture verifier\\n");
+  await writeFile(archive, "fixture-source-archive\n");
+  await writeFile(manifest, JSON.stringify({ format: "fixture" }) + "\n");
+  await writeFile(verifier, "// fixture verifier\n");
   return { root, posixRoot, archive, manifest, verifier };
 }
 
@@ -112,9 +117,9 @@ function runExecutor(
     "--git-tree",
     options.gitTree ?? tree,
     "--archive-sha256",
-    options.archiveHash ?? sha256("fixture-source-archive\\n"),
+    options.archiveHash ?? sha256("fixture-source-archive\n"),
     "--verifier-sha256",
-    options.verifierHash ?? sha256("// fixture verifier\\n"),
+    options.verifierHash ?? sha256("// fixture verifier\n"),
   ];
   return spawnSync(gitBash, args, {
     encoding: "utf8",
@@ -134,7 +139,7 @@ test("verify-and-build happy path produces one measured candidate attestation", 
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /CANDIDATE_ATTESTATION=.*candidate-1\.2\.3\.env/);
   assert.match(result.stdout, /CANDIDATE_ATTESTATION_SHA256=[a-f0-9]{64}/);
-  assert.match(await calls(fixture), /docker\|.*\|run\|.*\|--network\|none.*\|--read-only.*\|--self-check/m);
+  assert.match(await calls(fixture), /docker\|run\|.*\|--network\|none.*\|--read-only.*\|--self-check/m);
   assert.match(await calls(fixture), /build\|web/);
   const attestation = await readFile(path.join(fixture.root, "attestations", "candidate-1.2.3.env"), "utf8");
   assert.match(attestation, /CANDIDATE_PATH=.*release-1\.2\.3/);
