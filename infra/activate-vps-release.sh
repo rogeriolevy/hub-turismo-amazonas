@@ -589,29 +589,49 @@ rollback_attempted=false
 
 on_exit() {
   local original_status="$?"
+  local current_target=""
   trap - EXIT
   if [[ "$activated" == "true" && "$original_status" -ne 0 && "$rollback_attempted" == "false" ]]; then
-    rollback_attempted=true
-    printf 'ACTIVATION=failed\nROLLBACK=started\n' >&2
-    if (rollback_release "$postgres_before" "$db_before"); then
-      printf 'ACTIVATION=failed\nROLLBACK=passed\n' >&2
+    current_target="$(canonical_existing_path "$current" 2>/dev/null || true)"
+    if [[ "$current_target" == "$previous" ]]; then
+      printf 'ACTIVATION=failed\nROLLBACK=not-needed\nCURRENT_UNCHANGED=ok\n' >&2
+    elif [[ "$current_target" == "$candidate" ]]; then
+      rollback_attempted=true
+      printf 'ACTIVATION=failed\nROLLBACK=started\n' >&2
+      if (rollback_release "$postgres_before" "$db_before"); then
+        printf 'ACTIVATION=failed\nROLLBACK=passed\n' >&2
+      else
+        printf 'ACTIVATION=failed\nROLLBACK=failed\nORIGINAL_EXIT=%s\n' "$original_status" >&2
+        original_status=90
+      fi
     else
-      printf 'ACTIVATION=failed\nROLLBACK=failed\nORIGINAL_EXIT=%s\n' "$original_status" >&2
+      printf 'ACTIVATION=failed\nROLLBACK=failed\nCURRENT_TARGET_UNEXPECTED=%s\n' "${current_target:-unresolved}" >&2
       original_status=90
     fi
   fi
   exit "$original_status"
 }
 trap on_exit EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+test_signal_checkpoint() {
+  local checkpoint="$1"
+  [[ "$test_only" == "true" && "${HUB_GUARD_SCENARIO:-}" == "terminate-$checkpoint-current-switch" ]] || return 0
+  kill -TERM "$$"
+}
 
 [[ "$(canonical_existing_path "$current")" == "$previous" ]] || die "CURRENT_CHANGED_DURING_PREFLIGHT"
+# Arm rollback before mutating the active-release pointer. The EXIT handler
+# checks the resolved target so an interruption before the switch has no effect.
+activated=true
+test_signal_checkpoint "before"
 if [[ "$test_only" == "true" ]]; then
   atomic_set_current "$candidate"
-  activated=true
+  test_signal_checkpoint "after"
   test_activate_app_only "$candidate"
 else
   atomic_set_current "$candidate"
-  activated=true
   run_compose_app_only "$candidate"
 fi
 candidate_app_ids="$(verify_app_health "$candidate" "$candidate_version")"

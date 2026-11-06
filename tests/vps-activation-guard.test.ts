@@ -533,6 +533,27 @@ test("test-only simulated activation switches only the fixture and only web/work
   assert.match(upCalls[0], /^up\|[^|]+\|web booking-email-worker$/);
 });
 
+test("termination immediately after the fixture pointer switch restores previous services", async () => {
+  const fixture = await createFixture();
+  const result = runGuard(fixture, { simulate: true, scenario: "terminate-after-current-switch" });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /ROLLBACK=passed/);
+  assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+  const upCalls = (await callLog(fixture)).split("\n").filter((line) => line.startsWith("up|"));
+  assert.deepEqual(upCalls, ["up|0.12.13|web booking-email-worker"]);
+});
+
+test("termination immediately before the fixture pointer switch leaves previous services alone", async () => {
+  const fixture = await createFixture();
+  const result = runGuard(fixture, { simulate: true, scenario: "terminate-before-current-switch" });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /ROLLBACK=not-needed/);
+  assert.equal(await currentTarget(fixture), await realpath(fixture.previous));
+  assert.doesNotMatch(await callLog(fixture), /\|up\|/);
+});
+
 for (const scenario of ["ledger-missing", "ledger-extra", "ledger-mismatch"]) {
   test(`ledger ${scenario} fails closed before changing current or starting Compose`, async () => {
     const fixture = await createFixture();
