@@ -72,6 +72,7 @@ if [[ "$1" == exec ]]; then
     [[ "$completion" == COMPLETE ]] || exit 43
     exit 0
   fi
+    if [[ "$*" == *web-fixture*node*-e* ]]; then cat >/dev/null; exit 0; fi
     if [[ "$*" == *'test "$HUB_DB_USER"'* ]]; then
     [[ "\${FAKE_ROLE_MISMATCH:-}" != true ]] || exit 44
     exit 0

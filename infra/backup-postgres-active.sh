@@ -5,6 +5,9 @@ unset DOCKER_CONTEXT
 export DOCKER_HOST="${DOCKER_HOST:-unix:///var/run/docker.sock}"
 
 install_root="/opt/hub-turismo"
+candidate_source_path="${HUB_BACKUP_SOURCE_CANDIDATE_PATH:-}"
+candidate_attestation_path="${HUB_BACKUP_SOURCE_CANDIDATE_ATTESTATION:-}"
+candidate_attestation_sha256="${HUB_BACKUP_SOURCE_CANDIDATE_ATTESTATION_SHA256:-}"
 if [[ "${HUB_BACKUP_TEST_MODE:-}" == "true" ]]; then
   [[ -n "${HUB_INSTALL_ROOT:-}" && -d "${HUB_INSTALL_ROOT:-}" && ! -L "${HUB_INSTALL_ROOT:-}" ]] || { echo "TEST_INSTALL_ROOT_INVALID" >&2; exit 1; }
   [[ -f "$HUB_INSTALL_ROOT/.hub-backup-fixture" && ! -L "$HUB_INSTALL_ROOT/.hub-backup-fixture" ]] || { echo "TEST_FIXTURE_SENTINEL_MISSING" >&2; exit 1; }
@@ -15,7 +18,14 @@ elif [[ -n "${HUB_INSTALL_ROOT:-}" || -n "${HUB_BACKUP_TEST_MODE:-}" ]]; then
   exit 1
 fi
 
+candidate_source_mode=0
+if [[ -n "$candidate_source_path$candidate_attestation_path$candidate_attestation_sha256" ]]; then
+  [[ "${HUB_BACKUP_TEST_MODE:-}" != "true" && -n "$candidate_source_path" && -n "$candidate_attestation_path" && "$candidate_attestation_sha256" =~ ^[a-fA-F0-9]{64}$ ]] || { echo "CANDIDATE_SOURCE_PARAMETERS_INVALID" >&2; exit 1; }
+  candidate_source_mode=1
+fi
+
 die() { echo "$1" >&2; exit 1; }
+command -v docker >/dev/null || die "DOCKER_UNAVAILABLE"
 release_directory="$(readlink -e -- "$install_root/current")" || die "ACTIVE_RELEASE_UNRESOLVED"
 case "$release_directory" in "$install_root"/release-*) ;; *) die "ACTIVE_RELEASE_INVALID" ;; esac
 if [[ "${HUB_BACKUP_TEST_MODE:-}" != "true" && "$(stat -c '%U' "$release_directory")" != "hub" ]]; then die "ACTIVE_RELEASE_OWNER_INVALID"; fi
@@ -24,10 +34,43 @@ if find "$release_directory" -xdev \( -type f -o -type d \) -perm /022 -print -q
 backup_script="$release_directory/infra/backup-postgres.sh"
 source_helper="$release_directory/scripts/capture-postgres-backup-source.mjs"
 env_file="$release_directory/infra/vps.env"
-for required_file in "$backup_script" "$source_helper" "$env_file"; do [[ -f "$required_file" && ! -L "$required_file" ]] || die "ACTIVE_RELEASE_FILE_INVALID"; done
+for required_file in "$backup_script" "$env_file"; do [[ -f "$required_file" && ! -L "$required_file" ]] || die "ACTIVE_RELEASE_FILE_INVALID"; done
 if [[ "${HUB_BACKUP_TEST_MODE:-}" != "true" && "$(stat -c '%U:%G:%a' "$env_file")" != "hub:hub:600" ]]; then die "ACTIVE_ENV_MODE_INVALID"; fi
 
-command -v docker >/dev/null || die "DOCKER_UNAVAILABLE"
+source_release_directory="$release_directory"
+source_compose_file=""
+if (( candidate_source_mode == 1 )); then
+  [[ "$candidate_source_path" =~ ^/opt/hub-turismo/release-[0-9]+\.[0-9]+\.[0-9]+$ && -d "$candidate_source_path" && ! -L "$candidate_source_path" ]] || die "CANDIDATE_SOURCE_PATH_INVALID"
+  source_release_directory="$(readlink -e -- "$candidate_source_path")" || die "CANDIDATE_SOURCE_PATH_INVALID"
+  [[ "$source_release_directory" == "$candidate_source_path" ]] || die "CANDIDATE_SOURCE_PATH_MISMATCH"
+  script_release_directory="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+  [[ "$script_release_directory" == "$source_release_directory" ]] || die "CANDIDATE_SOURCE_SCRIPT_MISMATCH"
+  [[ "$candidate_attestation_path" == "/opt/hub-turismo/attestations/candidate-${source_release_directory##*/release-}.env" && -f "$candidate_attestation_path" && ! -L "$candidate_attestation_path" ]] || die "CANDIDATE_SOURCE_ATTESTATION_PATH_INVALID"
+  [[ "$(stat -c '%U:%G:%a' "$candidate_attestation_path")" == "hub:hub:600" ]] || die "CANDIDATE_SOURCE_ATTESTATION_PERMISSIONS_INVALID"
+  [[ "$(sha256sum < "$candidate_attestation_path" | awk '{print $1}')" == "${candidate_attestation_sha256,,}" ]] || die "CANDIDATE_SOURCE_ATTESTATION_HASH_MISMATCH"
+  attested_value() {
+    local key="$1"
+    awk -F= -v key="$key" '$1 == key { count++; value = substr($0, index($0, "=") + 1) } END { if (count != 1) exit 1; print value }' "$candidate_attestation_path"
+  }
+  candidate_version="${source_release_directory##*/release-}"
+  candidate_image_tag="$(attested_value IMAGE_TAG)" || die "CANDIDATE_SOURCE_ATTESTATION_INVALID"
+  candidate_image_id="$(attested_value IMAGE_ID)" || die "CANDIDATE_SOURCE_ATTESTATION_INVALID"
+  [[ "$(attested_value CANDIDATE_PATH)" == "$source_release_directory" && "$(attested_value PACKAGE_VERSION)" == "$candidate_version" && "$candidate_image_tag" == "hub-turismo-amazonas:$candidate_version" ]] || die "CANDIDATE_SOURCE_ATTESTATION_MISMATCH"
+  [[ "$candidate_image_id" =~ ^sha256:[a-f0-9]{64}$ && "$(docker image inspect --format '{{.Id}}' "$candidate_image_tag")" == "$candidate_image_id" ]] || die "CANDIDATE_SOURCE_IMAGE_MISMATCH"
+  source_compose_file="$source_release_directory/infra/compose.vps.yaml"
+  source_env_file="$source_release_directory/infra/vps.env"
+  source_helper="$source_release_directory/scripts/capture-postgres-backup-source.mjs"
+  for required_file in "$source_compose_file" "$source_env_file" "$source_helper"; do [[ -f "$required_file" && ! -L "$required_file" ]] || die "CANDIDATE_SOURCE_FILE_INVALID"; done
+  [[ "$(stat -c '%U:%G:%a' "$source_env_file")" == "hub:hub:600" ]] || die "CANDIDATE_SOURCE_ENV_PERMISSIONS_INVALID"
+  candidate_compose_sha256="$(sha256sum < "$source_compose_file" | awk '{print $1}')"
+  candidate_environment_sha256="$(grep -v '^[[:space:]]*APP_VERSION=' "$source_env_file" | sha256sum | awk '{print $1}')"
+  active_environment_sha256="$(grep -v '^[[:space:]]*APP_VERSION=' "$env_file" | sha256sum | awk '{print $1}')"
+  [[ "$candidate_compose_sha256" == "$(attested_value COMPOSE_SHA256)" && "$candidate_environment_sha256" == "$(attested_value ENVIRONMENT_SHA256)" && "$candidate_environment_sha256" == "$active_environment_sha256" ]] || die "CANDIDATE_SOURCE_CONFIGURATION_MISMATCH"
+  docker compose -p hub-turismo --env-file "$source_env_file" -f "$source_compose_file" config --quiet || die "CANDIDATE_SOURCE_COMPOSE_INVALID"
+else
+  [[ -f "$source_helper" && ! -L "$source_helper" ]] || die "ACTIVE_RELEASE_FILE_INVALID"
+fi
+
 service_container() {
   local service="$1"; local -a ids=()
   mapfile -t ids < <(docker ps --filter 'label=com.docker.compose.project=hub-turismo' --filter "label=com.docker.compose.service=$service" --format '{{.ID}}')
@@ -72,7 +115,11 @@ cleanup_owned_partials() {
 }
 trap cleanup_owned_partials EXIT
 
-coproc SOURCE_HELPER { docker exec -i "$web_container_id" node /app/scripts/capture-postgres-backup-source.mjs; }
+if (( candidate_source_mode == 1 )); then
+  coproc SOURCE_HELPER { docker compose -p hub-turismo --env-file "$source_env_file" -f "$source_compose_file" run --rm --no-deps -T web node /app/scripts/capture-postgres-backup-source.mjs; }
+else
+  coproc SOURCE_HELPER { docker exec -i "$web_container_id" node /app/scripts/capture-postgres-backup-source.mjs; }
+fi
 source_stdout_fd="${SOURCE_HELPER[0]}"
 source_stdin_fd="${SOURCE_HELPER[1]}"
 read_source_line() { local value; IFS= read -r value <&"$source_stdout_fd" || die "SOURCE_HELPER_PROTOCOL_FAILED"; printf '%s' "$value"; }
@@ -85,7 +132,7 @@ snapshot_id="${BASH_REMATCH[1]}"
 source_record="${record_line#SOURCE_RECORD=}"
 [[ "$role_line" =~ ^SOURCE_ROLE=([A-Za-z_][A-Za-z0-9_\$-]*)$ ]] || die "SOURCE_ROLE_INVALID"
 source_role="${BASH_REMATCH[1]}"
-printf '%s' "$source_record" | node -e 'const fs=require("fs"); const text=fs.readFileSync(0,"utf8"); let value; try { value=JSON.parse(text); } catch { process.exit(1) }; const wanted=["schema","capturedAtUtc","counts","ledgerSha256","releaseVersion"]; const countKeys=Object.keys(value.counts||{}); if (JSON.stringify(Object.keys(value))!==JSON.stringify(wanted) || value.schema!=="hub-postgres-source-v1" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value.capturedAtUtc) || !/^[a-f0-9]{64}$/.test(value.ledgerSha256) || !/^\d+\.\d+\.\d+$/.test(value.releaseVersion) || countKeys.some((key,index)=>key!==[...countKeys].sort()[index] || !/^(0|[1-9]\d*)$/.test(value.counts[key])) || JSON.stringify(value)!==text) process.exit(1);' || die "SOURCE_RECORD_INVALID"
+printf '%s' "$source_record" | docker exec -i "$web_container_id" node -e 'const fs=require("fs"); const text=fs.readFileSync(0,"utf8"); let value; try { value=JSON.parse(text); } catch { process.exit(1) }; const wanted=["schema","capturedAtUtc","counts","ledgerSha256","releaseVersion"]; const countKeys=Object.keys(value.counts||{}); if (JSON.stringify(Object.keys(value))!==JSON.stringify(wanted) || value.schema!=="hub-postgres-source-v1" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value.capturedAtUtc) || !/^[a-f0-9]{64}$/.test(value.ledgerSha256) || !/^\d+\.\d+\.\d+$/.test(value.releaseVersion) || countKeys.some((key,index)=>key!==[...countKeys].sort()[index] || !/^(0|[1-9]\d*)$/.test(value.counts[key])) || JSON.stringify(value)!==text) process.exit(1);' || die "SOURCE_RECORD_INVALID"
 # PostgreSQL permits importing an exported snapshot as its exporting role.  Capture
 # and dump as the dedicated application owner: it has the minimum database
 # privileges required for a consistent logical backup, while POSTGRES_USER remains

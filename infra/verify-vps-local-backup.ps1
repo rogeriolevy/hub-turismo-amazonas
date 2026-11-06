@@ -226,6 +226,8 @@ restore_database='__DATABASE_NAME__'
 expected_hash='__EXPECTED_HASH__'
 source_name='__SOURCE_NAME__'
 expected_source_hash='__EXPECTED_SOURCE_HASH__'
+candidate_attestation_path='__CANDIDATE_ATTESTATION_PATH__'
+expected_candidate_attestation_hash='__CANDIDATE_ATTESTATION_SHA256__'
 database_created=0
 postgres_container_id=""
 
@@ -239,7 +241,11 @@ if [[ "$stage" != "/var/tmp/hub-local-backup-__STAGE_TOKEN__" || ! -d "$stage" |
 fi
 if [[ ! "$dump_name" =~ ^hub-[0-9]{8}T[0-9]{6}Z-[0-9]+\.dump$ ||
       ! "$restore_database" =~ ^hub_restore_local_[0-9]{8}T[0-9]{6}Z_[a-f0-9]{8}$ ||
-      ! "$expected_hash" =~ ^[a-f0-9]{64}$ ]]; then
+      ! "$expected_hash" =~ ^[a-f0-9]{64}$ ||
+      ! "$source_name" =~ ^hub-[0-9]{8}T[0-9]{6}Z-[0-9]+\.source\.json$ ||
+      ! "$expected_source_hash" =~ ^[a-f0-9]{64}$ ||
+      ! "$candidate_attestation_path" =~ ^/opt/hub-turismo/attestations/candidate-[0-9]+\.[0-9]+\.[0-9]+\.env$ ||
+      ! "$expected_candidate_attestation_hash" =~ ^[a-f0-9]{64}$ ]]; then
   echo "Os identificadores do ensaio estão fora dos formatos permitidos." >&2
   exit 1
 fi
@@ -267,6 +273,12 @@ cleanup() {
   if [[ -f "$stage/$dump_name.sha256" && ! -L "$stage/$dump_name.sha256" ]]; then
     rm -f -- "$stage/$dump_name.sha256" || cleanup_failed=1
   fi
+  if [[ -f "$stage/$source_name" && ! -L "$stage/$source_name" ]]; then
+    rm -f -- "$stage/$source_name" || cleanup_failed=1
+  fi
+  if [[ -f "$stage/$source_name.sha256" && ! -L "$stage/$source_name.sha256" ]]; then
+    rm -f -- "$stage/$source_name.sha256" || cleanup_failed=1
+  fi
   if [[ -f "$stage/restore-local-backup.sh" && ! -L "$stage/restore-local-backup.sh" ]]; then
     rm -f -- "$stage/restore-local-backup.sh" || cleanup_failed=1
   fi
@@ -282,6 +294,35 @@ cleanup() {
   exit "$status"
 }
 trap cleanup EXIT
+
+[[ -f "$candidate_attestation_path" && ! -L "$candidate_attestation_path" && "$(stat -c '%U:%G:%a' "$candidate_attestation_path")" == "hub:hub:600" ]] || { echo "O atestado candidato está ausente ou sem as permissões esperadas." >&2; exit 1; }
+[[ "$(sha256sum < "$candidate_attestation_path" | awk '{print $1}')" == "$expected_candidate_attestation_hash" ]] || { echo "O hash do atestado candidato não corresponde ao informado." >&2; exit 1; }
+candidate_value() {
+  local key="$1"
+  awk -F= -v key="$key" '$1 == key { count++; value = substr($0, index($0, "=") + 1) } END { if (count != 1) exit 1; print value }' "$candidate_attestation_path"
+}
+candidate_release_directory="$(candidate_value CANDIDATE_PATH)" || { echo "O atestado candidato está incompleto." >&2; exit 1; }
+candidate_version="${candidate_attestation_path##*/candidate-}"
+candidate_version="${candidate_version%.env}"
+candidate_image_tag="$(candidate_value IMAGE_TAG)" || { echo "O atestado candidato está incompleto." >&2; exit 1; }
+candidate_image_id="$(candidate_value IMAGE_ID)" || { echo "O atestado candidato está incompleto." >&2; exit 1; }
+[[ "$candidate_release_directory" == "/opt/hub-turismo/release-$candidate_version" && -d "$candidate_release_directory" && ! -L "$candidate_release_directory" && "$(readlink -e -- "$candidate_release_directory")" == "$candidate_release_directory" ]] || { echo "O caminho da candidata não corresponde ao atestado." >&2; exit 1; }
+candidate_compose_file="$candidate_release_directory/infra/compose.vps.yaml"
+candidate_environment_file="$candidate_release_directory/infra/vps.env"
+[[ -f "$candidate_release_directory/scripts/capture-postgres-backup-source.mjs" && ! -L "$candidate_release_directory/scripts/capture-postgres-backup-source.mjs" && -f "$candidate_compose_file" && ! -L "$candidate_compose_file" && -f "$candidate_environment_file" && ! -L "$candidate_environment_file" ]] || { echo "Os arquivos necessários da candidata estão ausentes." >&2; exit 1; }
+[[ "$(stat -c '%U:%G:%a' "$candidate_environment_file")" == "hub:hub:600" ]] || { echo "O ambiente da candidata tem permissões inesperadas." >&2; exit 1; }
+candidate_package_version="$(awk -F '"' '/^[[:space:]]*"version"[[:space:]]*:/ { count++; value=$4 } END { if (count != 1) exit 1; print value }' "$candidate_release_directory/package.json")" || { echo "A versão da candidata é inválida." >&2; exit 1; }
+candidate_environment_version="$(awk -F= '$1 == "APP_VERSION" { count++; value=substr($0, index($0, "=") + 1) } END { if (count != 1) exit 1; print value }' "$candidate_environment_file")" || { echo "A versão no ambiente da candidata é inválida." >&2; exit 1; }
+candidate_compose_hash="$(sha256sum < "$candidate_compose_file" | awk '{print $1}')"
+candidate_environment_hash="$(grep -v '^[[:space:]]*APP_VERSION=' "$candidate_environment_file" | sha256sum | awk '{print $1}')"
+[[ "$candidate_package_version" == "$candidate_version" && "$candidate_environment_version" == "$candidate_version" && "$candidate_image_tag" == "hub-turismo-amazonas:$candidate_version" && "$candidate_image_id" =~ ^sha256:[a-f0-9]{64}$ && "$(docker image inspect --format '{{.Id}}' "$candidate_image_tag")" == "$candidate_image_id" ]] || { echo "A versão ou imagem da candidata não corresponde ao atestado." >&2; exit 1; }
+[[ "$candidate_compose_hash" == "$(candidate_value COMPOSE_SHA256)" && "$candidate_environment_hash" == "$(candidate_value ENVIRONMENT_SHA256)" ]] || { echo "A configuração da candidata não corresponde ao atestado." >&2; exit 1; }
+active_release_for_environment="$(readlink -e -- /opt/hub-turismo/current)"
+active_environment_file="$active_release_for_environment/infra/vps.env"
+[[ -f "$active_environment_file" && ! -L "$active_environment_file" && "$(stat -c '%U:%G:%a' "$active_environment_file")" == "hub:hub:600" ]] || { echo "O ambiente ativo não está disponível com as permissões esperadas." >&2; exit 1; }
+active_environment_hash="$(grep -v '^[[:space:]]*APP_VERSION=' "$active_environment_file" | sha256sum | awk '{print $1}')"
+[[ "$active_environment_hash" == "$candidate_environment_hash" ]] || { echo "O ambiente da candidata difere do ambiente ativo da VPS." >&2; exit 1; }
+docker compose -p hub-turismo --env-file "$candidate_environment_file" -f "$candidate_compose_file" config --quiet || { echo "A configuração Compose candidata é inválida." >&2; exit 1; }
 
 if [[ ! -f "$stage/$dump_name" || -L "$stage/$dump_name" ||
       ! -s "$stage/$dump_name" || ! -f "$stage/$dump_name.sha256" ||
@@ -301,7 +342,7 @@ if [[ "$sidecar_hash" != "$expected_hash" || "$actual_hash" != "$expected_hash" 
   exit 1
 fi
 
-release_directory="$(readlink -e -- /opt/hub-turismo/current)"
+release_directory="$active_release_for_environment"
 case "$release_directory" in
   /opt/hub-turismo/release-*) ;;
   *) echo "A release ativa do Hub não foi encontrada." >&2; exit 1 ;;
@@ -346,10 +387,10 @@ fi
 web_container_id="$(docker ps --filter 'label=com.docker.compose.project=hub-turismo' --filter 'label=com.docker.compose.service=web' --format '{{.ID}}' | head -n 1)"
 [[ -n "$web_container_id" ]] || { echo "O container web não está disponível para a comparação canônica." >&2; exit 1; }
 restore_database_url="$(docker exec "$web_container_id" node -e 'const value=process.env.DATABASE_URL; if (!value) process.exit(2); const url=new URL(value); url.pathname="/"+process.argv[1]; process.stdout.write(url.toString())' "$restore_database")" || { echo "Não foi possível derivar a conexão isolada." >&2; exit 1; }
-restored_capture="$(printf 'COMPLETE\n' | docker exec -i -e DATABASE_URL="$restore_database_url" "$web_container_id" node /app/scripts/capture-postgres-backup-source.mjs)" || { echo "A captura canônica do restore falhou." >&2; exit 1; }
+restored_capture="$(printf 'COMPLETE\n' | DATABASE_URL="$restore_database_url" docker compose -p hub-turismo --env-file "$candidate_environment_file" -f "$candidate_compose_file" run --rm --no-deps -T -e DATABASE_URL web node /app/scripts/capture-postgres-backup-source.mjs)" || { echo "A captura canônica do restore falhou." >&2; exit 1; }
 restored_record="$(sed -n 's/^SOURCE_RECORD=//p' <<< "$restored_capture")"
 [[ "$(grep -Ec '^SOURCE_RECORD=' <<< "$restored_capture")" == 1 && -n "$restored_record" ]] || { echo "A captura do restore não retornou um único recibo canônico." >&2; exit 1; }
-node -e 'const fs=require("fs"); const [source, restored]=process.argv.slice(1).map(JSON.parse); if (JSON.stringify(source.counts)!==JSON.stringify(restored.counts) || source.ledgerSha256!==restored.ledgerSha256) process.exit(1);' "$(cat "$stage/$source_name")" "$restored_record" || { echo "A restauração não corresponde exatamente ao snapshot de origem." >&2; exit 1; }
+printf '%s\n%s\n' "$(cat "$stage/$source_name")" "$restored_record" | docker exec -i "$web_container_id" node -e 'const fs=require("fs"); const [source, restored]=fs.readFileSync(0,"utf8").trimEnd().split("\n").map(JSON.parse); if (JSON.stringify(source.counts)!==JSON.stringify(restored.counts) || source.ledgerSha256!==restored.ledgerSha256) process.exit(1);' || { echo "A restauração não corresponde exatamente ao snapshot de origem." >&2; exit 1; }
 echo "RESTORE_SOURCE_COMPARISON=match"
 printf '%s\n' "$restore_counts"
 echo "RESTORE_DATABASE=$restore_database"
@@ -361,6 +402,8 @@ $remoteRestoreScript = $remoteRestoreScript.Replace("__DATABASE_NAME__", $restor
 $remoteRestoreScript = $remoteRestoreScript.Replace("__EXPECTED_HASH__", $receiptHash)
 $remoteRestoreScript = $remoteRestoreScript.Replace("__SOURCE_NAME__", (Split-Path -Leaf $sourceReceiptFile))
 $remoteRestoreScript = $remoteRestoreScript.Replace("__EXPECTED_SOURCE_HASH__", $sourceReceiptHash)
+$remoteRestoreScript = $remoteRestoreScript.Replace("__CANDIDATE_ATTESTATION_PATH__", $CandidateAttestationPath)
+$remoteRestoreScript = $remoteRestoreScript.Replace("__CANDIDATE_ATTESTATION_SHA256__", $CandidateAttestationSha256.ToLowerInvariant())
 $localRestoreScript = Join-Path $localStage "restore-local-backup.sh"
 
 try {
